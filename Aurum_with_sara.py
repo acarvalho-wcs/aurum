@@ -289,7 +289,7 @@ languages = {
 }
 
 # Initial Interface (always in English)
-col1, col2, col3 = st.columns([1, 5])
+col1, col2, col3 = st.columns([1, 5, 1])
 with col1:
     st.image("logo.jpg", width=200)
 with col2:
