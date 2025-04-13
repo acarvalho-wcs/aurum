@@ -293,7 +293,7 @@ col1, col2 = st.columns([1, 5])
 with col1:
     st.image("Aurum_logo.jpg", width=100)
 with col2:
-    st.title("🌎 Welcome to Aurum!")
+    st.title("🌎 Welcome to Aurum!/Bem-vindo ao Aurum!/¡Bienvenido a Aurum!")
 st.write("Please, select your language:")
 
 # Language selection
