@@ -102,6 +102,7 @@ def org_crime_score(df, binary_features, species_col='Species', year_col='Year',
         log['chi2'] = f"{co_score:+.2f} ({co_log})"
 
     
+
 # Anomaly detection (interactive configuration)
 st.markdown("## 🚨 Anomaly Detection")
 
@@ -162,9 +163,6 @@ if st.button("▶️ Run Anomaly Detection"):
             methods_used.append("Mahalanobis")
 
         if votes:
-            outlier_votes = sum(pd.Series(votes).apply(lambda x: (np.array(x) == -1).sum()))
-            ratio = outlier_votes / (len(df) * len(votes))
-
             st.markdown("### 🔍 Detected Anomalous Cases")
             anomaly_votes = pd.DataFrame({"Case #": df["Case #"]})
 
