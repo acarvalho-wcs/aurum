@@ -1,0 +1,12 @@
+# 🦜 Aurum – Wildlife Crime Analysis Tool
+
+**Aurum** is an open analytical tool to detect signs of organized crime in wildlife trafficking datasets.
+
+It uses statistical methods and unsupervised learning to analyze patterns like:
+
+- 📈 Temporal Trends (TCS) (running)
+- 🧬 Species Co-occurrence  (under construction)
+- 🚨 Anomaly Detection (under construction)
+- 🕸️ Network Connectivity  (under construction)
+- 🧮 Organized Crime Score (OCS)  (under construction)
+- 🧠 Wildlife Crime Staging (SARA Model)
