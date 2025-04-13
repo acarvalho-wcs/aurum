@@ -13,7 +13,6 @@ import networkx as nx
 import statsmodels.api as sm
 run_trend = run_cooccurrence = run_anomaly = run_network = run_ocs = False
 df_selected = pd.DataFrame()
- if not df_selected.empty and 'Inferred Stage' in df_selected.columns:
     
 # --- NEW COMPONENT: Trend Component using TCS ---
 def trend_component(df, year_col='Year', count_col='N_seized', breakpoint=2015, min_obs=5):
@@ -794,7 +793,7 @@ if run_cooccurrence:
 # ======================
 # 🔎 SARA PANEL
 # ======================
-if 'Inferred Stage' in df_selected.columns:
+if not df_selected.empty and 'Inferred Stage' in df_selected.columns:
     st.markdown("## 🧠 SARA Model – Wildlife Crime Staging")
 
     selected_sp = st.selectbox("Select a species for SARA overview:", df_selected['Species'].unique())
