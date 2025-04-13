@@ -453,6 +453,10 @@ columns_msg = {
 
 # --- Upload do arquivo ---
 uploaded_file = st.file_uploader(file_upload_labels[lang], type=["xlsx"])
+run_trend = run_cooccurrence = run_anomaly = run_network = run_ocs = False
+co_score = 0.0
+selected_species = []
+df_selected = pd.DataFrame()
 
 # Se arquivo for carregado, salva na sessão
 if uploaded_file is not None:
