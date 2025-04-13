@@ -837,7 +837,8 @@ if 'Inferred Stage' in df_selected.columns:
 
 
 # Explicação automática multilíngue
-with st.expander("🧠 Interpretation / Interpretação / Interpretación"):
+if run_cooccurrence and co_results:
+    with st.expander("🧠 Interpretation / Interpretação / Interpretación"):
     if lang == "pt":
         if 'co_score' in locals() and co_score > 0.1:
             st.success("O escore de coocorrência é alto, indicando que as espécies tendem a aparecer juntas nas apreensões com maior frequência do que o esperado ao acaso. Isso pode refletir uma logística estruturada ou fontes de origem compartilhadas.")
