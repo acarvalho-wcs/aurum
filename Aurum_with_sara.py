@@ -290,7 +290,13 @@ languages = {
 }
 
 # Initial Interface (always in English)
-st.title("🌎 Welcome to Aurum!")
+col1, col2, col3 = st.columns([1, 5, 1])
+with col1:
+    st.image("logo.jpg", width=200)
+with col2:
+    st.title("🌍 Welcome to Aurum!")
+with col3:
+    st.image("wcs.jpg", width=200)
 st.write("Please, select your language:")
 
 # Language selection
