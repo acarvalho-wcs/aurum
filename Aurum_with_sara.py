@@ -101,21 +101,89 @@ def org_crime_score(df, binary_features, species_col='Species', year_col='Year',
         score += co_score
         log['chi2'] = f"{co_score:+.2f} ({co_log})"
 
-    # Anomaly detection
+    
+# Anomaly detection (interactive configuration)
+st.markdown("## 🚨 Anomaly Detection")
+
+# Step 1: Feature selection
+available_features = df.select_dtypes(include=[np.number]).columns.tolist()
+binary_features = st.multiselect("🔧 Select features to include in anomaly detection:", available_features)
+
+# Step 2: Model selection
+st.markdown("### 🧪 Choose which models to apply:")
+use_iforest = st.checkbox("Isolation Forest", value=True)
+use_lof = st.checkbox("Local Outlier Factor", value=True)
+use_dbscan = st.checkbox("DBSCAN", value=True)
+use_zscore = st.checkbox("Z-score", value=True)
+use_mahalanobis = st.checkbox("Mahalanobis Distance", value=True)
+
+# Step 3: Run button
+if st.button("▶️ Run Anomaly Detection"):
     if all(f in df.columns for f in binary_features):
         X = StandardScaler().fit_transform(df[binary_features])
-        iforest = IsolationForest(random_state=42).fit_predict(X)
-        lof = LocalOutlierFactor().fit_predict(X)
-        dbscan = DBSCAN(eps=1.2, min_samples=2).fit_predict(X)
-        outlier_votes = sum(pd.Series([iforest, lof, dbscan]).apply(lambda x: (np.array(x) == -1).sum()))
-        ratio = outlier_votes / (len(df) * 3)
-        if ratio > 0.15:
-            score += default_weights['anomaly']
-            log['anomalies'] = f'+{default_weights["anomaly"]:.2f} ({int(ratio*100)}% consensus)'
-        else:
-            log['anomalies'] = '0 (low outlier consensus)'
 
-    # Network structure
+        votes = []
+        methods_used = []
+
+        if use_iforest:
+            iforest = IsolationForest(random_state=42).fit_predict(X)
+            votes.append(iforest)
+            methods_used.append("Isolation Forest")
+
+        if use_lof:
+            lof = LocalOutlierFactor().fit_predict(X)
+            votes.append(lof)
+            methods_used.append("Local Outlier Factor")
+
+        if use_dbscan:
+            dbscan = DBSCAN(eps=1.2, min_samples=2).fit_predict(X)
+            votes.append(dbscan)
+            methods_used.append("DBSCAN")
+
+        if use_zscore:
+            z_scores = np.abs(X)
+            z_outliers = np.any(z_scores > 3, axis=1).astype(int)
+            z_outliers = np.where(z_outliers == 1, -1, 1)
+            votes.append(z_outliers)
+            methods_used.append("Z-score")
+
+        if use_mahalanobis:
+            try:
+                cov = np.cov(X, rowvar=False)
+                inv_cov = np.linalg.inv(cov)
+                mean = np.mean(X, axis=0)
+                diff = X - mean
+                md = np.sqrt(np.sum(diff @ inv_cov * diff, axis=1))
+                threshold_md = np.percentile(md, 97.5)
+                mahalanobis = np.where(md > threshold_md, -1, 1)
+            except np.linalg.LinAlgError:
+                mahalanobis = np.ones(len(X))
+            votes.append(mahalanobis)
+            methods_used.append("Mahalanobis")
+
+        if votes:
+            outlier_votes = sum(pd.Series(votes).apply(lambda x: (np.array(x) == -1).sum()))
+            ratio = outlier_votes / (len(df) * len(votes))
+
+            st.markdown("### 🔍 Detected Anomalous Cases")
+            anomaly_votes = pd.DataFrame({"Case #": df["Case #"]})
+
+            for name, vote in zip(methods_used, votes):
+                anomaly_votes[name] = (np.array(vote) == -1).astype(int)
+
+            anomaly_votes["Total Votes"] = anomaly_votes.drop(columns=["Case #"]).sum(axis=1)
+            flagged_cases = anomaly_votes[anomaly_votes["Total Votes"] >= 2]
+
+            if not flagged_cases.empty:
+                st.dataframe(flagged_cases.sort_values(by="Total Votes", ascending=False))
+            else:
+                st.info("No significant anomalies detected across selected methods.")
+        else:
+            st.warning("Please select at least one anomaly detection method.")
+    else:
+        st.error("Selected features are not available in the dataset.")
+
+# Network structure
     G = nx.Graph()
     for _, row in df.iterrows():
         G.add_node(row['Case #'])
