@@ -1,9 +1,9 @@
+streamlit
 pandas
 numpy
-streamlit
 matplotlib
-seaborn
 scikit-learn
+statsmodels
+plotly
 networkx
-scipy
 openpyxl
