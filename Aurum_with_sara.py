@@ -80,7 +80,6 @@ def org_crime_score(df, binary_features, species_col='Species', year_col='Year',
     log = {}
 
     # TREND COMPONENT (replaces old R² logic)
-    selected_species = []
     breakpoint = st.session_state.get('trend_breakpoint', 2015)
     tcs, tcs_log = trend_component(df, year_col=year_col, count_col=count_col, breakpoint=breakpoint)
     if tcs > 1:
@@ -92,8 +91,7 @@ def org_crime_score(df, binary_features, species_col='Species', year_col='Year',
     else:
         log['trend'] = f"0 ({tcs_log})"
 
-    
-    # Chi-squared
+    # CHI-SQUARED CO-OCCURRENCE
     if 'Species' in df.columns:
         species_list = df['Species'].dropna().unique().tolist()
         co_results = general_species_cooccurrence(df, species_list)
@@ -101,87 +99,46 @@ def org_crime_score(df, binary_features, species_col='Species', year_col='Year',
         score += co_score
         log['chi2'] = f"{co_score:+.2f} ({co_log})"
 
-    
-
-# Anomaly detection (interactive configuration)
-st.markdown("## 🚨 Anomaly Detection")
-
-# Step 1: Feature selection
-available_features = df.select_dtypes(include=[np.number]).columns.tolist()
-binary_features = st.multiselect("🔧 Select features to include in anomaly detection:", available_features)
-
-# Step 2: Model selection
-st.markdown("### 🧪 Choose which models to apply:")
-use_iforest = st.checkbox("Isolation Forest", value=True)
-use_lof = st.checkbox("Local Outlier Factor", value=True)
-use_dbscan = st.checkbox("DBSCAN", value=True)
-use_zscore = st.checkbox("Z-score", value=True)
-use_mahalanobis = st.checkbox("Mahalanobis Distance", value=True)
-
-# Step 3: Run button
-if st.button("▶️ Run Anomaly Detection"):
+    # ANOMALY DETECTION SCORE
     if all(f in df.columns for f in binary_features):
         X = StandardScaler().fit_transform(df[binary_features])
 
-        votes = []
-        methods_used = []
+        methods = []
+        iforest = IsolationForest(random_state=42).fit_predict(X)
+        methods.append(iforest)
 
-        if use_iforest:
-            iforest = IsolationForest(random_state=42).fit_predict(X)
-            votes.append(iforest)
-            methods_used.append("Isolation Forest")
+        lof = LocalOutlierFactor().fit_predict(X)
+        methods.append(lof)
 
-        if use_lof:
-            lof = LocalOutlierFactor().fit_predict(X)
-            votes.append(lof)
-            methods_used.append("Local Outlier Factor")
+        dbscan = DBSCAN(eps=1.2, min_samples=2).fit_predict(X)
+        methods.append(dbscan)
 
-        if use_dbscan:
-            dbscan = DBSCAN(eps=1.2, min_samples=2).fit_predict(X)
-            votes.append(dbscan)
-            methods_used.append("DBSCAN")
+        z_scores = np.abs(X)
+        z_outliers = np.any(z_scores > 3, axis=1).astype(int)
+        z_outliers = np.where(z_outliers == 1, -1, 1)
+        methods.append(z_outliers)
 
-        if use_zscore:
-            z_scores = np.abs(X)
-            z_outliers = np.any(z_scores > 3, axis=1).astype(int)
-            z_outliers = np.where(z_outliers == 1, -1, 1)
-            votes.append(z_outliers)
-            methods_used.append("Z-score")
+        try:
+            cov = np.cov(X, rowvar=False)
+            inv_cov = np.linalg.inv(cov)
+            mean = np.mean(X, axis=0)
+            diff = X - mean
+            md = np.sqrt(np.sum(diff @ inv_cov * diff, axis=1))
+            threshold_md = np.percentile(md, 97.5)
+            mahalanobis = np.where(md > threshold_md, -1, 1)
+        except np.linalg.LinAlgError:
+            mahalanobis = np.ones(len(X))
+        methods.append(mahalanobis)
 
-        if use_mahalanobis:
-            try:
-                cov = np.cov(X, rowvar=False)
-                inv_cov = np.linalg.inv(cov)
-                mean = np.mean(X, axis=0)
-                diff = X - mean
-                md = np.sqrt(np.sum(diff @ inv_cov * diff, axis=1))
-                threshold_md = np.percentile(md, 97.5)
-                mahalanobis = np.where(md > threshold_md, -1, 1)
-            except np.linalg.LinAlgError:
-                mahalanobis = np.ones(len(X))
-            votes.append(mahalanobis)
-            methods_used.append("Mahalanobis")
-
-        if votes:
-            st.markdown("### 🔍 Detected Anomalous Cases")
-            anomaly_votes = pd.DataFrame({"Case #": df["Case #"]})
-
-            for name, vote in zip(methods_used, votes):
-                anomaly_votes[name] = (np.array(vote) == -1).astype(int)
-
-            anomaly_votes["Total Votes"] = anomaly_votes.drop(columns=["Case #"]).sum(axis=1)
-            flagged_cases = anomaly_votes[anomaly_votes["Total Votes"] >= 2]
-
-            if not flagged_cases.empty:
-                st.dataframe(flagged_cases.sort_values(by="Total Votes", ascending=False))
-            else:
-                st.info("No significant anomalies detected across selected methods.")
+        outlier_votes = sum(pd.Series(methods).apply(lambda x: (np.array(x) == -1).sum()))
+        ratio = outlier_votes / (len(df) * len(methods))
+        if ratio > 0.15:
+            score += default_weights['anomaly']
+            log['anomalies'] = f'+{default_weights["anomaly"]:.2f} ({int(ratio*100)}% consensus)'
         else:
-            st.warning("Please select at least one anomaly detection method.")
-    else:
-        st.error("Selected features are not available in the dataset.")
+            log['anomalies'] = '0 (low outlier consensus)'
 
-# Network structure
+    # NETWORK STRUCTURE
     G = nx.Graph()
     for _, row in df.iterrows():
         G.add_node(row['Case #'])
@@ -206,11 +163,11 @@ if st.button("▶️ Run Anomaly Detection"):
     else:
         log['network'] = f'0 (density = {density:.2f}, {components} comps)'
 
-    
-    # Co-occurrence emergence flag (e.g., sp_a + sp_b since 2023)
+    # Co-occurrence emergence
     log['cooccurrence_flag'] = detect_emerging_cooccurrence(df, 'sp_a', 'sp_b', year_threshold=2023)
 
     return max(-1.0, min(1.0, score)), log
+
 
 
 
