@@ -296,7 +296,7 @@ with col1:
 with col2:
     st.image("logo.jpg", width=200)
 with col3:
-    st.title("🌍 Welcome to Aurum!")
+    st.title("**Welcome to Aurum!**")
 st.write("Please, select your language:")
 
 # Language selection
