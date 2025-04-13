@@ -839,65 +839,62 @@ if 'Inferred Stage' in df_selected.columns:
 # Explicação automática multilíngue
 if run_cooccurrence and co_results:
     with st.expander("🧠 Interpretation / Interpretação / Interpretación"):
-    if lang == "pt":
-        if 'co_score' in locals() and co_score > 0.1:
-            st.success("O escore de coocorrência é alto, indicando que as espécies tendem a aparecer juntas nas apreensões com maior frequência do que o esperado ao acaso. Isso pode refletir uma logística estruturada ou fontes de origem compartilhadas.")
-        elif co_score > 0.0:
-            st.warning("Alguns pares de espécies apresentam sinais iniciais de coocorrência, embora o padrão ainda seja fraco. Pode ser um indício precoce de coordenação.")
+        if lang == "pt":
+            if co_score > 0.1:
+                st.success("O escore de coocorrência é alto, indicando que as espécies tendem a aparecer juntas nas apreensões com maior frequência do que o esperado ao acaso. Isso pode refletir uma logística estruturada ou fontes de origem compartilhadas.")
+            elif co_score > 0.0:
+                st.warning("Alguns pares de espécies apresentam sinais iniciais de coocorrência, embora o padrão ainda seja fraco. Pode ser um indício precoce de coordenação.")
+            else:
+                st.info("Não há evidências estatísticas de coocorrência entre as espécies analisadas. Os eventos de tráfico parecem ocorrer de forma independente.")
+
+            st.markdown("""
+            ### 🔬 Como esse escore é calculado?
+            O **Cooccurrence Score** reflete a proporção de pares de espécies com associação significativa (p < 0.05), ajustado pelo peso do componente:
+
+            Coocorrência = (pares significativos ÷ total de pares) × peso do componente
+            
+            Onde:
+            - \( |S| \) = número de pares com p < 0.05  
+            - \( |P| \) = total de pares testados  
+            - \( w_{\chi^2} \) = peso desse componente no índice OCS
+            """)
+
+        elif lang == "es":
+            if co_score > 0.1:
+                st.success("El puntaje de coocurrencia es alto, lo que indica que las especies tienden a aparecer juntas en incautaciones más a menudo de lo esperado por azar. Esto puede reflejar logísticas compartidas o rutas comunes.")
+            elif co_score > 0.0:
+                st.warning("Algunos pares de especies muestran signos iniciales de coocurrencia, aunque el patrón sigue siendo débil. Puede ser una señal temprana de coordinación.")
+            else:
+                st.info("No hay evidencia estadística de que las especies aparezcan juntas más de lo esperado por azar. Las incautaciones parecen independientes.")
+
+            st.markdown("""
+            ### 🔬 ¿Cómo se calcula este puntaje?
+            El **Cooccurrence Score** refleja la proporción de pares de especies significativamente asociados (p < 0.05), ajustado por su peso:
+
+            Coocurrencia = (pares significativos ÷ total de pares) × peso del componente
+            
+            Donde:
+            - \( |S| \) = número de pares con p < 0.05  
+            - \( |P| \) = total de pares evaluados  
+            - \( w_{\chi^2} \) = peso del componente en el OCS
+            """)
+
         else:
-            st.info("Não há evidências estatísticas de coocorrência entre as espécies analisadas. Os eventos de tráfico parecem ocorrer de forma independente.")
+            if co_score > 0.1:
+                st.success("The co-occurrence score is high, suggesting that the species tend to be trafficked together more often than by chance. This may indicate coordinated logistics or shared sourcing.")
+            elif co_score > 0.0:
+                st.warning("Some species pairs are showing weak but emerging co-occurrence patterns. These may reflect early signs of coordination.")
+            else:
+                st.info("No statistical evidence of non-random co-occurrence. Most trafficking appears to occur independently between species.")
 
-        st.markdown("""
-        ### 🔬 Como esse escore é calculado?
-        O **Cooccurrence Score** reflete a proporção de pares de espécies com associação significativa (p < 0.05), ajustado pelo peso do componente:
+            st.markdown("""
+            ### 🔬 How is this score calculated?
+            The **Co-occurrence Score** reflects the proportion of significantly associated species pairs (p < 0.05), weighted for the OCS:
 
-        Coocorrência = (pares significativos ÷ total de pares) × peso do componente
-        \]
-        
-        Onde:
-        - \( |S| \) = número de pares com p < 0.05
-        - \( |P| \) = total de pares testados
-        - \( w_{\chi^2} \) = peso desse componente no índice OCS
-        """)
-
-    elif lang == "es":
-        if 'co_score' in locals() and co_score > 0.1:
-            st.success("El puntaje de coocurrencia es alto, lo que indica que las especies tienden a aparecer juntas en incautaciones más a menudo de lo esperado por azar. Esto puede reflejar logísticas compartidas o rutas comunes.")
-        elif co_score > 0.0:
-            st.warning("Algunos pares de especies muestran signos iniciales de coocurrencia, aunque el patrón sigue siendo débil. Puede ser una señal temprana de coordinación.")
-        else:
-            st.info("No hay evidencia estadística de que las especies aparezcan juntas más de lo esperado por azar. Las incautaciones parecen independientes.")
-
-        st.markdown("""
-        ### 🔬 ¿Cómo se calcula este puntaje?
-        El **Cooccurrence Score** refleja la proporción de pares de especies significativamente asociados (p < 0.05), ajustado por su peso:
-
-        Coocurrencia = (pares significativos ÷ total de pares) × peso del componente
-        \]
-
-        Donde:
-        - \( |S| \) = número de pares con p < 0.05
-        - \( |P| \) = total de pares evaluados
-        - \( w_{\chi^2} \) = peso del componente en el OCS
-        """)
-
-    else:
-        if 'co_score' in locals() and co_score > 0.1:
-            st.success("The co-occurrence score is high, suggesting that the species tend to be trafficked together more often than by chance. This may indicate coordinated logistics or shared sourcing.")
-        elif co_score > 0.0:
-            st.warning("Some species pairs are showing weak but emerging co-occurrence patterns. These may reflect early signs of coordination.")
-        else:
-            st.info("No statistical evidence of non-random co-occurrence. Most trafficking appears to occur independently between species.")
-
-        st.markdown("""
-        ### 🔬 How is this score calculated?
-        The **Co-occurrence Score** reflects the proportion of significantly associated species pairs (p < 0.05), weighted for the OCS:
-
-        Co-occurrence = (significant pairs ÷ total pairs) × component weight
-        \]
-
-        Where:
-        - \( |S| \): number of significant pairs
-        - \( |P| \): total pairs tested
-        - \( w_{\chi^2} \): component weight in the final score
-        """)
+            Co-occurrence = (significant pairs ÷ total pairs) × component weight
+            
+            Where:
+            - \( |S| \): number of significant pairs  
+            - \( |P| \): total pairs tested  
+            - \( w_{\chi^2} \): component weight in the final score
+            """)
