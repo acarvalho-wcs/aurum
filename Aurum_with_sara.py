@@ -599,45 +599,45 @@ if st.session_state.get('uploaded_file') is not None:
 if selected_species:
     df_selected = df_clean[df_clean['Species'].isin(selected_species)]
 
-    st.markdown("## 📊 Visualização Personalizada")
-    st.markdown("Use esse painel para explorar visualmente seus dados antes das análises avançadas.")
+    st.markdown("## 📊 Custom Visualization")
+    st.markdown("Use this panel to visually explore your data before advanced analyses.")
 
-    chart_type = st.selectbox("📍 Escolha o tipo de gráfico:", ["Barras", "Pizza", "Linha", "Dispersão"])
-    x_axis = st.selectbox("🧭 Eixo X:", df_selected.columns)
-    y_axis = st.selectbox("📐 Eixo Y:", df_selected.columns)
+    chart_type = st.selectbox("📍 Choose the chart type:", ["Bar", "Pie", "Line", "Scatter"])
+    x_axis = st.selectbox("🧭 X Axis:", df_selected.columns)
+    y_axis = st.selectbox("📐 Y Axis:", df_selected.columns)
 
     import plotly.express as px
-    if chart_type == "Barras":
-        fig = px.bar(df_selected, x=x_axis, y=y_axis, color='Species', title="📊 Gráfico de Barras")
+    if chart_type == "Bar":
+        fig = px.bar(df_selected, x=x_axis, y=y_axis, color='Species', title="📊 Bar Chart")
         st.plotly_chart(fig)
 
-    elif chart_type == "Pizza":
-        fig = px.pie(df_selected, names=x_axis, values=y_axis, title="🥧 Gráfico de Pizza")
+    elif chart_type == "Pie":
+        fig = px.pie(df_selected, names=x_axis, values=y_axis, title="🥧 Pie Chart")
         st.plotly_chart(fig)
 
-    elif chart_type == "Linha":
-        fig = px.line(df_selected, x=x_axis, y=y_axis, color='Species', title="📈 Gráfico de Linhas", markers=True)
+    elif chart_type == "Line":
+        fig = px.line(df_selected, x=x_axis, y=y_axis, color='Species', title="📈 Line Chart", markers=True)
         st.plotly_chart(fig)
 
-    elif chart_type == "Dispersão":
-        fig = px.scatter(df_selected, x=x_axis, y=y_axis, color='Species', title="🔘 Gráfico de Dispersão")
+    elif chart_type == "Scatter":
+        fig = px.scatter(df_selected, x=x_axis, y=y_axis, color='Species', title="🔘 Scatter Chart")
         st.plotly_chart(fig)
 
-    st.success(f"✅ {len(df_selected)} registros selecionados para análise.")
+    st.success(f"✅ {len(df_selected)} records selected for analysis.")
 
     st.markdown("### 📊 Choose the analyses you want to perform:")
 
-    run_trend = st.checkbox("📈 Trend Analysis", value=True)
-    run_cooccurrence = st.checkbox("🧬 Species Co-occurrence", value=True)
-    run_anomaly = st.checkbox("🚨 Anomaly Detection", value=True)
-    run_network = st.checkbox("🕸️ Network Analysis", value=True)
-    run_ocs = st.checkbox("🧮 Calculate Organized Crime Score (OCS)", value=True)
+    run_trend = st.checkbox("📈 Trend Analysis", value=False)
+    run_cooccurrence = st.checkbox("🧬 Species Co-occurrence", value=False)
+    run_anomaly = st.checkbox("🚨 Anomaly Detection", value=False)
+    run_network = st.checkbox("🕸️ Network Analysis", value=False)
+    run_ocs = st.checkbox("🧮 Calculate Organized Crime Score (OCS)", value=False)
 
     if run_trend:
             st.subheader("📈 Trend Analysis")
 
             # Permitir escolher breakpoint
-            default_breakpoint = st.session_state.get("trend_breakpoint", 2015)
+            default_breakpoint = st.session_state.get("trend_breakpoint", 2013)
             breakpoint_year = st.number_input(
                 "Choose a breakpoint year (used to split time series into two phases):",
                 min_value=1990, max_value=2030, value=int(default_breakpoint), step=1
