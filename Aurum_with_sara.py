@@ -11,6 +11,7 @@ from sklearn.linear_model import LinearRegression
 from scipy.stats import chi2_contingency
 import networkx as nx
 import statsmodels.api as sm
+run_trend = run_cooccurrence = run_anomaly = run_network = run_ocs = False
 
 # --- NEW COMPONENT: Trend Component using TCS ---
 def trend_component(df, year_col='Year', count_col='N_seized', breakpoint=2015, min_obs=5):
