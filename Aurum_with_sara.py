@@ -292,9 +292,9 @@ languages = {
 # Initial Interface (always in English)
 col1, col2, col3 = st.columns([1, 2, 3])
 with col1:
-    st.image("wcs.jpg", width=120)
+    st.image("wcs.jpg", width=200)
 with col2:
-    st.image("logo.jpg", width=150)
+    st.image("logo.jpg", width=200)
 with col3:
     st.title("**Welcome to Aurum!**")
 st.write("Please, select your language:")
