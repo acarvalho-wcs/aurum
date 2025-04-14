@@ -1009,3 +1009,50 @@ if run_anomaly:
         # Gráfico (heatmap)
         st.markdown("### 🔍 Anomaly votes distribution")
         st.bar_chart(vote_df["Outlier Votes"].value_counts().sort_index())
+
+st.markdown("## 🎛️ Customize anomaly period for OCS")
+
+year_min = st.slider(
+    "📅 Consider only cases from year:",
+    min_value=int(df_selected['Year'].min()),
+    max_value=int(df_selected['Year'].max()),
+    value=int(df_selected['Year'].max() - 5),
+    step=1
+)
+
+df_recent = df_selected[df_selected['Year'] >= year_min]
+if len(df_recent) >= 3:
+    features = [col for col in df_selected.columns if pd.api.types.is_numeric_dtype(df_selected[col])]
+    features = [f for f in features if f not in ['Year']]  # opcional: remover 'Year'
+
+    X_recent = StandardScaler().fit_transform(df_recent[features])
+
+    methods = [
+        IsolationForest(random_state=42).fit_predict(X_recent),
+        LocalOutlierFactor().fit_predict(X_recent),
+        DBSCAN(eps=1.2, min_samples=2).fit_predict(X_recent),
+        np.where(np.any(np.abs(X_recent) > 3, axis=1), -1, 1)
+    ]
+
+    try:
+        cov = np.cov(X_recent, rowvar=False)
+        inv_cov = np.linalg.inv(cov)
+        mean = np.mean(X_recent, axis=0)
+        diff = X_recent - mean
+        md = np.sqrt(np.sum(diff @ inv_cov * diff, axis=1))
+        threshold_md = np.percentile(md, 97.5)
+        methods.append(np.where(md > threshold_md, -1, 1))
+    except np.linalg.LinAlgError:
+        methods.append(np.ones(len(X_recent)))
+
+    total_votes = sum((np.array(m) == -1).sum() for m in methods)
+    ratio_recent = total_votes / (len(df_recent) * len(methods))
+
+    st.markdown(f"📊 **Recent anomaly consensus (since {year_min}):** `{ratio_recent:.2%}`")
+
+    if ratio_recent > 0.15:
+        st.success(f"✅ Anomaly would contribute +0.20 to OCS based on recent data")
+    else:
+        st.warning("❌ Anomaly would contribute 0.00 to OCS (low consensus)")
+else:
+    st.warning("⚠️ Not enough data from selected year to calculate anomaly score")
