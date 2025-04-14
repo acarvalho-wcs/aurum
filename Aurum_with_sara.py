@@ -527,6 +527,7 @@ if st.session_state.get('uploaded_file') is not None:
 
     # --- Aplica a limpeza ---
     # === Aplicação de pontuação por país de origem dos ofensores ===
+    df_clean = expand_multi_species_rows(df_raw)
     import os
 
     country_score_path = "country_offenders_values.csv"  # certifique-se de que está no mesmo diretório que o .py
@@ -547,8 +548,6 @@ if st.session_state.get('uploaded_file') is not None:
             st.markdown("✅ `Offender_Score` column added using country_offenders_values.csv")
     else:
         st.warning("⚠️ Country score file not found (country_offenders_values.csv)")
-
-    df_clean = expand_multi_species_rows(df_raw)
 
     # ===============================
     # 🔄 INFERÊNCIA AUTOMÁTICA DE COLUNAS PARA O MODELO SARA
