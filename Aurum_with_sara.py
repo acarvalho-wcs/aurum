@@ -542,10 +542,10 @@ if st.session_state.get('uploaded_file') is not None:
             return sum(country_map.get(c, 0) for c in countries)
 
         if "Country of offenders" in df_clean.columns:
-            df_clean["Offender_Score"] = df_clean["Country of offenders"].apply(
+            df_clean["Offender_value"] = df_clean["Country of offenders"].apply(
                 lambda x: score_countries(x, country_map)
             )
-            st.markdown("✅ `Offender_Score` column added using country_offenders_values.csv")
+            st.markdown("✅ `Offender_value` column added using country_offenders_values.csv")
     else:
         st.warning("⚠️ Country score file not found (country_offenders_values.csv)")
 
@@ -947,12 +947,12 @@ if run_anomaly:
 
     # Seleciona colunas binárias para a análise (ex: 'N_seized', 'Year', etc.)
     
-    # Detecção de Anomalias com suporte à Offender_Score
+    # Detecção de Anomalias com suporte à Offender_value
     numeric_cols = [col for col in df_selected.columns if pd.api.types.is_numeric_dtype(df_selected[col])]
 
     default_features = ["N_seized", "Year"]
-    if "Offender_Score" in df_selected.columns:
-        default_features.append("Offender_Score")
+    if "Offender_value" in df_selected.columns:
+        default_features.append("Offender_value")
 
     binary_features = st.multiselect(
         "📊 Select numeric features to evaluate anomalies:",
