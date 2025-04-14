@@ -928,7 +928,7 @@ if run_anomaly:
     binary_features = st.multiselect(
         "📊 Select numeric features to evaluate anomalies:",
         options=[col for col in df_selected.columns if pd.api.types.is_numeric_dtype(df_selected[col])],
-        default=["N_seized", "Year"]
+        default=["N_seized", "Year","Country of offenders","Location of seizure or shipment"]
     )
 
     if len(binary_features) < 1:
