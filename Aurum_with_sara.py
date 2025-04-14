@@ -948,17 +948,18 @@ if run_anomaly:
 
     # Seleciona colunas binárias para a análise (ex: 'N_seized', 'Year', etc.)
     
-numeric_cols = [col for col in df_selected.columns if pd.api.types.is_numeric_dtype(df_selected[col])]
+    # Detecção de Anomalias com suporte à Offender_Score
+    numeric_cols = [col for col in df_selected.columns if pd.api.types.is_numeric_dtype(df_selected[col])]
 
-default_features = ["N_seized", "Year"]
-if "Offender_Score" in df_selected.columns:
-    default_features.append("Offender_Score")
+    default_features = ["N_seized", "Year"]
+    if "Offender_Score" in df_selected.columns:
+        default_features.append("Offender_Score")
 
-binary_features = st.multiselect(
-    "📊 Select numeric features to evaluate anomalies:",
-    options=numeric_cols,
-    default=default_features
-)
+    binary_features = st.multiselect(
+        "📊 Select numeric features to evaluate anomalies:",
+        options=numeric_cols,
+        default=default_features
+    )
 
     if len(binary_features) < 1:
         st.warning("⚠️ Please select at least one numeric feature.")
@@ -983,7 +984,7 @@ binary_features = st.multiselect(
             threshold_md = np.percentile(md, 97.5)
             mahalanobis = np.where(md > threshold_md, -1, 1)
         except np.linalg.LinAlgError:
-            mahalanobis = np.ones(len(X))  # fallback se matriz singular
+            mahalanobis = np.ones(len(X))
 
         # Votos
         votes = {
@@ -1009,3 +1010,4 @@ binary_features = st.multiselect(
         # Gráfico (heatmap)
         st.markdown("### 🔍 Outlier vote distribution")
         st.bar_chart(vote_df["Outlier Votes"].value_counts().sort_index())
+
