@@ -1007,6 +1007,6 @@ if run_anomaly:
         st.dataframe(top_outliers.set_index("Case #"))
 
         # Gráfico (heatmap)
-        st.markdown("### 🔍 Outlier vote distribution")
+        st.markdown("### 🔍 Anomalous cases")
         st.bar_chart(vote_df["Outlier Votes"].value_counts().sort_index())
 
