@@ -526,6 +526,28 @@ if st.session_state.get('uploaded_file') is not None:
 
 
     # --- Aplica a limpeza ---
+    # === Aplicação de pontuação por país de origem dos ofensores ===
+    import os
+
+    country_score_path = "country_offenders_values.csv"  # certifique-se de que está no mesmo diretório que o .py
+    if os.path.exists(country_score_path):
+        df_country_score = pd.read_csv(country_score_path, encoding="ISO-8859-1")
+        country_map = dict(zip(df_country_score["Country"].str.strip(), df_country_score["Value"]))
+
+        def score_countries(cell_value, country_map):
+            if not isinstance(cell_value, str):
+                return 0
+            countries = [c.strip() for c in cell_value.split("+")]
+            return sum(country_map.get(c, 0) for c in countries)
+
+        if "Country of offenders" in df_clean.columns:
+            df_clean["Offender_Score"] = df_clean["Country of offenders"].apply(
+                lambda x: score_countries(x, country_map)
+            )
+            st.markdown("✅ `Offender_Score` column added using country_offenders_values.csv")
+    else:
+        st.warning("⚠️ Country score file not found (country_offenders_values.csv)")
+
     df_clean = expand_multi_species_rows(df_raw)
 
     # ===============================
