@@ -921,3 +921,62 @@ if run_cooccurrence and co_results:
             - \( |P| \): total pairs tested  
             - \( w_{\chi^2} \): component weight in the final score
             """)
+if run_anomaly:
+    st.subheader("🚨 Anomaly Detection")
+
+    # Seleciona colunas binárias para a análise (ex: 'N_seized', 'Year', etc.)
+    binary_features = st.multiselect(
+        "📊 Select numeric features to evaluate anomalies:",
+        options=[col for col in df_selected.columns if pd.api.types.is_numeric_dtype(df_selected[col])],
+        default=["N_seized", "Year"]
+    )
+
+    if len(binary_features) < 1:
+        st.warning("⚠️ Please select at least one numeric feature.")
+    else:
+        # Padronização
+        X = StandardScaler().fit_transform(df_selected[binary_features])
+
+        # Algoritmos
+        iforest = IsolationForest(random_state=42).fit_predict(X)
+        lof = LocalOutlierFactor().fit_predict(X)
+        dbscan = DBSCAN(eps=1.2, min_samples=2).fit_predict(X)
+        z_scores = np.abs(X)
+        z_outliers = np.any(z_scores > 3, axis=1).astype(int)
+        z_outliers = np.where(z_outliers == 1, -1, 1)
+
+        try:
+            cov = np.cov(X, rowvar=False)
+            inv_cov = np.linalg.inv(cov)
+            mean = np.mean(X, axis=0)
+            diff = X - mean
+            md = np.sqrt(np.sum(diff @ inv_cov * diff, axis=1))
+            threshold_md = np.percentile(md, 97.5)
+            mahalanobis = np.where(md > threshold_md, -1, 1)
+        except np.linalg.LinAlgError:
+            mahalanobis = np.ones(len(X))  # fallback se matriz singular
+
+        # Votos
+        votes = {
+            "Isolation Forest": iforest,
+            "LOF": lof,
+            "DBSCAN": dbscan,
+            "Z-score": z_outliers,
+            "Mahalanobis": mahalanobis
+        }
+
+        vote_df = pd.DataFrame(votes)
+        vote_df["Outlier Votes"] = (vote_df == -1).sum(axis=1)
+        vote_df["Case #"] = df_selected["Case #"].values
+        consensus_ratio = (vote_df["Outlier Votes"] > 2).sum() / len(vote_df)
+
+        st.markdown(f"🧮 **Consensus Outlier Ratio:** `{consensus_ratio:.2%}`")
+
+        # Tabela de outliers
+        st.markdown("### 📋 Most anomalous cases")
+        top_outliers = vote_df.sort_values(by="Outlier Votes", ascending=False).head(10)
+        st.dataframe(top_outliers.set_index("Case #"))
+
+        # Gráfico (heatmap)
+        st.markdown("### 🔍 Outlier vote distribution")
+        st.bar_chart(vote_df["Outlier Votes"].value_counts().sort_index())
