@@ -1009,11 +1009,3 @@ if run_anomaly:
         # Gráfico (heatmap)
         st.markdown("### 🔍 Anomaly votes distribution")
         st.bar_chart(vote_df["Outlier Votes"].value_counts().sort_index())
-
-ocs_score, ocs_log = org_crime_score(...)
-st.markdown(f"### 🔐 Organized Crime Score (OCS): `{ocs_score:.2f}`")
-
-# Mostra o detalhamento de cada componente
-with st.expander("🔍 View contribution of each component"):
-    for k, v in ocs_log.items():
-        st.markdown(f"**{k.title()}**: {v}")
