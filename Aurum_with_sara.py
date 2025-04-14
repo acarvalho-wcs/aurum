@@ -947,10 +947,17 @@ if run_anomaly:
     st.subheader("🚨 Anomaly Detection")
 
     # Seleciona colunas binárias para a análise (ex: 'N_seized', 'Year', etc.)
+    # Detecção de Anomalias com suporte à Offender_Score
+    numeric_cols = [col for col in df_selected.columns if pd.api.types.is_numeric_dtype(df_selected[col])]
+
+    default_features = ["N_seized", "Year"]
+    if "Offender_Score" in df_selected.columns:
+        default_features.append("Offender_Score")
+
     binary_features = st.multiselect(
         "📊 Select numeric features to evaluate anomalies:",
-        options=[col for col in df_selected.columns if pd.api.types.is_numeric_dtype(df_selected[col])],
-        default=["N_seized", "Year"]
+        options=numeric_cols,
+        default=default_features
     )
 
     if len(binary_features) < 1:
