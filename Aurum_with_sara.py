@@ -946,18 +946,10 @@ if run_anomaly:
     st.subheader("🚨 Anomaly Detection")
 
     # Seleciona colunas binárias para a análise (ex: 'N_seized', 'Year', etc.)
-    
-    # Detecção de Anomalias com suporte à Offender_value
-    numeric_cols = [col for col in df_selected.columns if pd.api.types.is_numeric_dtype(df_selected[col])]
-
-    default_features = ["N_seized", "Year"]
-    if "Offender_value" in df_selected.columns:
-        default_features.append("Offender_value")
-
     binary_features = st.multiselect(
         "📊 Select numeric features to evaluate anomalies:",
-        options=numeric_cols,
-        default=default_features
+        options=[col for col in df_selected.columns if pd.api.types.is_numeric_dtype(df_selected[col])],
+        default=["N_seized", "Year"]
     )
 
     if len(binary_features) < 1:
@@ -983,7 +975,7 @@ if run_anomaly:
             threshold_md = np.percentile(md, 97.5)
             mahalanobis = np.where(md > threshold_md, -1, 1)
         except np.linalg.LinAlgError:
-            mahalanobis = np.ones(len(X))
+            mahalanobis = np.ones(len(X))  # fallback se matriz singular
 
         # Votos
         votes = {
@@ -1006,49 +998,53 @@ if run_anomaly:
         top_outliers = vote_df.sort_values(by="Outlier Votes", ascending=False).head(10)
         st.dataframe(top_outliers.set_index("Case #"))
 
-st.markdown("## 🎛️ Customize anomaly period for OCS")
+        # Gráfico (heatmap)
+        st.markdown("### 🔍 Outlier vote distribution")
+        st.bar_chart(vote_df["Outlier Votes"].value_counts().sort_index())
 
-year_min = st.slider(
-    "📅 Consider only cases from year:",
-    min_value=int(df_selected['Year'].min()),
-    max_value=int(df_selected['Year'].max()),
-    value=int(df_selected['Year'].max() - 5),
-    step=1
-)
+    st.markdown("## 🎛️ Customize anomaly period for OCS")
 
-df_recent = df_selected[df_selected['Year'] >= year_min]
-if len(df_recent) >= 3:
-    features = [col for col in df_selected.columns if pd.api.types.is_numeric_dtype(df_selected[col])]
-    features = [f for f in features if f not in ['Year']]  # opcional: remover 'Year'
+    year_min = st.slider(
+        "📅 Consider only cases from year:",
+        min_value=int(df_selected['Year'].min()),
+        max_value=int(df_selected['Year'].max()),
+        value=int(df_selected['Year'].max() - 5),
+        step=1
+    )
 
-    X_recent = StandardScaler().fit_transform(df_recent[features])
+    df_recent = df_selected[df_selected['Year'] >= year_min]
+    if len(df_recent) >= 3:
+        features = [col for col in df_selected.columns if pd.api.types.is_numeric_dtype(df_selected[col])]
+        features = [f for f in features if f not in ['Year']]
 
-    methods = [
-        IsolationForest(random_state=42).fit_predict(X_recent),
-        LocalOutlierFactor().fit_predict(X_recent),
-        DBSCAN(eps=1.2, min_samples=2).fit_predict(X_recent),
-        np.where(np.any(np.abs(X_recent) > 3, axis=1), -1, 1)
-    ]
+        X_recent = StandardScaler().fit_transform(df_recent[features])
 
-    try:
-        cov = np.cov(X_recent, rowvar=False)
-        inv_cov = np.linalg.inv(cov)
-        mean = np.mean(X_recent, axis=0)
-        diff = X_recent - mean
-        md = np.sqrt(np.sum(diff @ inv_cov * diff, axis=1))
-        threshold_md = np.percentile(md, 97.5)
-        methods.append(np.where(md > threshold_md, -1, 1))
-    except np.linalg.LinAlgError:
-        methods.append(np.ones(len(X_recent)))
+        methods = [
+            IsolationForest(random_state=42).fit_predict(X_recent),
+            LocalOutlierFactor().fit_predict(X_recent),
+            DBSCAN(eps=1.2, min_samples=2).fit_predict(X_recent),
+            np.where(np.any(np.abs(X_recent) > 3, axis=1), -1, 1)
+        ]
 
-    total_votes = sum((np.array(m) == -1).sum() for m in methods)
-    ratio_recent = total_votes / (len(df_recent) * len(methods))
+        try:
+            cov = np.cov(X_recent, rowvar=False)
+            inv_cov = np.linalg.inv(cov)
+            mean = np.mean(X_recent, axis=0)
+            diff = X_recent - mean
+            md = np.sqrt(np.sum(diff @ inv_cov * diff, axis=1))
+            threshold_md = np.percentile(md, 97.5)
+            methods.append(np.where(md > threshold_md, -1, 1))
+        except np.linalg.LinAlgError:
+            methods.append(np.ones(len(X_recent)))
 
-    st.markdown(f"📊 **Recent anomaly consensus (since {year_min}):** `{ratio_recent:.2%}`")
+        total_votes = sum((np.array(m) == -1).sum() for m in methods)
+        ratio_recent = total_votes / (len(df_recent) * len(methods))
 
-    if ratio_recent > 0.15:
-        st.success(f"✅ Anomaly would contribute +0.20 to OCS based on recent data")
+        st.markdown(f"📊 **Recent anomaly consensus (since {year_min}):** `{ratio_recent:.2%}`")
+
+        if ratio_recent > 0.15:
+            st.success(f"✅ Anomaly would contribute +0.20 to OCS based on recent data")
+        else:
+            st.warning("❌ Anomaly would contribute 0.00 to OCS (low consensus)")
     else:
-        st.warning("❌ Anomaly would contribute 0.00 to OCS (low consensus)")
-else:
-    st.warning("⚠️ Not enough data from selected year to calculate anomaly score")
+        st.warning("⚠️ Not enough data from selected year to calculate anomaly score")
