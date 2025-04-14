@@ -998,10 +998,6 @@ if run_anomaly:
         top_outliers = vote_df.sort_values(by="Outlier Votes", ascending=False).head(10)
         st.dataframe(top_outliers.set_index("Case #"))
 
-        # Gráfico (heatmap)
-        st.markdown("### 🔍 Outlier vote distribution")
-        st.bar_chart(vote_df["Outlier Votes"].value_counts().sort_index())
-
     st.markdown("## 🎛️ Customize anomaly period for OCS")
 
     year_min = st.slider(
