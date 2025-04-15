@@ -1043,7 +1043,7 @@ with st.expander("🧠 Interpretation of Anomaly Detection Models"):
 """)
 
 
-    st.markdown("## 🎛️ Customize anomaly period for OCS")
+st.markdown("## 🎛️ Customize anomaly period for OCS")
 
     year_min = st.slider(
         "📅 Consider only cases from year:",
