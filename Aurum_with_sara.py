@@ -998,6 +998,34 @@ if run_anomaly:
         top_outliers = vote_df.sort_values(by="Outlier Votes", ascending=False).head(10)
         st.dataframe(top_outliers.set_index("Case #"))
 
+with st.expander("🧠 Interpretation of Anomaly Detection Models"):
+    st.markdown("""
+**📘 How to interpret the anomaly detection models used:**
+
+- **Isolation Forest:** Detects anomalies based on how easy it is to isolate a data point.  
+  → `-1` means the case is anomalous.
+
+- **LOF (Local Outlier Factor):** Compares the local density of a point to its neighbors.  
+  → `-1` means the case is in a sparse region and considered anomalous.
+
+- **DBSCAN:** Clustering algorithm that groups dense areas.  
+  → `-1` means the point does not belong to any cluster and is treated as an outlier.  
+  → Values `0`, `1`, `2`, etc. indicate cluster membership (not anomalous).
+
+- **Z-score:** Flags data points with high deviation from the mean in any feature.  
+  → `-1` indicates the case had at least one extreme value.
+
+- **Mahalanobis Distance:** Measures multivariate distance from the center.  
+  → `-1` means the case is statistically distant from the expected distribution.
+
+---
+
+**🔎 General Interpretation:**
+- Cases marked `-1` by multiple models are more likely to be true anomalies.
+- A consensus of **4 or 5 votes** strongly suggests suspicious or outlier behavior.
+- Even a single highly anomalous case (5/5 models) can indicate organized activity.
+""")
+
     st.markdown("## 🎛️ Customize anomaly period for OCS")
 
     year_min = st.slider(
