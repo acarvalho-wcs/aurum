@@ -1000,40 +1000,32 @@ if run_anomaly:
 
 with st.expander("🧠 Interpretation of Anomaly Detection Models"):
     st.markdown("""
-**📘 How to interpret the outputs of the anomaly detection models used in Aurum:**
+**How to interpret the outputs of the anomaly detection models used in Aurum:**
 
 ---
 
-### 🔍 Isolation Forest
+### Isolation Forest
 - Output: `-1` or `1`
 - `-1` → The case is considered **anomalous** (isolated early in the tree structure).
 - `1` → The case is considered **normal**.
 
----
-
-### 🔍 Local Outlier Factor (LOF)
+### Local Outlier Factor (LOF)
 - Output: `-1` or `1`
 - `-1` → The case is considered an **outlier**, having significantly lower local density than neighbors.
 - `1` → The case is **not an outlier**.
 
----
-
-### 🔍 DBSCAN (Density-Based Spatial Clustering)
+### DBSCAN (Density-Based Spatial Clustering)
 - Output: `-1`, `0`, `1`, `2`, etc.
 - `-1` → The case does **not belong to any cluster** and is treated as **anomalous**.
 - `0`, `1`, `2`, ... → The case is assigned to a specific cluster → **not anomalous**.
 
----
-
-### 🔍 Z-Score Outlier Detection
+### Z-Score Outlier Detection
 - Output: `-1` or `1`
 - `-1` → At least one feature of the case is **more than 3 standard deviations** away from the mean.
          → Considered **anomalous**.
 - `1` → All features are within normal range → **not anomalous**.
 
----
-
-### 🔍 Mahalanobis Distance
+### Mahalanobis Distance
 - Output: `-1` or `1`
 - `-1` → The case lies **far from the multivariate mean** considering the covariance structure.
          → Considered **anomalous**.
@@ -1041,7 +1033,7 @@ with st.expander("🧠 Interpretation of Anomaly Detection Models"):
 
 ---
 
-### 🧠 Overall Interpretation
+### **Overall Interpretation**
 
 - The more models that label a case as `-1`, the stronger the evidence of **anomalous or suspicious behavior**.
 - **Cases with 4 or 5 outlier votes** are especially important and may suggest signs of **organization or coordination**.
