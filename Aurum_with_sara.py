@@ -102,22 +102,15 @@ def org_crime_score(df, binary_features, species_col='Species', year_col='Year',
     # ANOMALY DETECTION SCORE
     if all(f in df.columns for f in binary_features):
         X = StandardScaler().fit_transform(df[binary_features])
-
-        methods = []
-        iforest = IsolationForest(random_state=42).fit_predict(X)
-        methods.append(iforest)
-
-        lof = LocalOutlierFactor().fit_predict(X)
-        methods.append(lof)
-
-        dbscan = DBSCAN(eps=1.2, min_samples=2).fit_predict(X)
-        methods.append(dbscan)
-
-        z_scores = np.abs(X)
-        z_outliers = np.any(z_scores > 3, axis=1).astype(int)
-        z_outliers = np.where(z_outliers == 1, -1, 1)
-        methods.append(z_outliers)
-
+    
+        models = [
+            IsolationForest(random_state=42).fit_predict(X),
+            LocalOutlierFactor().fit_predict(X),
+            DBSCAN(eps=1.2, min_samples=2).fit_predict(X),
+            np.where(np.any(np.abs(X) > 3, axis=1), -1, 1)
+        ]
+    
+        # Mahalanobis Distance
         try:
             cov = np.cov(X, rowvar=False)
             inv_cov = np.linalg.inv(cov)
@@ -125,19 +118,27 @@ def org_crime_score(df, binary_features, species_col='Species', year_col='Year',
             diff = X - mean
             md = np.sqrt(np.sum(diff @ inv_cov * diff, axis=1))
             threshold_md = np.percentile(md, 97.5)
-            mahalanobis = np.where(md > threshold_md, -1, 1)
+            models.append(np.where(md > threshold_md, -1, 1))
         except np.linalg.LinAlgError:
-            mahalanobis = np.ones(len(X))
-        methods.append(mahalanobis)
+            models.append(np.ones(len(X)))
+    
+        votes = np.array(models)
+        total_votes = (votes == -1).sum(axis=0)  # soma de votos por caso
+    
+        peso = default_weights['anomaly']
+        soma_pesos_anomalias = total_votes[total_votes > 0].sum()
+        total_casos = len(df)
+    
+        anom_score = peso * (soma_pesos_anomalias / (total_casos * len(models)))
+        score += anom_score
+    
+        log['anomalies'] = f'+{anom_score:.2f} (total anomaly votes = {soma_pesos_anomalias} / {total_casos * len(models)})'
+    
+        st.markdown("### 📊 Anomaly Contribution to OCS")
+        st.markdown(f"**Weighted anomaly score:** `{anom_score:.4f}`")
+    st.markdown(f"Votes from all models: `{soma_pesos_anomalias}` over `{total_casos * len(models)}` possible votes")
 
-        outlier_votes = sum(pd.Series(methods).apply(lambda x: (np.array(x) == -1).sum()))
-        ratio = outlier_votes / (len(df) * len(methods))
-        if ratio > 0.15:
-            score += default_weights['anomaly']
-            log['anomalies'] = f'+{default_weights["anomaly"]:.2f} ({int(ratio*100)}% consensus)'
-        else:
-            log['anomalies'] = '0 (low outlier consensus)'
-
+  
     # NETWORK STRUCTURE
     G = nx.Graph()
     for _, row in df.iterrows():
