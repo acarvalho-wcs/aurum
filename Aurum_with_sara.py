@@ -20,6 +20,7 @@ st.set_page_config(page_title="Aurum Dashboard", layout="wide")
 st.title("Aurum - A Toolkit for Wildlife Trafficking Analysts")
 st.markdown("**Select an analysis from the sidebar to begin.**")
 st.markdown("Developed by Wildlife Conservation Society (WCS), Brasil.")
+st.sidebar.markdown("How to cite: Carvalho, A. F., 2025. Detecting Organized Wildlife Crime with *Aurum*: An AI-Powered Toolkit for Trafficking Analysis. Wildlife Conservation Society.")
 
 # Upload do arquivo
 st.sidebar.markdown("## 📂 Upload Data")
