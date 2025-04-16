@@ -381,14 +381,16 @@ if user_msg:
     # Chave da OpenAI via secrets
     openai.api_key = st.secrets["openai_api_key"]
 
-    # Requisição à API
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=st.session_state["messages"]
-    )
+# Requisição à API
+client = openai.OpenAI(api_key=st.secrets["openai_api_key"])
 
-    reply = response["choices"][0]["message"]["content"]
-    st.session_state["messages"].append({"role": "assistant", "content": reply})
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=st.session_state["messages"]
+)
+
+reply = response.choices[0].message.content
+st.session_state["messages"].append({"role": "assistant", "content": reply})
 
 # Exibe histórico
 for msg in st.session_state["messages"][1:]:
