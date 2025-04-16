@@ -44,7 +44,6 @@ data = worksheet.get_all_records()
 df = pd.DataFrame(data)
 
 sheets = client.open_by_key(sheet_id)
-st.write("Aba(s) disponíveis:", [ws.title for ws in sheets.worksheets()])
 
 # --- AUTENTICAÇÃO ---
 st.sidebar.markdown("## 🔐 Aurum Gateway")
