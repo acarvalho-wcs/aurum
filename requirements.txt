@@ -7,4 +7,6 @@ statsmodels
 plotly
 networkx
 openpyxl
+streamlit
+openai
 streamlit-chat
