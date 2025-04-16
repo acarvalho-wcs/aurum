@@ -32,6 +32,8 @@ if uploaded_file is not None:
 
             df.columns = df.columns.str.strip().str.replace('\xa0', '', regex=True)
             if 'Year' in df.columns:
+    except Exception as e:
+        st.error(f"❌ Error reading file: {e}")
                 df['Year'] = df['Year'].astype(str).str.extract(r'(\d{4})').astype(float)
 
             def expand_multi_species_rows(df):
@@ -296,6 +298,8 @@ if uploaded_file is not None:
                         vote_df["Case #"] = df_selected["Case #"].values
 
                         consensus_ratio = (vote_df["Outlier Votes"] > 2).sum() / len(vote_df)
+    except Exception as e:
+        st.error(f"❌ Error reading file: {e}")
                         st.markdown(f"**Consensus Outlier Ratio:** `{consensus_ratio:.2%}`")
 
                         st.markdown("### 📋 Most anomalous cases")
