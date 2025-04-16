@@ -148,14 +148,15 @@ if selected_species:
     show_viz = st.sidebar.checkbox("Data Visualization", value=False)
     show_trend = st.sidebar.checkbox("Trend Analysis", value=False)
 
+    except Exception as e:
+        st.error(f"❌ Error reading file: {e}")
+        df = None
+
 if df is not None:
             st.sidebar.markdown("## Select Species")
             species_options = sorted(df['Species'].dropna().unique())
             selected_species = st.sidebar.multiselect("Select one or more species:", species_options)
 
-    except Exception as e:
-        st.error(f"❌ Error reading file: {e}")
-        df = None
 
         # Aplicar valores numéricos aos países se o arquivo estiver disponível
         import os
