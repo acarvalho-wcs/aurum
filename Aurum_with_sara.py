@@ -29,18 +29,19 @@ st.markdown("**Select an analysis from the sidebar to begin.**")
 SHEET_NAME = "Form Responses"
 SPREADSHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
 
-# Autenticação com Google via st.secrets
-scope = [
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive"
-]
-credentials = Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"],
-    scopes=scope
-)
-gc = gspread.authorize(credentials)
-sh = gc.open_by_key(SPREADSHEET_ID)
-worksheet = sh.worksheet(SHEET_NAME)
+# Configurações de escopo e autenticação
+scope = ["https://www.googleapis.com/auth/spreadsheets"]
+credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+client = gspread.authorize(credentials)
+
+# ID da planilha e nome da aba
+sheet_id = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
+sheet_name = "Página1"  # ou o nome correto da aba
+
+# Leitura da planilha
+worksheet = client.open_by_key(sheet_id).worksheet(sheet_name)
+data = worksheet.get_all_records()
+df = pd.DataFrame(data)
 
 # --- AUTENTICAÇÃO ---
 st.sidebar.markdown("## 🔐 Aurum Gateway")
