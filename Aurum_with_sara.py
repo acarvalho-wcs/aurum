@@ -77,7 +77,7 @@ if login:
 
 # --- FORMULÁRIO ---
 if "user" in st.session_state:
-    st.markdown("## 📥 Submit New Case to Aurum")
+    st.markdown("## Submit New Case to Aurum")
     with st.form("aurum_form"):
         case_id = st.text_input("Case ID")
         n_seized = st.text_input("N seized specimens (e.g. 2 GLT + 1 LM)")
