@@ -229,97 +229,99 @@ python
 Copiar
 Editar
             show_trend = st.sidebar.checkbox("Trend Analysis", value=False)
-            if show_trend:
-                st.markdown("## Trend Analysis")
+        if show_trend:
+            st.markdown("## Trend Analysis")
 
-                breakpoint_year = st.number_input("Breakpoint year (split the trend):", 1990, 2030, value=2015)
-                show_cusum = st.checkbox("Apply CUSUM", value=True)
+            breakpoint_year = st.number_input("Breakpoint year (split the trend):", 1990, 2030, value=2015)
+            show_cusum = st.checkbox("Apply CUSUM", value=True)
 
-                def trend_component(df, year_col='Year', count_col='N_seized', breakpoint=2015):
-                    df_pre = df[df[year_col] <= breakpoint]
-                    df_post = df[df[year_col] > breakpoint]
+            def trend_component(df, year_col='Year', count_col='N_seized', breakpoint=2015):
+                df_pre = df[df[year_col] <= breakpoint]
+                df_post = df[df[year_col] > breakpoint]
 
-                    if len(df_pre) < 2 or len(df_post) < 2:
-                        return 0.0, "Insufficient data for segmented regression"
+                if len(df_pre) < 2 or len(df_post) < 2:
+                    return 0.0, "Insufficient data for segmented regression"
 
-                    X_pre = sm.add_constant(df_pre[[year_col]])
-                    y_pre = df_pre[count_col]
-                    model_pre = sm.OLS(y_pre, X_pre).fit()
-                    slope_pre = model_pre.params[year_col]
+                X_pre = sm.add_constant(df_pre[[year_col]])
+                y_pre = df_pre[count_col]
+                model_pre = sm.OLS(y_pre, X_pre).fit()
+                slope_pre = model_pre.params[year_col]
 
-                    X_post = sm.add_constant(df_post[[year_col]])
-                    y_post = df_post[count_col]
-                    model_post = sm.OLS(y_post, X_post).fit()
-                    slope_post = model_post.params[year_col]
+                X_post = sm.add_constant(df_post[[year_col]])
+                y_post = df_post[count_col]
+                model_post = sm.OLS(y_post, X_post).fit()
+                slope_post = model_post.params[year_col]
 
-                    tcs = (slope_post - slope_pre) / (abs(slope_pre) + 1)
-                    log = f"TCS = {tcs:.2f}"
-                    return tcs, log
+                tcs = (slope_post - slope_pre) / (abs(slope_pre) + 1)
+                log = f"TCS = {tcs:.2f}"
+                return tcs, log
 
-                tcs, tcs_log = trend_component(df_selected, breakpoint=breakpoint_year)
-                st.markdown(f"**Trend Coordination Score (TCS):** `{tcs:.2f}`")
-                st.info(tcs_log)
+            tcs, tcs_log = trend_component(df_selected, breakpoint=breakpoint_year)
+            st.markdown(f"**Trend Coordination Score (TCS):** `{tcs:.2f}`")
+            st.info(tcs_log)
 
-                st.markdown("### Trend Plot")
-                fig, ax = plt.subplots(figsize=(8, 5))
+            st.markdown("### Trend Plot")
+            fig, ax = plt.subplots(figsize=(8, 5))
 
+            for species in selected_species:
+                subset = df_selected[df_selected['Species'] == species]
+                ax.scatter(subset['Year'], subset['N_seized'], label=species, alpha=0.6)
+
+                df_pre = subset[subset['Year'] <= breakpoint_year]
+                df_post = subset[subset['Year'] > breakpoint_year]
+
+                if len(df_pre) > 1:
+                    model_pre = sm.OLS(df_pre['N_seized'], sm.add_constant(df_pre['Year'])).fit()
+                    ax.plot(df_pre['Year'], model_pre.predict(sm.add_constant(df_pre['Year'])), linestyle='--')
+
+                if len(df_post) > 1:
+                    model_post = sm.OLS(df_post['N_seized'], sm.add_constant(df_post['Year'])).fit()
+                    ax.plot(df_post['Year'], model_post.predict(sm.add_constant(df_post['Year'])), linestyle='-.')
+
+            ax.axvline(breakpoint_year, color='red', linestyle=':', label=f"Breakpoint = {breakpoint_year}")
+            ax.set_title("Seizure Trend by Species")
+            ax.set_xlabel("Year")
+            ax.set_ylabel("Individuals Seized")
+            ax.legend()
+            st.pyplot(fig)
+
+            if show_cusum:
+                st.markdown("### CUSUM Analysis")
                 for species in selected_species:
-                    subset = df_selected[df_selected['Species'] == species]
-                    ax.scatter(subset['Year'], subset['N_seized'], label=species, alpha=0.6)
+                    subset = df_selected[df_selected['Species'] == species].copy()
+                    subset = subset.sort_values("Year")
+                    if len(subset) < 4:
+                        st.warning(f"Not enough data for CUSUM for {species}")
+                        continue
 
-                    df_pre = subset[subset['Year'] <= breakpoint_year]
-                    df_post = subset[subset['Year'] > breakpoint_year]
+                    years = subset["Year"]
+                    values = subset["N_seized"]
+                    mean = values.mean()
+                    cusum_pos = [0]
+                    cusum_neg = [0]
 
-                    if len(df_pre) > 1:
-                        model_pre = sm.OLS(df_pre['N_seized'], sm.add_constant(df_pre['Year'])).fit()
-                        ax.plot(df_pre['Year'], model_pre.predict(sm.add_constant(df_pre['Year'])), linestyle='--')
+                    for val in values:
+                        s_pos = max(0, cusum_pos[-1] + val - mean)
+                        s_neg = min(0, cusum_neg[-1] + val - mean)
+                        cusum_pos.append(s_pos)
+                        cusum_neg.append(s_neg)
 
-                    if len(df_post) > 1:
-                        model_post = sm.OLS(df_post['N_seized'], sm.add_constant(df_post['Year'])).fit()
-                        ax.plot(df_post['Year'], model_post.predict(sm.add_constant(df_post['Year'])), linestyle='-.')
+                    cusum_pos = cusum_pos[1:]
+                    cusum_neg = cusum_neg[1:]
 
-                ax.axvline(breakpoint_year, color='red', linestyle=':', label=f"Breakpoint = {breakpoint_year}")
-                ax.set_title("Seizure Trend by Species")
-                ax.set_xlabel("Year")
-                ax.set_ylabel("Individuals Seized")
-                ax.legend()
-                st.pyplot(fig)
+                    fig_c, ax_c = plt.subplots()
+                    ax_c.plot(years, values, color='black', marker='o', label='Trend')
+                    ax_c.plot(years, cusum_pos, linestyle='--', color='green', label='CUSUM+')
+                    ax_c.plot(years, cusum_neg, linestyle='--', color='orange', label='CUSUM–')
 
-                if show_cusum:
-                    st.markdown("### CUSUM Analysis")
-                    for species in selected_species:
-                        subset = df_selected[df_selected['Species'] == species].copy()
-                        subset = subset.sort_values("Year")
-                        if len(subset) < 4:
-                            st.warning(f"Not enough data for CUSUM for {species}")
-                            continue
+                    ax_c.set_title(f"{species} – Trend & CUSUM")
+                    ax_c.set_xlabel("Year")
+                    ax_c.set_ylabel("Seized Specimens")
+                    ax_c.legend()
+                    st.pyplot(fig_c)
 
-                        years = subset["Year"]
-                        values = subset["N_seized"]
-                        mean = values.mean()
-                        cusum_pos = [0]
-                        cusum_neg = [0]
-
-                        for val in values:
-                            s_pos = max(0, cusum_pos[-1] + val - mean)
-                            s_neg = min(0, cusum_neg[-1] + val - mean)
-                            cusum_pos.append(s_pos)
-                            cusum_neg.append(s_neg)
-
-                        # Remover o primeiro elemento (0 inicial)
-                        cusum_pos = cusum_pos[1:]
-                        cusum_neg = cusum_neg[1:]
-
-                        fig_c, ax_c = plt.subplots()
-                        ax_c.plot(years, values, color='black', marker='o', label='Trend')
-                        ax_c.plot(years, cusum_pos, linestyle='--', color='green', label='CUSUM+')
-                        ax_c.plot(years, cusum_neg, linestyle='--', color='orange', label='CUSUM–')
-
-                        ax_c.set_title(f"{species} – Trend & CUSUM")
-                        ax_c.set_xlabel("Year")
-                        ax_c.set_ylabel("Seized Specimens")
-                        ax_c.legend()
-                        st.pyplot(fig_c)
+    except Exception as e:
+        st.error(f"❌ Error reading file: {e}")
 
 
             show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
