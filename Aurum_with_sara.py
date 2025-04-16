@@ -140,6 +140,11 @@ if uploaded_file is not None:
             return pd.DataFrame(expanded_rows)
 
         df = expand_multi_species_rows(df).reset_index(drop=True)
+    
+if df is not None:
+            st.sidebar.markdown("## Select Species")
+            species_options = sorted(df['Species'].dropna().unique())
+            selected_species = st.sidebar.multiselect("Select one or more species:", species_options)
 
     except Exception as e:
         st.error(f"❌ Error reading file: {e}")
@@ -197,9 +202,6 @@ if uploaded_file is not None:
         st.success("✅ File uploaded and cleaned successfully!")
 
         st.sidebar.markdown("---")
-        st.sidebar.markdown("## Select Species")
-        species_options = sorted(df['Species'].dropna().unique())
-        selected_species = st.sidebar.multiselect("Select one or more species:", species_options)
 
 if selected_species:
     df_selected = df[df['Species'].isin(selected_species)]
