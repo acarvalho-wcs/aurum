@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import re
@@ -6,6 +5,8 @@ import unicodedata
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import numpy as np
+from io import BytesIO
+import base64
 from itertools import combinations
 from scipy.stats import chi2_contingency
 from sklearn.ensemble import IsolationForest
@@ -422,20 +423,50 @@ if export_html and df_selected is not None:
     from datetime import datetime
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    html_sections = []
+    html_sections.append(f"<h1>Aurum Wildlife Trafficking Report</h1>")
+    html_sections.append(f"<p><strong>Generated:</strong> {now}</p>")
+    html_sections.append(f"<p><strong>Selected Species:</strong> {', '.join(selected_species)}</p>")
+
+    # Tabela de dados
+    html_sections.append("<h2>Data Sample</h2>")
+    html_sections.append(df_selected.head(10).to_html(index=False))
+
+    # Resultados de tendência
+    if show_trend:
+        html_sections.append("<h2>Trend Analysis</h2>")
+        html_sections.append(f"<p><strong>TCS:</strong> {tcs:.2f}</p>")
+
+        # Salvar figura
+        trend_buf = BytesIO()
+        fig.savefig(trend_buf, format="png", bbox_inches="tight")
+        trend_buf.seek(0)
+        trend_base64 = base64.b64encode(trend_buf.read()).decode("utf-8")
+        html_sections.append(f'<img src="data:image/png;base64,{trend_base64}" width="700">')
+
+    # Coocorrência
+    if show_cooc and co_results:
+        html_sections.append("<h2>Species Co-occurrence</h2>")
+        for sp_a, sp_b, chi2, p, table in co_results:
+            html_sections.append(f"<h4>{sp_a} × {sp_b}</h4>")
+            html_sections.append(table.to_html())
+            html_sections.append(f"<p>Chi² = {chi2:.2f} | p = {p:.4f}</p>")
+
+    # Anomalias
+    if show_anomaly and 'vote_df' in locals():
+        html_sections.append("<h2>Anomaly Detection</h2>")
+        html_sections.append(f"<p><strong>Consensus Outlier Ratio:</strong> {consensus_ratio:.2%}</p>")
+        html_sections.append("<h4>Top Anomalies</h4>")
+        html_sections.append(top_outliers.to_html(index=False))
+
+    # Finaliza o HTML
     html_report = f"""
     <html>
-    <head><title>Aurum Report</title></head>
-    <body>
-        <h1>Aurum Wildlife Trafficking Report</h1>
-        <p><strong>Generated:</strong> {now}</p>
-        <p><strong>Selected Species:</strong> {', '.join(selected_species)}</p>
-        <h2>Data Sample</h2>
-        {df_selected.head(10).to_html(index=False)}
-    </body>
+    <head><meta charset='utf-8'><title>Aurum Report</title></head>
+    <body>{''.join(html_sections)}</body>
     </html>
     """
 
-    from io import BytesIO
     report_bytes = BytesIO()
     report_bytes.write(html_report.encode("utf-8"))
     report_bytes.seek(0)
