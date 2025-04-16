@@ -19,6 +19,7 @@ st.set_page_config(page_title="Aurum Dashboard", layout="centered")
 # Título e logotipo
 st.title("Aurum - A Toolkit for Wildlife Trafficking Analysts")
 st.markdown("Select an analysis from the sidebar to begin.")
+st.markdown("Developed by Antônio F. Carvalho - Wildlife Conservation Society, Brasil.")
 
 # Upload do arquivo
 st.sidebar.markdown("## 📂 Upload Data")
