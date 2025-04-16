@@ -39,9 +39,12 @@ sheet_id = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
 sheet_name = "Sheet1"  # ou o nome correto da aba
 
 # Leitura da planilha
-worksheet = client.open_by_key(sheet_id).worksheet(sheet_name)
+worksheet = client.open_by_key(sheet_id).sheet1
 data = worksheet.get_all_records()
 df = pd.DataFrame(data)
+
+sheets = client.open_by_key(sheet_id)
+st.write("Aba(s) disponíveis:", [ws.title for ws in sheets.worksheets()])
 
 # --- AUTENTICAÇÃO ---
 st.sidebar.markdown("## 🔐 Aurum Gateway")
