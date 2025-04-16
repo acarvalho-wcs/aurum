@@ -114,7 +114,7 @@ if "user" in st.session_state:
             else:
                 st.dataframe(data[data["Author"] == st.session_state["user"]])
         else:
-            st.warning("⚠️ Dados do formulário ainda não disponíveis. Verifique a conexão com a planilha.")
+            st.warning("Form data not yet available. Please check the spreadsheet connection.")
 
 # Upload do arquivo
 st.sidebar.markdown("## 📂 Upload Data")
