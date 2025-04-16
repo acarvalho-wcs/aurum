@@ -91,29 +91,31 @@ if uploaded_file is not None:
         if selected_species:
             df_selected = df[df['Species'].isin(selected_species)]
 
-            # Opção para visualização e seleção de tipo de gráfico
-            st.sidebar.markdown("---")
-            st.sidebar.markdown("## 📊 Data Visualization")
+            # Opção para visualização de gráficos
+            show_viz = st.sidebar.checkbox("📊 Show Data Visualization", value=False)
+            if show_viz:
+                st.sidebar.markdown("---")
+                st.sidebar.markdown("## 📊 Data Visualization")
 
-            if st.sidebar.checkbox("Preview data"):
-                st.write("### Preview of cleaned data:")
-                st.dataframe(df_selected.head())
+                if st.sidebar.checkbox("Preview data"):
+                    st.write("### Preview of cleaned data:")
+                    st.dataframe(df_selected.head())
 
-            chart_type = st.sidebar.selectbox("Select chart type:", ["Bar", "Line", "Scatter", "Pie"])
-            x_axis = st.sidebar.selectbox("X-axis:", df_selected.columns, index=0)
-            y_axis = st.sidebar.selectbox("Y-axis:", df_selected.columns, index=1)
+                chart_type = st.sidebar.selectbox("Select chart type:", ["Bar", "Line", "Scatter", "Pie"])
+                x_axis = st.sidebar.selectbox("X-axis:", df_selected.columns, index=0)
+                y_axis = st.sidebar.selectbox("Y-axis:", df_selected.columns, index=1)
 
-            import plotly.express as px
-            st.markdown("### Custom Chart")
-            if chart_type == "Bar":
-                fig = px.bar(df_selected, x=x_axis, y=y_axis, color='Species')
-            elif chart_type == "Line":
-                fig = px.line(df_selected, x=x_axis, y=y_axis, color='Species')
-            elif chart_type == "Scatter":
-                fig = px.scatter(df_selected, x=x_axis, y=y_axis, color='Species')
-            elif chart_type == "Pie":
-                fig = px.pie(df_selected, names=x_axis, values=y_axis)
-            st.plotly_chart(fig)
+                import plotly.express as px
+                st.markdown("### Custom Chart")
+                if chart_type == "Bar":
+                    fig = px.bar(df_selected, x=x_axis, y=y_axis, color='Species')
+                elif chart_type == "Line":
+                    fig = px.line(df_selected, x=x_axis, y=y_axis, color='Species')
+                elif chart_type == "Scatter":
+                    fig = px.scatter(df_selected, x=x_axis, y=y_axis, color='Species')
+                elif chart_type == "Pie":
+                    fig = px.pie(df_selected, names=x_axis, values=y_axis)
+                st.plotly_chart(fig)
         else:
             st.warning("⚠️ Please select at least one species to explore the data.")
 
