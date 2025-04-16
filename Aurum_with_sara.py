@@ -14,7 +14,7 @@ from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 
 # Configuração da página
-st.set_page_config(page_title="Aurum Dashboard", layout="centered")
+st.set_page_config(page_title="Aurum Dashboard", layout="wide")
 
 # Título e logotipo
 st.title("Aurum - A Toolkit for Wildlife Trafficking Analysts")
