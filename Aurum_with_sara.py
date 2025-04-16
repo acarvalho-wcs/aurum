@@ -224,11 +224,16 @@ if uploaded_file is not None:
                 st.plotly_chart(fig)
 
             
+
+python
+Copiar
+Editar
             show_trend = st.sidebar.checkbox("Trend Analysis", value=False)
             if show_trend:
                 st.markdown("## Trend Analysis")
 
                 breakpoint_year = st.number_input("Breakpoint year (split the trend):", 1990, 2030, value=2015)
+                show_cusum = st.checkbox("Apply CUSUM", value=True)
 
                 def trend_component(df, year_col='Year', count_col='N_seized', breakpoint=2015):
                     df_pre = df[df[year_col] <= breakpoint]
@@ -279,6 +284,42 @@ if uploaded_file is not None:
                 ax.set_ylabel("Individuals Seized")
                 ax.legend()
                 st.pyplot(fig)
+
+                if show_cusum:
+                    st.markdown("### CUSUM Analysis")
+                    for species in selected_species:
+                        subset = df_selected[df_selected['Species'] == species].copy()
+                        subset = subset.sort_values("Year")
+                        if len(subset) < 4:
+                            st.warning(f"Not enough data for CUSUM for {species}")
+                            continue
+
+                        years = subset["Year"]
+                        values = subset["N_seized"]
+                        mean = values.mean()
+                        cusum_pos = [0]
+                        cusum_neg = [0]
+
+                        for val in values:
+                            s_pos = max(0, cusum_pos[-1] + val - mean)
+                            s_neg = min(0, cusum_neg[-1] + val - mean)
+                            cusum_pos.append(s_pos)
+                            cusum_neg.append(s_neg)
+
+                        # Remover o primeiro elemento (0 inicial)
+                        cusum_pos = cusum_pos[1:]
+                        cusum_neg = cusum_neg[1:]
+
+                        fig_c, ax_c = plt.subplots()
+                        ax_c.plot(years, values, color='black', marker='o', label='Trend')
+                        ax_c.plot(years, cusum_pos, linestyle='--', color='green', label='CUSUM+')
+                        ax_c.plot(years, cusum_neg, linestyle='--', color='orange', label='CUSUM–')
+
+                        ax_c.set_title(f"{species} – Trend & CUSUM")
+                        ax_c.set_xlabel("Year")
+                        ax_c.set_ylabel("Seized Specimens")
+                        ax_c.legend()
+                        st.pyplot(fig_c)
 
 
             show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
