@@ -385,6 +385,6 @@ def place_logo_bottom_right(image_path, width=100):
     )
 
 # Chamada da função para exibir a logo
-place_logo_bottom_right("logo.png")
+place_logo_bottom_right("wcs.jpg")
 
 st.sidebar.markdown("How to cite: Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
