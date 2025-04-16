@@ -282,6 +282,12 @@ if uploaded_file is not None:
 
             if show_cusum:
                 st.markdown("### CUSUM Analysis")
+
+                cusum_mode = st.selectbox(
+                    "Select data mode for CUSUM calculation:",
+                    ["N_seized (each seizure)", "Total specimens per year"]
+                )
+
                 for species in selected_species:
                     subset = df_selected[df_selected['Species'] == species].copy()
                     subset = subset.sort_values("Year")
@@ -289,8 +295,14 @@ if uploaded_file is not None:
                         st.warning(f"Not enough data for CUSUM for {species}")
                         continue
 
-                    years = subset["Year"]
-                    values = subset["N_seized"]
+                    if cusum_mode == "Total specimens per year":
+                        grouped = subset.groupby("Year")["N_seized"].sum().reset_index()
+                        years = grouped["Year"]
+                        values = grouped["N_seized"]
+                    else:
+                        years = subset["Year"]
+                        values = subset["N_seized"]
+
                     mean = values.mean()
                     cusum_pos = [0]
                     cusum_neg = [0]
@@ -309,11 +321,13 @@ if uploaded_file is not None:
                     ax_c.plot(years, cusum_pos, linestyle='--', color='green', label='CUSUM+')
                     ax_c.plot(years, cusum_neg, linestyle='--', color='orange', label='CUSUM–')
 
+                    ylabel = "Seized Specimens" if cusum_mode == "N_seized (each seizure)" else "Total Seized per Year"
                     ax_c.set_title(f"{species} – Trend & CUSUM")
                     ax_c.set_xlabel("Year")
-                    ax_c.set_ylabel("Seized Specimens")
+                    ax_c.set_ylabel(ylabel)
                     ax_c.legend()
                     st.pyplot(fig_c)
+
 
     except Exception as e:
         st.error(f"❌ Error reading file: {e}")
