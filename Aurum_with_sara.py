@@ -373,7 +373,7 @@ if uploaded_file is not None:
             else:
                 st.info("No co-occurrence data available for selected species.")
 
-            show_anomaly = st.sidebar.checkbox("Anomaly Detection", value=False)
+        show_anomaly = st.sidebar.checkbox("Anomaly Detection", value=False)
         if show_anomaly:
             st.markdown("## 🚨 Anomaly Detection")
 
@@ -381,38 +381,38 @@ if uploaded_file is not None:
             selected_features = st.multiselect("Select numeric features for anomaly detection:", numeric_cols, default=["N_seized", "Year", "Offender_value"])
 
             if selected_features:
-            X = StandardScaler().fit_transform(df_selected[selected_features])
+                X = StandardScaler().fit_transform(df_selected[selected_features])
 
-            models = {
-            "Isolation Forest": IsolationForest(random_state=42).fit_predict(X),
-            "LOF": LocalOutlierFactor().fit_predict(X),
-            "DBSCAN": DBSCAN(eps=1.2, min_samples=2).fit_predict(X),
-            "Z-Score": np.where(np.any(np.abs(X) > 3, axis=1), -1, 1)
-            }
+                models = {
+                    "Isolation Forest": IsolationForest(random_state=42).fit_predict(X),
+                    "LOF": LocalOutlierFactor().fit_predict(X),
+                    "DBSCAN": DBSCAN(eps=1.2, min_samples=2).fit_predict(X),
+                    "Z-Score": np.where(np.any(np.abs(X) > 3, axis=1), -1, 1)
+                }
 
-            try:
-            cov = np.cov(X, rowvar=False)
-            inv_cov = np.linalg.inv(cov)
-            mean = np.mean(X, axis=0)
-            diff = X - mean
-            md = np.sqrt(np.sum(diff @ inv_cov * diff, axis=1))
-            threshold_md = np.percentile(md, 97.5)
-            models["Mahalanobis"] = np.where(md > threshold_md, -1, 1)
-            except np.linalg.LinAlgError:
-            models["Mahalanobis"] = np.ones(len(X))
+                try:
+                    cov = np.cov(X, rowvar=False)
+                    inv_cov = np.linalg.inv(cov)
+                    mean = np.mean(X, axis=0)
+                    diff = X - mean
+                    md = np.sqrt(np.sum(diff @ inv_cov * diff, axis=1))
+                    threshold_md = np.percentile(md, 97.5)
+                    models["Mahalanobis"] = np.where(md > threshold_md, -1, 1)
+                except np.linalg.LinAlgError:
+                    models["Mahalanobis"] = np.ones(len(X))
 
-            vote_df = pd.DataFrame(models)
-            vote_df["Outlier Votes"] = (vote_df == -1).sum(axis=1)
-            vote_df["Case #"] = df_selected["Case #"].values
+                vote_df = pd.DataFrame(models)
+                vote_df["Outlier Votes"] = (vote_df == -1).sum(axis=1)
+                vote_df["Case #"] = df_selected["Case #"].values
 
-            consensus_ratio = (vote_df["Outlier Votes"] > 2).sum() / len(vote_df)
-            st.markdown(f"**Consensus Outlier Ratio:** `{consensus_ratio:.2%}`")
+                consensus_ratio = (vote_df["Outlier Votes"] > 2).sum() / len(vote_df)
+                st.markdown(f"**Consensus Outlier Ratio:** `{consensus_ratio:.2%}`")
 
-            st.markdown("### 📋 Most anomalous cases")
-            top_outliers = vote_df.sort_values(by="Outlier Votes", ascending=False).head(10)
-            st.dataframe(top_outliers.set_index("Case #"))
+                st.markdown("### 📋 Most anomalous cases")
+                top_outliers = vote_df.sort_values(by="Outlier Votes", ascending=False).head(10)
+                st.dataframe(top_outliers.set_index("Case #"))
 
-            show_network = st.sidebar.checkbox("Network Analysis", value=False)
+        show_network = st.sidebar.checkbox("Network Analysis", value=False)
         if show_network:
             st.markdown("## 🕸️ Network Analysis")
 
@@ -425,66 +425,66 @@ if uploaded_file is not None:
             selected_network_features = st.multiselect("Select features to define network connections:", available_features, default=["Case #"])
 
             if selected_network_features:
-            G = nx.Graph()
+                G = nx.Graph()
 
-            for key, group in df_selected.groupby(selected_network_features):
-            species_in_group = group['Species'].unique()
-            for sp1, sp2 in combinations(species_in_group, 2):
-            if G.has_edge(sp1, sp2):
-            G[sp1][sp2]['weight'] += 1
+                for key, group in df_selected.groupby(selected_network_features):
+                    species_in_group = group['Species'].unique()
+                    for sp1, sp2 in combinations(species_in_group, 2):
+                        if G.has_edge(sp1, sp2):
+                            G[sp1][sp2]['weight'] += 1
+                        else:
+                            G.add_edge(sp1, sp2, weight=1)
+
+                if G.number_of_edges() == 0:
+                    st.info("No edges were generated with the selected features.")
+                else:
+                    pos = nx.spring_layout(G, seed=42)
+
+                    edge_x = []
+                    edge_y = []
+                    for edge in G.edges():
+                        x0, y0 = pos[edge[0]]
+                        x1, y1 = pos[edge[1]]
+                        edge_x.extend([x0, x1, None])
+                        edge_y.extend([y0, y1, None])
+
+                    edge_trace = go.Scatter(
+                        x=edge_x, y=edge_y,
+                        line=dict(width=0.5, color='#888'),
+                        hoverinfo='none',
+                        mode='lines')
+
+                    node_x = []
+                    node_y = []
+                    node_text = []
+                    for node in G.nodes():
+                        x, y = pos[node]
+                        node_x.append(x)
+                        node_y.append(y)
+                        node_text.append(f"{node} ({G.degree[node]} connections)")
+
+                    node_trace = go.Scatter(
+                        x=node_x, y=node_y,
+                        mode='markers+text',
+                        text=node_text,
+                        textposition='top center',
+                        hoverinfo='text',
+                        marker=dict(
+                            showscale=False,
+                            color='lightblue',
+                            size=[8 + 2*G.degree[node] for node in G.nodes()],
+                            line_width=1))
+
+                    fig = go.Figure(data=[edge_trace, node_trace],
+                        layout=go.Layout(
+                            title='Dynamic Species Co-occurrence Network',
+                            showlegend=False,
+                            hovermode='closest',
+                            margin=dict(b=20,l=5,r=5,t=40)))
+
+                    st.plotly_chart(fig, use_container_width=True)
             else:
-            G.add_edge(sp1, sp2, weight=1)
-
-            if G.number_of_edges() == 0:
-            st.info("No edges were generated with the selected features.")
-            else:
-            pos = nx.spring_layout(G, seed=42)
-
-            edge_x = []
-            edge_y = []
-            for edge in G.edges():
-            x0, y0 = pos[edge[0]]
-            x1, y1 = pos[edge[1]]
-            edge_x.extend([x0, x1, None])
-            edge_y.extend([y0, y1, None])
-
-            edge_trace = go.Scatter(
-            x=edge_x, y=edge_y,
-            line=dict(width=0.5, color='#888'),
-            hoverinfo='none',
-            mode='lines')
-
-            node_x = []
-            node_y = []
-            node_text = []
-            for node in G.nodes():
-            x, y = pos[node]
-            node_x.append(x)
-            node_y.append(y)
-            node_text.append(f"{node} ({G.degree[node]} connections)")
-
-            node_trace = go.Scatter(
-            x=node_x, y=node_y,
-            mode='markers+text',
-            text=node_text,
-            textposition='top center',
-            hoverinfo='text',
-            marker=dict(
-            showscale=False,
-            color='lightblue',
-            size=[8 + 2*G.degree[node] for node in G.nodes()],
-            line_width=1))
-
-            fig = go.Figure(data=[edge_trace, node_trace],
-            layout=go.Layout(
-            title='Dynamic Species Co-occurrence Network',
-            showlegend=False,
-            hovermode='closest',
-            margin=dict(b=20,l=5,r=5,t=40)))
-
-            st.plotly_chart(fig, use_container_width=True)
-            else:
-            st.info("Please select at least one feature to generate the network.")
+                st.info("Please select at least one feature to generate the network.")
 
             st.sidebar.markdown("---")
 
