@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import re
 import unicodedata
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Configuração da página
 st.set_page_config(page_title="Aurum Dashboard", layout="wide")
@@ -116,30 +119,67 @@ if uploaded_file is not None:
                 elif chart_type == "Pie":
                     fig = px.pie(df_selected, names=x_axis, values=y_axis)
                 st.plotly_chart(fig)
+
+            # --- Trend Analysis (condicional) ---
+            show_trend = st.sidebar.checkbox("📈 Show Trend Analysis", value=False)
+            if show_trend:
+                st.markdown("## 📈 Trend Analysis")
+
+                breakpoint_year = st.number_input("Breakpoint year (split the trend):", 1990, 2030, value=2015)
+
+                def trend_component(df, year_col='Year', count_col='N_seized', breakpoint=2015):
+                    df_pre = df[df[year_col] <= breakpoint]
+                    df_post = df[df[year_col] > breakpoint]
+
+                    if len(df_pre) < 2 or len(df_post) < 2:
+                        return 0.0, "Insufficient data for segmented regression"
+
+                    X_pre = sm.add_constant(df_pre[[year_col]])
+                    y_pre = df_pre[count_col]
+                    model_pre = sm.OLS(y_pre, X_pre).fit()
+                    slope_pre = model_pre.params[year_col]
+
+                    X_post = sm.add_constant(df_post[[year_col]])
+                    y_post = df_post[count_col]
+                    model_post = sm.OLS(y_post, X_post).fit()
+                    slope_post = model_post.params[year_col]
+
+                    tcs = (slope_post - slope_pre) / (abs(slope_pre) + 1)
+                    log = f"TCS = {tcs:.2f}"
+                    return tcs, log
+
+                tcs, tcs_log = trend_component(df_selected, breakpoint=breakpoint_year)
+                st.markdown(f"**Trend Coordination Score (TCS):** `{tcs:.2f}`")
+                st.info(tcs_log)
+
+                # Gráfico de regressão segmentada
+                st.markdown("### 📉 Trend Plot")
+                fig, ax = plt.subplots(figsize=(8, 5))
+
+                for species in selected_species:
+                    subset = df_selected[df_selected['Species'] == species]
+                    ax.scatter(subset['Year'], subset['N_seized'], label=species, alpha=0.6)
+
+                    df_pre = subset[subset['Year'] <= breakpoint_year]
+                    df_post = subset[subset['Year'] > breakpoint_year]
+
+                    if len(df_pre) > 1:
+                        model_pre = sm.OLS(df_pre['N_seized'], sm.add_constant(df_pre['Year'])).fit()
+                        ax.plot(df_pre['Year'], model_pre.predict(sm.add_constant(df_pre['Year'])), linestyle='--')
+
+                    if len(df_post) > 1:
+                        model_post = sm.OLS(df_post['N_seized'], sm.add_constant(df_post['Year'])).fit()
+                        ax.plot(df_post['Year'], model_post.predict(sm.add_constant(df_post['Year'])), linestyle='-.')
+
+                ax.axvline(breakpoint_year, color='red', linestyle=':', label=f"Breakpoint = {breakpoint_year}")
+                ax.set_title("Seizure Trend by Species")
+                ax.set_xlabel("Year")
+                ax.set_ylabel("Individuals Seized")
+                ax.legend()
+                st.pyplot(fig)
+
         else:
             st.warning("⚠️ Please select at least one species to explore the data.")
 
     except Exception as e:
         st.error(f"❌ Error reading file: {e}")
-
-# Painel lateral para seleção de análise
-st.sidebar.markdown("---")
-st.sidebar.title("🔍 Analysis Menu")
-selected_analysis = st.sidebar.radio(
-    "Choose an analysis to explore:",
-    [
-        "Trend Analysis",
-        "Species Co-occurrence",
-        "Anomaly Detection",
-        "Network Analysis",
-        "Organized Crime Score (OCS)",
-        "SARA Model"
-    ]
-)
-
-# Espaço reservado para renderizar a análise selecionada
-if df_selected is not None:
-    st.markdown(f"### You selected: `{selected_analysis}`")
-    st.info("The analysis module will appear here when implemented.")
-else:
-    st.warning("⚠️ Please upload a valid dataset and select species to continue.")
