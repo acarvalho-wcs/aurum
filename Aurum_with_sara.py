@@ -73,7 +73,7 @@ if uploaded_file is not None:
 
         if 'Case #' in df.columns and 'Species' in df.columns:
             species_per_case = df.groupby('Case #')['Species'].nunique()
-            df['Logistic Convergence'] = df['Case #'].map(lambda x: "Yes" if species_per_case.get(x, 0) > 1 else "No")
+            df['Logistic Convergence'] = df['Case #'].map(lambda x: "1" if species_per_case.get(x, 0) > 1 else "0")
 
         def normalize_text(text):
             if not isinstance(text, str):
@@ -86,14 +86,14 @@ if uploaded_file is not None:
         def infer_stage(row):
             seizure = normalize_text(row.get("Seizure Status", ""))
             transit = normalize_text(row.get("Transit Feature", ""))
-            logistic = row.get("Logistic Convergence", "No")
+            logistic = row.get("Logistic Convergence", "0")
             if any(k in seizure for k in ["planned", "trap", "attempt"]):
                 return "Preparation"
             elif "captivity" in transit or "breeding" in transit:
                 return "Captivity"
             elif any(k in transit for k in ["airport", "border", "highway", "port"]):
                 return "Transport"
-            elif logistic == "Yes":
+            elif logistic == "1":
                 return "Logistic Consolidation"
             else:
                 return "Unclassified"
