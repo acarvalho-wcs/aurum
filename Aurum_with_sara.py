@@ -358,43 +358,5 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"❌ Error reading file: {e}")
 st.sidebar.markdown("---")
-show_chat = st.sidebar.checkbox("💬 Ask Aurum (AI Assistant)", value=False)
-
-import streamlit as st
-from streamlit_chat import message
-import openai
-
-# Página centralizada
-st.title("💬 Ask Aurum - Your Wildlife Crime AI Assistant")
-
-# Inicializa histórico
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [{"role": "system", "content": "You are Aurum, an assistant specialized in wildlife crime data analysis."}]
-
-# Campo de entrada
-user_msg = st.text_input("You:", key="chat_input")
-
-# Se o usuário enviar algo
-if user_msg:
-    st.session_state["messages"].append({"role": "user", "content": user_msg})
-
-    # Chave da OpenAI via secrets
-    openai.api_key = st.secrets["openai_api_key"]
-
-# Requisição à API
-client = openai.OpenAI(api_key=st.secrets["openai_api_key"])
-
-response = client.chat.completions.create(
-    model="gpt-3.5-turbo",
-    messages=st.session_state["messages"]
-)
-
-reply = response.choices[0].message.content
-st.session_state["messages"].append({"role": "assistant", "content": reply})
-
-# Exibe histórico
-for msg in st.session_state["messages"][1:]:
-    message(msg["content"], is_user=(msg["role"] == "user"))
-
 
 st.sidebar.markdown("How to cite: Carvalho, A. F., 2025. Detecting Organized Wildlife Crime with *Aurum*: An AI-Powered Toolkit for Trafficking Analysis. Wildlife Conservation Society.")
