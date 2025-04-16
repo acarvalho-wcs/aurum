@@ -17,7 +17,7 @@ from sklearn.preprocessing import StandardScaler
 st.set_page_config(page_title="Aurum Dashboard", layout="centered")
 
 # Título e logotipo
-st.title("Aurum - Wildlife Trafficking Analysis Toolkit")
+st.title("Aurum - A Toolkit for Wildlife Trafficking Analysts")
 st.markdown("Select an analysis from the sidebar to begin.")
 
 # Upload do arquivo
