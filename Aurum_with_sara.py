@@ -191,8 +191,7 @@ if uploaded_file is not None:
                 ax.legend()
                 st.pyplot(fig)
 
-
-                show_cusum = st.checkbox("Show CUSUM & Cumulative Mean", value=False)
+                show_cusum = st.checkbox("📉 Show CUSUM & Cumulative Mean", value=False)
                 if show_cusum:
                     st.markdown("### 🔄 Cumulative Mean & CUSUM")
                     fig2, ax2 = plt.subplots(figsize=(8, 3))
@@ -211,26 +210,22 @@ if uploaded_file is not None:
                     ax2.legend()
                     st.pyplot(fig2)
 
+                show_expanding = st.checkbox("📈 Show Expanding Mean (per Case)", value=False)
+                if show_expanding:
+                    st.markdown("### 🧮 Expanding Mean of Individuals per Case")
+                    fig3, ax3 = plt.subplots(figsize=(8, 3))
+                    for species in selected_species:
+                        subset = df_selected[df_selected['Species'] == species].sort_values('Year')
+                        ax3.scatter(subset['Year'], subset['N_seized'], label=f"{species} - N Seized", alpha=0.6)
+                        ax3.plot(subset['Year'], subset['N_seized'].expanding().mean(), linestyle='--', label=f"{species} - Previous Mean")
 
-                st.markdown("### 🔄 Cumulative Mean & CUSUM")
-                fig2, ax2 = plt.subplots(figsize=(8, 3))
-                for species in selected_species:
-                    subset = df_selected[df_selected['Species'] == species].sort_values('Year')
-                    y = subset['N_seized']
-                    cum_mean = y.expanding().mean()
-                    cusum = (y - y.mean()).cumsum()
+                    ax3.set_title("Individual Seizure Size vs Expanding Mean")
+                    ax3.set_xlabel("Year")
+                    ax3.set_ylabel("Number of Individuals per Case")
+                    ax3.legend()
+                    st.pyplot(fig3)
 
-                    ax2.plot(subset['Year'], cum_mean, label=f"{species} - Cumulative Mean", linestyle='-')
-                    ax2.plot(subset['Year'], cusum, label=f"{species} - CUSUM", linestyle='--')
-
-                ax2.set_title("CUSUM & Cumulative Mean")
-                ax2.set_xlabel("Year")
-                ax2.set_ylabel("Seized")
-                ax2.legend()
-                st.pyplot(fig2)
-
-
-            show_cooc = st.sidebar.checkbox("🧬 Show Species Co-occurrence", value=False)
+show_cooc = st.sidebar.checkbox("🧬 Show Species Co-occurrence", value=False)
             if show_cooc:
                 st.markdown("## 🧬 Species Co-occurrence Analysis")
 
