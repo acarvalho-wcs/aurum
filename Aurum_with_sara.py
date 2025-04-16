@@ -51,14 +51,108 @@ if login:
     else:
         st.warning("Please provide both username and password.")
 
-# Data source selection
-use_gateway_data = False
+# --- Data source selection (manual upload vs Google Sheets) ---
+source_option = None
 if "user" in st.session_state:
-    use_gateway_data = st.sidebar.radio(
-        "Choose data source:",
-        ["Manual Upload", "Aurum Gateway"],
-        index=0
-    ) == "Aurum Gateway"
+    st.sidebar.markdown("## 📊 Data Source")
+    source_option = st.sidebar.radio("Select data source:", ["Manual Upload (.xlsx)", "Aurum Gateway (Google Sheets)"])
+
+    if source_option == "Aurum Gateway (Google Sheets)":
+        st.sidebar.success("Using Aurum Gateway data.")
+        df = pd.DataFrame(worksheet.get_all_records())
+
+        if not df.empty:
+            df.columns = df.columns.str.strip().str.replace('\xa0', '', regex=True)
+            if 'Year' in df.columns:
+                df['Year'] = df['Year'].astype(str).str.extract(r'(\d{4})').astype(float)
+
+            def expand_multi_species_rows(df):
+                expanded_rows = []
+                for _, row in df.iterrows():
+                    matches = re.findall(r'(\d+)\s*([A-Z]{2,}\d{0,3})', str(row.get('N seized specimens', '')))
+                    if matches:
+                        for qty, species in matches:
+                            new_row = row.copy()
+                            new_row['N_seized'] = float(qty)
+                            new_row['Species'] = species
+                            expanded_rows.append(new_row)
+                    else:
+                        expanded_rows.append(row)
+                return pd.DataFrame(expanded_rows)
+
+            df = expand_multi_species_rows(df).reset_index(drop=True)
+
+            # Country scoring (optional)
+            import os
+            country_score_path = "country_offenders_values.csv"
+            if os.path.exists(country_score_path):
+                df_country_score = pd.read_csv(country_score_path, encoding="ISO-8859-1")
+                country_map = dict(zip(df_country_score["Country"].str.strip(), df_country_score["Value"]))
+
+                def score_countries(cell_value, country_map):
+                    if not isinstance(cell_value, str):
+                        return 0
+                    countries = [c.strip() for c in cell_value.split("+")]
+                    return sum(country_map.get(c, 0) for c in countries)
+
+                if "Country of offenders" in df.columns:
+                    df["Offender_value"] = df["Country of offenders"].apply(lambda x: score_countries(x, country_map))
+                    st.sidebar.markdown("✅ Offender_value column added.")
+
+            # Logistic Convergence and Stage
+            if 'Case #' in df.columns and 'Species' in df.columns:
+                species_per_case = df.groupby('Case #')['Species'].nunique()
+                df['Logistic Convergence'] = df['Case #'].map(lambda x: "1" if species_per_case.get(x, 0) > 1 else "0")
+
+            def normalize_text(text):
+                if not isinstance(text, str):
+                    text = str(text)
+                text = text.strip().lower()
+                text = unicodedata.normalize("NFKD", text)
+                text = re.sub(r'\s+', ' ', text)
+                return text
+
+            def infer_stage(row):
+                seizure = normalize_text(row.get("Seizure Status", ""))
+                transit = normalize_text(row.get("Transit Feature", ""))
+                logistic = row.get("Logistic Convergence", "0")
+                if any(k in seizure for k in ["planned", "trap", "attempt"]):
+                    return "Preparation"
+                elif "captivity" in transit or "breeding" in transit:
+                    return "Captivity"
+                elif any(k in transit for k in ["airport", "border", "highway", "port"]):
+                    return "Transport"
+                elif logistic == "1":
+                    return "Logistic Consolidation"
+                else:
+                    return "Unclassified"
+
+            df["Inferred Stage"] = df.apply(infer_stage, axis=1)
+
+            # --- Species selection and analysis options ---
+            st.sidebar.markdown("---")
+            st.sidebar.markdown("## 🐾 Select Species")
+            species_options = sorted(df['Species'].dropna().unique())
+            selected_species = st.sidebar.multiselect("Choose one or more species:", species_options)
+
+            df_selected = df[df['Species'].isin(selected_species)] if selected_species else None
+
+            if df_selected is not None and not df_selected.empty:
+                st.sidebar.markdown("## 🔍 Choose Analyses")
+                do_viz = st.sidebar.checkbox("Data Visualization")
+                do_trend = st.sidebar.checkbox("Trend Analysis")
+                do_cooc = st.sidebar.checkbox("Species Co-occurrence")
+                do_anomaly = st.sidebar.checkbox("Anomaly Detection")
+                do_network = st.sidebar.checkbox("Network Analysis")
+
+                st.markdown("## Filtered Data Preview")
+                st.dataframe(df_selected.head())
+
+                # You can now reuse the same analysis functions from the manual upload section here
+                # by wrapping them inside `if do_viz:`, `if do_trend:`, etc.
+
+            else:
+                st.warning("Please select one or more species to proceed.")
 
 # File upload
 uploaded_file = None
