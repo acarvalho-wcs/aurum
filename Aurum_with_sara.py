@@ -26,8 +26,8 @@ st.markdown("**Select an analysis from the sidebar to begin.**")
 
 # --- CONFIGURAÇÃO ---
 # Nome da aba do Google Sheets
-SHEET_NAME = "Aurum Form"
-SPREADSHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
+SHEET_NAME = "Aurum Gateway Data"
+SPREADSHEET_ID = "12xmK2MlbaY-5YDsJqvULKZ8r0tbNHjW8Xy2CgHsM-dw"
 
 # Configurações de escopo e autenticação
 scope = ["https://www.googleapis.com/auth/spreadsheets"]
