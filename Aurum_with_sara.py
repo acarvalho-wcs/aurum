@@ -31,20 +31,30 @@ SPREADSHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
 
 # Configurações de escopo e autenticação
 scope = ["https://www.googleapis.com/auth/spreadsheets"]
-credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+credentials = Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"],
+    scopes=scope
+)
 client = gspread.authorize(credentials)
 
-# ID da planilha e nome da aba
-sheet_id = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
-sheet_name = "Sheet1"  # ou o nome correto da aba
+# Tenta abrir a planilha
+try:
+    sheet_id = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
+    spreadsheet = client.open_by_key(sheet_id)
+    st.success("✅ Conexão com Google Sheets realizada com sucesso!")
 
-# Leitura da planilha
-worksheet = client.open_by_key(sheet_id).sheet1
-data = worksheet.get_all_records()
-df = pd.DataFrame(data)
+    # Lista abas disponíveis
+    st.write("📄 Abas disponíveis na planilha:", [ws.title for ws in spreadsheet.worksheets()])
 
-sheets = client.open_by_key(sheet_id)
-st.write("Aba(s) disponíveis:", [ws.title for ws in sheets.worksheets()])
+    # Usa a aba correta
+    worksheet = spreadsheet.worksheet("Sheet1")
+    data = worksheet.get_all_records()
+    df = pd.DataFrame(data)
+    st.dataframe(df.head())
+
+except Exception as e:
+    st.error("❌ Erro ao acessar a planilha do Google Sheets.")
+    st.exception(e)
 
 # --- AUTENTICAÇÃO ---
 st.sidebar.markdown("## 🔐 Aurum Gateway")
