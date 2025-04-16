@@ -26,7 +26,7 @@ st.markdown("**Select an analysis from the sidebar to begin.**")
 
 # --- CONFIGURAÇÃO ---
 # Nome da aba do Google Sheets
-SHEET_NAME = "Form Responses"
+SHEET_NAME = "Aurum Form"
 SPREADSHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
 
 # Configurações de escopo e autenticação
