@@ -621,6 +621,78 @@ if st.session_state.get('uploaded_file') is not None:
 if selected_species:
     df_selected = df_clean[df_clean['Species'].isin(selected_species)]
 
+
+# 📊 NOVA SEÇÃO: DASHBOARD INTERATIVO VISUAL
+# Deve ser inserido após a seleção de df_selected e selected_species
+
+if not df_selected.empty:
+    st.markdown("## 🎛️ Visual Dashboard: Interactive Exploration")
+    st.sidebar.markdown("## 🎯 Dashboard Controls")
+
+    # Seleção de variáveis para os gráficos
+    numeric_cols = df_selected.select_dtypes(include='number').columns.tolist()
+
+    st.sidebar.markdown("### 🔹 Scatter Plot")
+    scatter_x = st.sidebar.selectbox("X Axis (Scatter)", numeric_cols, index=0, key="scatter_x")
+    scatter_y = st.sidebar.selectbox("Y Axis (Scatter)", numeric_cols, index=1, key="scatter_y")
+
+    st.sidebar.markdown("### 🔹 Bar Chart")
+    bar_vars = st.sidebar.multiselect("Variables to group by species (Bar Chart)", numeric_cols,
+                                      default=numeric_cols[:2], key="bar_vars")
+
+    st.sidebar.markdown("### 🔹 Histogram")
+    hist_vars = st.sidebar.multiselect("Variables for Histogram", numeric_cols,
+                                       default=numeric_cols[:2], key="hist_vars")
+    bins = st.sidebar.slider("Histogram Bins", 5, 50, 20, step=5)
+
+    st.sidebar.markdown("### 🔹 Hexbin")
+    hexbin_x = st.sidebar.selectbox("X Axis (Hexbin)", numeric_cols, index=0, key="hexbin_x")
+    hexbin_y = st.sidebar.selectbox("Y Axis (Hexbin)", numeric_cols, index=1, key="hexbin_y")
+
+    # Gráfico Scatter
+    fig_scatter, ax_scatter = plt.subplots(figsize=(6, 4))
+    for sp in df_selected['Species'].unique():
+        df_sp = df_selected[df_selected['Species'] == sp]
+        ax_scatter.scatter(df_sp[scatter_x], df_sp[scatter_y], label=sp, alpha=0.6)
+    ax_scatter.set_title(f"{scatter_x} vs {scatter_y}")
+    ax_scatter.set_xlabel(scatter_x)
+    ax_scatter.set_ylabel(scatter_y)
+    ax_scatter.legend()
+
+    # Gráfico de Barras (médias por espécie)
+    fig_bar, ax_bar = plt.subplots(figsize=(6, 4))
+    if bar_vars:
+        mean_df = df_selected.groupby("Species")[bar_vars].mean()
+        mean_df.plot(kind="bar", ax=ax_bar, alpha=0.8)
+        ax_bar.set_title("Average values per Species")
+        ax_bar.set_ylabel("Average")
+
+    # Histograma
+    fig_hist, ax_hist = plt.subplots(figsize=(6, 4))
+    if hist_vars:
+        df_selected[hist_vars].plot.hist(ax=ax_hist, bins=bins, alpha=0.7)
+        ax_hist.set_title("Distribution of Selected Variables")
+
+    # Hexbin
+    fig_hex, ax_hex = plt.subplots(figsize=(6, 4))
+    df_selected.plot.hexbin(x=hexbin_x, y=hexbin_y, gridsize=25,
+                            reduce_C_function=np.mean, ax=ax_hex)
+    ax_hex.set_title("Concentration by Hexbin")
+
+    # Layout: 2 colunas x 2 linhas
+    col1, col2 = st.columns(2)
+    with col1:
+        st.pyplot(fig_scatter)
+    with col2:
+        st.pyplot(fig_bar)
+
+    col3, col4 = st.columns(2)
+    with col3:
+        st.pyplot(fig_hist)
+    with col4:
+        st.pyplot(fig_hex)
+
+
     st.markdown("## 📊 Custom Visualization")
     st.markdown("Use this panel to visually explore your data before advanced analyses.")
 
