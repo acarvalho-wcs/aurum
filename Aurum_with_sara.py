@@ -1,7 +1,5 @@
 import streamlit as st
 import pandas as pd
-import pygsheets
-gc = pygsheets.authorize(service_account_info=st.secrets["gcp_service_account"])
 from datetime import datetime
 import re
 import unicodedata
@@ -30,21 +28,26 @@ SHEET_NAME = "Aurum Gateway Data"
 SPREADSHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
 
 import pygsheets
+from google.oauth2.service_account import Credentials
 
 try:
-    # Autenticação com conta de serviço via secrets
-    gc = pygsheets.authorize(service_account_info=st.secrets["gcp_service_account"])
+    # Autenticação usando as credenciais via st.secrets
+    custom_creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=["https://www.googleapis.com/auth/spreadsheets"]
+    )
+    gc = pygsheets.authorize(custom_credentials=custom_creds)
 
-    # Abre a planilha pelo ID
+    # Abre a planilha
     sheet_id = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
     spreadsheet = gc.open_by_key(sheet_id)
 
     st.success("✅ Conexão com Google Sheets realizada com sucesso!")
 
-    # Lista abas disponíveis
+    # Lista as abas
     st.write("📄 Abas disponíveis na planilha:", [ws.title for ws in spreadsheet.worksheets()])
 
-    # Abre a aba correta
+    # Seleciona a aba correta
     worksheet = spreadsheet.worksheet_by_title("Sheet1")
 
     # Converte para DataFrame
