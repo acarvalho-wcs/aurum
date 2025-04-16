@@ -17,7 +17,7 @@ from sklearn.preprocessing import StandardScaler
 st.set_page_config(page_title="Aurum Dashboard", layout="wide")
 
 # Título e logotipo
-st.title("🐾 Aurum - Wildlife Crime Analysis Dashboard")
+st.title("**Aurum - Wildlife Crime Analysis Dashboard**")
 st.markdown("Select an analysis from the sidebar to begin.")
 
 # Upload do arquivo
