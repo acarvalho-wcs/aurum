@@ -357,5 +357,28 @@ if uploaded_file is not None:
 
     except Exception as e:
         st.error(f"❌ Error reading file: {e}")
+st.sidebar.markdown("---")
+show_chat = st.sidebar.checkbox("💬 Ask Aurum (AI Assistant)", value=False)
+
+if show_chat:
+    st.markdown("## 💬 Ask Aurum - Your Wildlife Crime AI Assistant")
+    from streamlit_chat import message
+
+    if "messages" not in st.session_state:
+        st.session_state["messages"] = []
+
+    user_msg = st.text_input("You:", key="chat_input")
+
+    if user_msg:
+        st.session_state["messages"].append({"role": "user", "content": user_msg})
+
+        # Resposta simulada (aqui entraria a chamada à API do ChatGPT futuramente)
+        reply = f"Aurum (AI): I received your question: '{user_msg}'. This is where I'd give you insights."
+
+        st.session_state["messages"].append({"role": "assistant", "content": reply})
+
+    for msg in st.session_state["messages"]:
+        message(msg["content"], is_user=(msg["role"] == "user"))
+
 
 st.sidebar.markdown("How to cite: Carvalho, A. F., 2025. Detecting Organized Wildlife Crime with *Aurum*: An AI-Powered Toolkit for Trafficking Analysis. Wildlife Conservation Society.")
