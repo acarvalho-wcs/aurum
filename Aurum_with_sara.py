@@ -359,4 +359,4 @@ if uploaded_file is not None:
         st.error(f"❌ Error reading file: {e}")
 st.sidebar.markdown("---")
 
-st.sidebar.markdown("How to cite: Carvalho, A. F., 2025. Detecting Organized Wildlife Crime with *Aurum*: An AI-Powered Toolkit for Trafficking Analysis. Wildlife Conservation Society.")
+st.sidebar.markdown("How to cite: Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: An AI-Powered Toolkit for Trafficking Analysis. Wildlife Conservation Society, 2025.")
