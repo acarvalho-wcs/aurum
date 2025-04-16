@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import re
@@ -99,94 +98,22 @@ def infer_stage(row):
         return "Logistic Consolidation"
     else:
         return "Unclassified"
-        def trend_component(df, year_col='Year', count_col='N_seized', breakpoint=2015):
-        df_pre = df[df[year_col] <= breakpoint]
-        df_post = df[df[year_col] > breakpoint]
-
-        if len(df_pre) < 2 or len(df_post) < 2:
+def trend_component(df, year_col='Year', count_col='N_seized', breakpoint=2015):
+    df_pre = df[df[year_col] <= breakpoint]
+    df_post = df[df[year_col] > breakpoint]
+    if len(df_pre) < 2 or len(df_post) < 2:
         return 0.0, "Insufficient data for segmented regression"
-
-        X_pre = sm.add_constant(df_pre[[year_col]])
-        y_pre = df_pre[count_col]
-        model_pre = sm.OLS(y_pre, X_pre).fit()
-        slope_pre = model_pre.params[year_col]
-
-        X_post = sm.add_constant(df_post[[year_col]])
-        y_post = df_post[count_col]
-        model_post = sm.OLS(y_post, X_post).fit()
-        slope_post = model_post.params[year_col]
-
-        tcs = (slope_post - slope_pre) / (abs(slope_pre) + 1)
-        log = f"TCS = {tcs:.2f}"
-        return tcs, log
-
-        tcs, tcs_log = trend_component(df_selected, breakpoint=breakpoint_year)
-        st.markdown(f"**Trend Coordination Score (TCS):** `{tcs:.2f}`")
-        st.info(tcs_log)
-
-        st.markdown("### 📉 Trend Plot")
-        fig, ax = plt.subplots(figsize=(8, 5))
-
-        for species in selected_species:
-        subset = df_selected[df_selected['Species'] == species].sort_values('Year')
-        ax.scatter(subset['Year'], subset['N_seized'], label=species, alpha=0.6)
-
-        df_pre = subset[subset['Year'] <= breakpoint_year]
-        df_post = subset[subset['Year'] > breakpoint_year]
-
-        if len(df_pre) > 1:
-        model_pre = sm.OLS(df_pre['N_seized'], sm.add_constant(df_pre['Year'])).fit()
-        ax.plot(df_pre['Year'], model_pre.predict(sm.add_constant(df_pre['Year'])), linestyle='--')
-
-        if len(df_post) > 1:
-        model_post = sm.OLS(df_post['N_seized'], sm.add_constant(df_post['Year'])).fit()
-        ax.plot(df_post['Year'], model_post.predict(sm.add_constant(df_post['Year'])), linestyle='-.')
-
-        ax.axvline(breakpoint_year, color='red', linestyle=':', label=f"Breakpoint = {breakpoint_year}")
-        ax.set_title("Seizure Trend by Species")
-        ax.set_xlabel("Year")
-        ax.set_ylabel("Individuals Seized")
-        ax.legend()
-        st.pyplot(fig)
-
-        show_cusum = st.checkbox("📉 Show CUSUM & Cumulative Mean", value=False)
-        if show_cusum:
-        st.markdown("### 🔄 Cumulative Mean & CUSUM")
-        fig2, ax2 = plt.subplots(figsize=(8, 3))
-        for species in selected_species:
-        subset = df_selected[df_selected['Species'] == species].sort_values('Year')
-        y = subset['N_seized']
-        cum_mean = y.expanding().mean()
-        cusum = (y - y.mean()).cumsum()
-
-        ax2.plot(subset['Year'], cum_mean, label=f"{species} - Cumulative Mean", linestyle='-')
-        ax2.plot(subset['Year'], cusum, label=f"{species} - CUSUM", linestyle='--')
-
-        ax2.set_title("CUSUM & Cumulative Mean")
-        ax2.set_xlabel("Year")
-        ax2.set_ylabel("Seized")
-        ax2.legend()
-        st.pyplot(fig2)
-
-        show_expanding = st.checkbox("📈 Show Expanding Mean (per Case)", value=False)
-        if show_expanding:
-        st.markdown("### 🧮 Expanding Mean of Individuals per Case")
-        fig3, ax3 = plt.subplots(figsize=(8, 3))
-        for species in selected_species:
-        subset = df_selected[df_selected['Species'] == species].sort_values('Year')
-        ax3.scatter(subset['Year'], subset['N_seized'], label=f"{species} - N Seized", alpha=0.6)
-        ax3.plot(subset['Year'], subset['N_seized'].expanding().mean(), linestyle='--', label=f"{species} - Previous Mean")
-
-        ax3.set_title("Individual Seizure Size vs Expanding Mean")
-        ax3.set_xlabel("Year")
-        ax3.set_ylabel("Number of Individuals per Case")
-        ax3.legend()
-        st.pyplot(fig3)
-
-        show_cooc = st.sidebar.checkbox("🧬 Show Species Co-occurrence", value=False)
-        if show_cooc:
-        st.markdown("## 🧬 Species Co-occurrence Analysis")
-
+    X_pre = sm.add_constant(df_pre[[year_col]])
+    y_pre = df_pre[count_col]
+    model_pre = sm.OLS(y_pre, X_pre).fit()
+    slope_pre = model_pre.params[year_col]
+    X_post = sm.add_constant(df_post[[year_col]])
+    y_post = df_post[count_col]
+    model_post = sm.OLS(y_post, X_post).fit()
+    slope_post = model_post.params[year_col]
+    tcs = (slope_post - slope_pre) / (abs(slope_pre) + 1)
+    log = f"TCS = {tcs:.2f}"
+    return tcs, log
         def general_species_cooccurrence(df, species_list, case_col='Case #'):
         presence = pd.DataFrame()
         presence[case_col] = df[case_col].unique()
