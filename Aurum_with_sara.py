@@ -389,7 +389,7 @@ place_logo_bottom_right("wcs.jpg")
 st.sidebar.markdown("---")
 show_about = st.sidebar.button("**About Aurum**")
 if show_about:
-    st.markdown("## ℹ️ About Aurum")
+    st.markdown("About Aurum")
     st.markdown("""
 **Aurum** is a modular and interactive toolkit designed to support the detection and analysis of **wildlife trafficking** and organized environmental crime. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly interface.
 
