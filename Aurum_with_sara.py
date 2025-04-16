@@ -105,7 +105,7 @@ if "user" in st.session_state:
             st.success("✅ Case submitted to Aurum successfully!")
 
     # Visualizar dados (admin ou próprio autor)
-    st.markdown("## 📄 My Cases")
+    st.markdown("## My Cases")
     data = pd.DataFrame(worksheet.get_all_records())
     if st.session_state.get("is_admin"):
         st.dataframe(data)
