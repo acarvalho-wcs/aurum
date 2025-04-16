@@ -486,7 +486,8 @@ if uploaded_file is not None:
         else:
         st.info("Please select at least one feature to generate the network.")
 
-st.sidebar.markdown("---")
+        st.sidebar.markdown("---")
+
 
 import base64
 
