@@ -141,6 +141,13 @@ if uploaded_file is not None:
 
         df = expand_multi_species_rows(df).reset_index(drop=True)
     
+if selected_species:
+    df_selected = df[df['Species'].isin(selected_species)]
+
+    # Painel lateral: seleção das análises
+    show_viz = st.sidebar.checkbox("Data Visualization", value=False)
+    show_trend = st.sidebar.checkbox("Trend Analysis", value=False)
+
 if df is not None:
             st.sidebar.markdown("## Select Species")
             species_options = sorted(df['Species'].dropna().unique())
@@ -203,12 +210,6 @@ if df is not None:
 
         st.sidebar.markdown("---")
 
-if selected_species:
-    df_selected = df[df['Species'].isin(selected_species)]
-
-    # Painel lateral: seleção das análises
-    show_viz = st.sidebar.checkbox("Data Visualization", value=False)
-    show_trend = st.sidebar.checkbox("Trend Analysis", value=False)
     show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
     show_anomaly = st.sidebar.checkbox("Anomaly Detection", value=False)
     show_network = st.sidebar.checkbox("Network Analysis", value=False)
