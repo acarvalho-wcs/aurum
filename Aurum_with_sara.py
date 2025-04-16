@@ -25,7 +25,7 @@ st.sidebar.markdown("## 📂 Upload Data")
 uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).** Please be sure that your file contains the following features: Case #, Year (of seizure), N seized specimens, Country of offenders, Seizure Status, Transit Feature, Logistic Convergence, Inferred Stage", type=["xlsx"])
 
 st.sidebar.markdown("## 📥 Download Template")
-with open("aurum_template.xlsx", "rb") as f:
+with open("Aurum_template.xlsx", "rb") as f:
     st.sidebar.download_button(
         label="📄 Click here to download a data template",
         data=f,
