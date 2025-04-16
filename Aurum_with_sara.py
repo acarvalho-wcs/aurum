@@ -116,7 +116,8 @@ with open("Aurum_template.xlsx", "rb") as f:
 
 df = None
 df_selected = None
-selected_species = []  # Garante que a variável exista mesmo se upload falhar
+selected_species = []  # Garante que a variável exista
+
 if uploaded_file is not None:
     try:
         df = pd.read_excel(uploaded_file)
@@ -140,23 +141,24 @@ if uploaded_file is not None:
             return pd.DataFrame(expanded_rows)
 
         df = expand_multi_species_rows(df).reset_index(drop=True)
-    
+
+    except Exception as e:
+        st.error(f"❌ Error reading file: {e}")
+        df = None
+
+# ✅ Depois do try-except
+if df is not None:
+    st.sidebar.markdown("## Select Species")
+    species_options = sorted(df['Species'].dropna().unique())
+    selected_species = st.sidebar.multiselect("Select one or more species:", species_options)
+
+# ✅ Agora sim, seguro usar
 if selected_species:
     df_selected = df[df['Species'].isin(selected_species)]
 
     # Painel lateral: seleção das análises
     show_viz = st.sidebar.checkbox("Data Visualization", value=False)
     show_trend = st.sidebar.checkbox("Trend Analysis", value=False)
-
-    except Exception as e:
-        st.error(f"❌ Error reading file: {e}")
-        df = None
-
-if df is not None:
-            st.sidebar.markdown("## Select Species")
-            species_options = sorted(df['Species'].dropna().unique())
-            selected_species = st.sidebar.multiselect("Select one or more species:", species_options)
-
 
         # Aplicar valores numéricos aos países se o arquivo estiver disponível
         import os
