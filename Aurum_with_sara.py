@@ -113,6 +113,46 @@ if uploaded_file is not None:
                     fig = px.pie(df_selected, names=x_axis, values=y_axis)
                 st.plotly_chart(fig)
 
+            
+            show_cooc = st.sidebar.checkbox("🧬 Show Species Co-occurrence", value=False)
+            if show_cooc:
+                st.markdown("## 🧬 Species Co-occurrence Analysis")
+
+                def general_species_cooccurrence(df, species_list, case_col='Case #'):
+                    presence = pd.DataFrame()
+                    presence[case_col] = df[case_col].unique()
+                    presence.set_index(case_col, inplace=True)
+
+                    for sp in species_list:
+                        sp_df = df[df['Species'] == sp][[case_col]]
+                        sp_df['present'] = 1
+                        grouped = sp_df.groupby(case_col)['present'].max()
+                        presence[sp] = grouped
+
+                    presence.fillna(0, inplace=True)
+                    presence = presence.astype(int)
+
+                    results = []
+                    for sp_a, sp_b in combinations(species_list, 2):
+                        table = pd.crosstab(presence[sp_a], presence[sp_b])
+                        if table.shape == (2, 2):
+                            chi2, p, _, _ = chi2_contingency(table)
+                            results.append((sp_a, sp_b, chi2, p, table))
+                    return results
+
+                co_results = general_species_cooccurrence(df_selected, selected_species)
+
+                if co_results:
+                    st.markdown("### 📊 Co-occurrence Results")
+                    for sp_a, sp_b, chi2, p, table in co_results:
+                        st.markdown(f"**{sp_a} × {sp_b}**")
+                        st.dataframe(table)
+                        st.markdown(f"Chi² = `{chi2:.2f}` | p = `{p:.4f}`")
+                        st.markdown("---")
+                else:
+                    st.info("No co-occurrence data available for selected species.")
+
+
             show_anomaly = st.sidebar.checkbox("🚨 Show Anomaly Detection", value=False)
             if show_anomaly:
                 st.markdown("## 🚨 Anomaly Detection")
