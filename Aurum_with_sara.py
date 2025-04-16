@@ -18,10 +18,6 @@ from sklearn.preprocessing import StandardScaler
 # Configuração da página
 st.set_page_config(page_title="Aurum Dashboard", layout="wide")
 
-# Título e logotipo
-st.title("Aurum - Wildlife Trafficking Analytics")
-st.markdown("**Select an analysis from the sidebar to begin.**")
-
 # --- CONFIGURAÇÃO ---
 # Nome da aba do Google Sheets
 SHEET_NAME = "Aurum Gateway Data"
@@ -603,4 +599,9 @@ if export_html and df_selected is not None:
         mime="text/html"
     )
     
+
+# Título e logotipo
+st.title("Aurum - Wildlife Trafficking Analytics")
+st.markdown("**Select an analysis from the sidebar to begin.**")
+
 st.sidebar.markdown("How to cite: Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
