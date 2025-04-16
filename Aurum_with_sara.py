@@ -621,6 +621,31 @@ if st.session_state.get('uploaded_file') is not None:
 if selected_species:
     df_selected = df_clean[df_clean['Species'].isin(selected_species)]
 
+
+# 📊 PAINEL VISUAL DO AURUM
+# Esta seção cria uma interface mais limpa com painel lateral para seleção de análises
+
+if not df_selected.empty:
+    st.markdown("## 🎛️ Visual Dashboard: Choose Your Analysis")
+    st.sidebar.markdown("## 🔎 Analysis Menu")
+
+    analysis_option = st.sidebar.radio(
+        "Select an analysis to run:",
+        ["Trend Analysis", "Species Co-occurrence", "Anomaly Detection", "Network Analysis", "OCS Calculation"]
+    )
+
+    # Variáveis de controle para a execução das análises
+    run_trend = analysis_option == "Trend Analysis"
+    run_cooccurrence = analysis_option == "Species Co-occurrence"
+    run_anomaly = analysis_option == "Anomaly Detection"
+    run_network = analysis_option == "Network Analysis"
+    run_ocs = analysis_option == "OCS Calculation"
+
+    # Mensagens explicativas
+    st.markdown(f"### ✅ Selected: `{analysis_option}`")
+    st.markdown("Continue below to view the results and options for this analysis.")
+
+
     st.markdown("## 📊 Custom Visualization")
     st.markdown("Use this panel to visually explore your data before advanced analyses.")
 
