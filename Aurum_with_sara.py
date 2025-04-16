@@ -50,6 +50,27 @@ if uploaded_file is not None:
 
         df = expand_multi_species_rows(df).reset_index(drop=True)
 
+
+        # Aplicar valores numéricos aos países se o arquivo estiver disponível
+        import os
+        country_score_path = "country_offenders_values.csv"
+        if os.path.exists(country_score_path):
+            df_country_score = pd.read_csv(country_score_path, encoding="ISO-8859-1")
+            country_map = dict(zip(df_country_score["Country"].str.strip(), df_country_score["Value"]))
+
+            def score_countries(cell_value, country_map):
+                if not isinstance(cell_value, str):
+                    return 0
+                countries = [c.strip() for c in cell_value.split("+")]
+                return sum(country_map.get(c, 0) for c in countries)
+
+            if "Country of offenders" in df.columns:
+                df["Offender_value"] = df["Country of offenders"].apply(lambda x: score_countries(x, country_map))
+                st.markdown("✅ `Offender_value` column added using country_offenders_values.csv")
+        else:
+            st.warning("⚠️ File country_offenders_values.csv not found. Offender scoring skipped.")
+
+
         if 'Case #' in df.columns and 'Species' in df.columns:
             species_per_case = df.groupby('Case #')['Species'].nunique()
             df['Logistic Convergence'] = df['Case #'].map(lambda x: "Yes" if species_per_case.get(x, 0) > 1 else "No")
