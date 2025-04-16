@@ -365,7 +365,6 @@ from streamlit_chat import message
 import openai
 
 # Página centralizada
-st.set_page_config(page_title="Aurum Assistant", layout="centered")
 st.title("💬 Ask Aurum - Your Wildlife Crime AI Assistant")
 
 # Inicializa histórico
