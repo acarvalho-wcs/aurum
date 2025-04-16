@@ -197,7 +197,7 @@ if uploaded_file is not None:
         species_options = sorted(df['Species'].dropna().unique())
         selected_species = st.sidebar.multiselect("Select one or more species:", species_options)
 
-    if selected_species:
+        if selected_species:
             df_selected = df[df['Species'].isin(selected_species)]
 
             show_viz = st.sidebar.checkbox("Data Visualization", value=False)
@@ -318,9 +318,10 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"❌ Error reading file: {e}")
 
+
         show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
         if show_cooc:
-            st.markdown("## Species Co-occurrence Analysis")
+            st.markdown("## 🧬 Species Co-occurrence Analysis")
 
             def general_species_cooccurrence(df, species_list, case_col='Case #'):
                 presence = pd.DataFrame()
@@ -358,7 +359,7 @@ if uploaded_file is not None:
 
         show_anomaly = st.sidebar.checkbox("Anomaly Detection", value=False)
         if show_anomaly:
-            st.markdown("## Anomaly Detection")
+            st.markdown("## 🚨 Anomaly Detection")
 
             numeric_cols = [col for col in df_selected.columns if pd.api.types.is_numeric_dtype(df_selected[col])]
             selected_features = st.multiselect("Select numeric features for anomaly detection:", numeric_cols, default=["N_seized", "Year", "Offender_value"])
@@ -397,7 +398,7 @@ if uploaded_file is not None:
 
         show_network = st.sidebar.checkbox("Network Analysis", value=False)
         if show_network:
-            st.markdown("## Network Analysis")
+            st.markdown("## 🕸️ Network Analysis")
 
             import networkx as nx
             import plotly.graph_objects as go
@@ -459,18 +460,18 @@ if uploaded_file is not None:
                             line_width=1))
 
                     fig = go.Figure(data=[edge_trace, node_trace],
-                                   layout=go.Layout(
-                                       title='Dynamic Species Co-occurrence Network',
-                                       showlegend=False,
-                                       hovermode='closest',
-                                       margin=dict(b=20,l=5,r=5,t=40)))
+                                 layout=go.Layout(
+                                     title='Dynamic Species Co-occurrence Network',
+                                     showlegend=False,
+                                     hovermode='closest',
+                                     margin=dict(b=20,l=5,r=5,t=40)))
 
                     st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("Please select at least one feature to generate the network.")
 
-        else:
-            st.warning("⚠️ Please select at least one species to explore the data.")
+    else:
+        st.warning("⚠️ Please select at least one species to explore the data.")
 
     except Exception as e:
         st.error(f"❌ Error reading file: {e}")
