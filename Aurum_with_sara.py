@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from io import BytesIO
 import base64
-import os
 from itertools import combinations
 from scipy.stats import chi2_contingency
 from sklearn.ensemble import IsolationForest
@@ -117,8 +116,7 @@ with open("Aurum_template.xlsx", "rb") as f:
 
 df = None
 df_selected = None
-selected_species = []  # Garante que a variável exista
-
+selected_species = []  # Garante que a variável exista mesmo se upload falhar
 if uploaded_file is not None:
     try:
         df = pd.read_excel(uploaded_file)
@@ -143,17 +141,6 @@ if uploaded_file is not None:
 
         df = expand_multi_species_rows(df).reset_index(drop=True)
 
-    except Exception as e:
-        st.error(f"❌ Error reading file: {e}")
-        df = None
-
-# ✅ Depois do try-except
-if df is not None:
-    st.sidebar.markdown("## Select Species")
-    species_options = sorted(df['Species'].dropna().unique())
-    selected_species = st.sidebar.multiselect("Select one or more species:", species_options)
-
-# ✅ Agora sim, seguro usar
 if selected_species:
     df_selected = df[df['Species'].isin(selected_species)]
 
@@ -161,23 +148,36 @@ if selected_species:
     show_viz = st.sidebar.checkbox("Data Visualization", value=False)
     show_trend = st.sidebar.checkbox("Trend Analysis", value=False)
 
-# Aplicar valores numéricos aos países se o arquivo estiver disponível
-country_score_path = "country_offenders_values.csv"
-if os.path.exists(country_score_path):
-    df_country_score = pd.read_csv(country_score_path, encoding="ISO-8859-1")
-    country_map = dict(zip(df_country_score["Country"].str.strip(), df_country_score["Value"]))
+if df is not None:
+            st.sidebar.markdown("## Select Species")
+            species_options = sorted(df['Species'].dropna().unique())
 
-    def score_countries(cell_value, country_map):
-        if not isinstance(cell_value, str):
-            return 0
-        countries = [c.strip() for c in cell_value.split("+")]
-        return sum(country_map.get(c, 0) for c in countries)
+        country_score_path = "country_offenders_values.csv"
+        if os.path.exists(country_score_path):
+            df_country_score = pd.read_csv(country_score_path, encoding="ISO-8859-1")
+            country_map = dict(zip(df_country_score["Country"].str.strip(), df_country_score["Value"]))
 
-    if "Country of offenders" in df.columns:
-        df["Offender_value"] = df["Country of offenders"].apply(lambda x: score_countries(x, country_map))
-        st.markdown("✅ `Offender_value` column added using country_offenders_values.csv")
-else:
-    st.warning("⚠️ File country_offenders_values.csv not found. Offender scoring skipped.")
+            selected_species = st.sidebar.multiselect("Select one or more species:", species_options)
+
+    except Exception as e:
+        st.error(f"❌ Error reading file: {e}")
+        df = None
+
+        # Aplicar valores numéricos aos países se o arquivo estiver disponível
+        import os
+
+            def score_countries(cell_value, country_map):
+                if not isinstance(cell_value, str):
+                    return 0
+                countries = [c.strip() for c in cell_value.split("+")]
+                return sum(country_map.get(c, 0) for c in countries)
+
+            if "Country of offenders" in df.columns:
+                df["Offender_value"] = df["Country of offenders"].apply(lambda x: score_countries(x, country_map))
+                st.markdown("✅ `Offender_value` column added using country_offenders_values.csv")
+        else:
+            st.warning("⚠️ File country_offenders_values.csv not found. Offender scoring skipped.")
+
 
         if 'Case #' in df.columns and 'Species' in df.columns:
             species_per_case = df.groupby('Case #')['Species'].nunique()
@@ -609,5 +609,5 @@ if export_html and df_selected is not None:
         file_name="aurum_report.html",
         mime="text/html"
     )
-    
+
 st.sidebar.markdown("How to cite: Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
