@@ -402,4 +402,49 @@ The platform enables the upload and processing of case-level data and offers a s
 - **Interactive Visualization**: Generate customized plots and dashboards based on uploaded data and selected variables.
 """)
 
+st.sidebar.markdown("---")
+st.sidebar.markdown("## Export Options")
+export_xlsx = st.sidebar.button("Export Cleaned data.xlsx")
+export_html = st.sidebar.button("Export Analysis Report (.html)")
+
+if export_xlsx and df_selected is not None:
+    from io import BytesIO
+    towrite = BytesIO()
+    df_selected.to_excel(towrite, index=False, engine='openpyxl')
+    towrite.seek(0)
+    st.download_button(
+        label="Download Cleaned Excel File",
+        data=towrite,
+        file_name="aurum_cleaned_data.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+if export_html and df_selected is not None:
+    from datetime import datetime
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    html_report = f"""
+    <html>
+    <head><title>Aurum Report</title></head>
+    <body>
+        <h1>Aurum Wildlife Trafficking Report</h1>
+        <p><strong>Generated:</strong> {now}</p>
+        <p><strong>Selected Species:</strong> {', '.join(selected_species)}</p>
+        <h2>Data Sample</h2>
+        {df_selected.head(10).to_html(index=False)}
+    </body>
+    </html>
+    """
+
+    from io import BytesIO
+    report_bytes = BytesIO()
+    report_bytes.write(html_report.encode("utf-8"))
+    report_bytes.seek(0)
+
+    st.download_button(
+        label="Download HTML Report",
+        data=report_bytes,
+        file_name="aurum_report.html",
+        mime="text/html"
+    )
+    
 st.sidebar.markdown("How to cite: Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
