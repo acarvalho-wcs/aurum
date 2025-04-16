@@ -116,6 +116,7 @@ with open("Aurum_template.xlsx", "rb") as f:
 
 df = None
 df_selected = None
+selected_species = []  # Garante que a variável exista mesmo se upload falhar
 if uploaded_file is not None:
     try:
         df = pd.read_excel(uploaded_file)
