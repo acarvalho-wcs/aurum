@@ -36,7 +36,7 @@ client = gspread.authorize(credentials)
 
 # ID da planilha e nome da aba
 sheet_id = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
-sheet_name = "Página1"  # ou o nome correto da aba
+sheet_name = "Sheet1"  # ou o nome correto da aba
 
 # Leitura da planilha
 worksheet = client.open_by_key(sheet_id).worksheet(sheet_name)
