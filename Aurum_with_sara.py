@@ -360,25 +360,40 @@ if uploaded_file is not None:
 st.sidebar.markdown("---")
 show_chat = st.sidebar.checkbox("💬 Ask Aurum (AI Assistant)", value=False)
 
-if show_chat:
-    st.markdown("## 💬 Ask Aurum - Your Wildlife Crime AI Assistant")
-    from streamlit_chat import message
+import streamlit as st
+from streamlit_chat import message
+import openai
 
-    if "messages" not in st.session_state:
-        st.session_state["messages"] = []
+# Página centralizada
+st.set_page_config(page_title="Aurum Assistant", layout="centered")
+st.title("💬 Ask Aurum - Your Wildlife Crime AI Assistant")
 
-    user_msg = st.text_input("You:", key="chat_input")
+# Inicializa histórico
+if "messages" not in st.session_state:
+    st.session_state["messages"] = [{"role": "system", "content": "You are Aurum, an assistant specialized in wildlife crime data analysis."}]
 
-    if user_msg:
-        st.session_state["messages"].append({"role": "user", "content": user_msg})
+# Campo de entrada
+user_msg = st.text_input("You:", key="chat_input")
 
-        # Resposta simulada (aqui entraria a chamada à API do ChatGPT futuramente)
-        reply = f"Aurum (AI): I received your question: '{user_msg}'. This is where I'd give you insights."
+# Se o usuário enviar algo
+if user_msg:
+    st.session_state["messages"].append({"role": "user", "content": user_msg})
 
-        st.session_state["messages"].append({"role": "assistant", "content": reply})
+    # Chave da OpenAI via secrets
+    openai.api_key = st.secrets["openai_api_key"]
 
-    for msg in st.session_state["messages"]:
-        message(msg["content"], is_user=(msg["role"] == "user"))
+    # Requisição à API
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=st.session_state["messages"]
+    )
+
+    reply = response["choices"][0]["message"]["content"]
+    st.session_state["messages"].append({"role": "assistant", "content": reply})
+
+# Exibe histórico
+for msg in st.session_state["messages"][1:]:
+    message(msg["content"], is_user=(msg["role"] == "user"))
 
 
 st.sidebar.markdown("How to cite: Carvalho, A. F., 2025. Detecting Organized Wildlife Crime with *Aurum*: An AI-Powered Toolkit for Trafficking Analysis. Wildlife Conservation Society.")
