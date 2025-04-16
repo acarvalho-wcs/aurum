@@ -140,6 +140,9 @@ if uploaded_file is not None:
 
         df = expand_multi_species_rows(df).reset_index(drop=True)
 
+    except Exception as e:
+        st.error(f"❌ Error reading file: {e}")
+        df = None
 
         # Aplicar valores numéricos aos países se o arquivo estiver disponível
         import os
