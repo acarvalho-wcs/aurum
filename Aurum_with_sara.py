@@ -42,12 +42,6 @@ try:
     sheet_id = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
     spreadsheet = gc.open_by_key(sheet_id)
 
-    st.success("✅ Conexão com Google Sheets realizada com sucesso!")
-
-    # Lista as abas
-    st.write("📄 Abas disponíveis na planilha:", [ws.title for ws in spreadsheet.worksheets()])
-
-    # Seleciona a aba correta
     worksheet = spreadsheet.worksheet_by_title("Sheet1")
 
     # Converte para DataFrame
@@ -55,11 +49,11 @@ try:
     st.dataframe(df.head())
 
 except Exception as e:
-    st.error("❌ Error accessing Google Sheets.")
+    st.error("Error accessing Google Sheets.")
     st.exception(e)
 
 # --- BATCH UPLOAD ---
-st.markdown("## 📤 Batch Upload of Cases")
+st.markdown("## Batch Upload of Cases")
 
 batch_file = st.file_uploader("Upload an Excel file (.xlsx) with multiple cases", type=["xlsx"], key="batch")
 
