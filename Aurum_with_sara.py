@@ -228,7 +228,7 @@ if uploaded_file is not None:
             st.markdown("## Trend Analysis")
 
             breakpoint_year = st.number_input("Breakpoint year (split the trend):", 1990, 2030, value=2015)
-            show_cusum = st.checkbox("Apply CUSUM", value=False)
+            show_cusum = st.checkbox("Show CUSUM Analysis")
 
             def trend_component(df, year_col='Year', count_col='N_seized', breakpoint=2015):
                 df_pre = df[df[year_col] <= breakpoint]
