@@ -110,9 +110,9 @@ if uploaded_file is not None:
         if selected_species:
             df_selected = df[df['Species'].isin(selected_species)]
 
-            show_viz = st.sidebar.checkbox("📊 Show Data Visualization", value=False)
+            show_viz = st.sidebar.checkbox("Data Visualization", value=False)
             if show_viz:
-                st.markdown("## 📊 Data Visualization")
+                st.markdown("## Data Visualization")
                 if st.sidebar.checkbox("Preview data"):
                     st.write("### Preview of cleaned data:")
                     st.dataframe(df_selected.head())
@@ -134,9 +134,9 @@ if uploaded_file is not None:
                 st.plotly_chart(fig)
 
             
-            show_trend = st.sidebar.checkbox("📈 Show Trend Analysis", value=False)
+            show_trend = st.sidebar.checkbox("📈 Trend Analysis", value=False)
             if show_trend:
-                st.markdown("## 📈 Trend Analysis")
+                st.markdown("## Trend Analysis")
 
                 breakpoint_year = st.number_input("Breakpoint year (split the trend):", 1990, 2030, value=2015)
 
@@ -165,7 +165,7 @@ if uploaded_file is not None:
                 st.markdown(f"**Trend Coordination Score (TCS):** `{tcs:.2f}`")
                 st.info(tcs_log)
 
-                st.markdown("### 📉 Trend Plot")
+                st.markdown("### Trend Plot")
                 fig, ax = plt.subplots(figsize=(8, 5))
 
                 for species in selected_species:
@@ -191,7 +191,7 @@ if uploaded_file is not None:
                 st.pyplot(fig)
 
 
-            show_cooc = st.sidebar.checkbox("🧬 Show Species Co-occurrence", value=False)
+            show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
             if show_cooc:
                 st.markdown("## 🧬 Species Co-occurrence Analysis")
 
@@ -229,7 +229,7 @@ if uploaded_file is not None:
                 else:
                     st.info("No co-occurrence data available for selected species.")
 
-            show_anomaly = st.sidebar.checkbox("🚨 Show Anomaly Detection", value=False)
+            show_anomaly = st.sidebar.checkbox("Anomaly Detection", value=False)
             if show_anomaly:
                 st.markdown("## 🚨 Anomaly Detection")
 
@@ -268,7 +268,7 @@ if uploaded_file is not None:
                     top_outliers = vote_df.sort_values(by="Outlier Votes", ascending=False).head(10)
                     st.dataframe(top_outliers.set_index("Case #"))
 
-            show_network = st.sidebar.checkbox("🕸️ Show Network Analysis", value=False)
+            show_network = st.sidebar.checkbox("Network Analysis", value=False)
             if show_network:
                 st.markdown("## 🕸️ Network Analysis")
 
