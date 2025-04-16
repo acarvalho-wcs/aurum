@@ -319,7 +319,7 @@ if uploaded_file is not None:
         st.error(f"❌ Error reading file: {e}")
 
 
-            show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
+        show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
             if show_cooc:
                 st.markdown("## 🧬 Species Co-occurrence Analysis")
 
