@@ -104,13 +104,17 @@ if "user" in st.session_state:
             worksheet.append_row(new_row)
             st.success("✅ Case submitted to Aurum successfully!")
 
-    # Visualizar dados (admin ou próprio autor)
-    st.markdown("## My Cases")
-    data = pd.DataFrame(worksheet.get_all_records())
-    if st.session_state.get("is_admin"):
-        st.dataframe(data)
-    else:
-        st.dataframe(data[data["Author"] == st.session_state["user"]])
+        # Visualizar dados (admin ou próprio autor)
+        st.markdown("## My Cases")
+
+        if "worksheet" in locals():
+            data = pd.DataFrame(worksheet.get_all_records())
+            if st.session_state.get("is_admin"):
+                st.dataframe(data)
+            else:
+                st.dataframe(data[data["Author"] == st.session_state["user"]])
+        else:
+            st.warning("⚠️ Dados do formulário ainda não disponíveis. Verifique a conexão com a planilha.")
 
 # Upload do arquivo
 st.sidebar.markdown("## 📂 Upload Data")
