@@ -191,6 +191,27 @@ if uploaded_file is not None:
                 ax.legend()
                 st.pyplot(fig)
 
+
+                show_cusum = st.checkbox("Show CUSUM & Cumulative Mean", value=False)
+                if show_cusum:
+                    st.markdown("### 🔄 Cumulative Mean & CUSUM")
+                    fig2, ax2 = plt.subplots(figsize=(8, 3))
+                    for species in selected_species:
+                        subset = df_selected[df_selected['Species'] == species].sort_values('Year')
+                        y = subset['N_seized']
+                        cum_mean = y.expanding().mean()
+                        cusum = (y - y.mean()).cumsum()
+
+                        ax2.plot(subset['Year'], cum_mean, label=f"{species} - Cumulative Mean", linestyle='-')
+                        ax2.plot(subset['Year'], cusum, label=f"{species} - CUSUM", linestyle='--')
+
+                    ax2.set_title("CUSUM & Cumulative Mean")
+                    ax2.set_xlabel("Year")
+                    ax2.set_ylabel("Seized")
+                    ax2.legend()
+                    st.pyplot(fig2)
+
+
                 st.markdown("### 🔄 Cumulative Mean & CUSUM")
                 fig2, ax2 = plt.subplots(figsize=(8, 3))
                 for species in selected_species:
