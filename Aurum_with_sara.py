@@ -387,7 +387,7 @@ def place_logo_bottom_right(image_path, width=100):
 place_logo_bottom_right("wcs.jpg")
 
 st.sidebar.markdown("---")
-show_about = st.sidebar.button("**About Aurum**")
+show_about = st.sidebar.button("##**About Aurum**")
 if show_about:
     st.markdown("About Aurum")
     st.markdown("""
