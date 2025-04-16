@@ -76,7 +76,8 @@ if batch_file:
             batch_df = batch_df[columns_order]
 
             # Converte para lista de listas e envia para o Google Sheets
-            rows_to_append = batch_df.values.tolist()
+            rows_to_append = batch_df.fillna("").astype(str).values.tolist()
+            
             for row in rows_to_append:
                 worksheet.append_table(values=row, start='A2', overwrite=False)
 
