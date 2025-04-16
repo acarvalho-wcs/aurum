@@ -83,6 +83,8 @@ if uploaded_file is not None:
                                                         text = re.sub(r'\s+', ' ', text)
                                                         return text
 
+    except Exception as e:
+        st.error(f"❌ Error reading file: {e}")
 def infer_stage(row):
     seizure = normalize_text(row.get("Seizure Status", ""))
     transit = normalize_text(row.get("Transit Feature", ""))
@@ -336,4 +338,6 @@ def infer_stage(row):
         st.warning("⚠️ Please select at least one species to explore the data.")
 
         except Exception as e:
+        st.error(f"❌ Error reading file: {e}")
+    except Exception as e:
         st.error(f"❌ Error reading file: {e}")
