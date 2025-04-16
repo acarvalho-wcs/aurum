@@ -322,6 +322,7 @@ if uploaded_file is not None:
                     ax_c.plot(years, cusum_neg, linestyle='--', color='orange', label='CUSUM–')
                     ax_c.axhline(0, color='gray', linewidth=0.6, linestyle='-', alpha=0.3)
                     ax_c.axvline(years.min(), color='gray', linewidth=0.6, linestyle='-', alpha=0.3)
+                    ax_c.grid(True, linestyle='--', linewidth=0.3, alpha=0.3)
 
                     ylabel = "Seized Specimens" if cusum_mode == "Total Seized per Year" else "N_seized (each seizure)"
                     ax_c.set_title(f"{species} – Trend & CUSUM")
