@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import re
+import unicodedata
 
 # Configuração da página
 st.set_page_config(page_title="Aurum Dashboard", layout="wide")
@@ -16,14 +18,75 @@ df = None
 if uploaded_file is not None:
     try:
         df = pd.read_excel(uploaded_file)
-        st.success("✅ File uploaded successfully!")
+
+        # Limpeza de colunas
+        df.columns = df.columns.str.strip().str.replace('\xa0', '', regex=True)
+
+        # Conversão de colunas e extração do ano
+        if 'Year' in df.columns:
+            df['Year'] = df['Year'].astype(str).str.extract(r'(\d{4})').astype(float)
+
+        # --- Expansão de múltiplas espécies em uma única linha ---
+        def expand_multi_species_rows(df):
+            expanded_rows = []
+            for _, row in df.iterrows():
+                matches = re.findall(r'(\d+)\s*([A-Z]{2,})', str(row.get('N seized specimens', '')))
+                if matches:
+                    for qty, species in matches:
+                        new_row = row.copy()
+                        new_row['N_seized'] = float(qty)
+                        new_row['Species'] = species
+                        expanded_rows.append(new_row)
+                else:
+                    expanded_rows.append(row)
+            return pd.DataFrame(expanded_rows)
+
+        df = expand_multi_species_rows(df)
+        df = df.reset_index(drop=True)
+
+        # --- Feature: Logistic Convergence ---
+        if 'Case #' in df.columns and 'Species' in df.columns:
+            species_per_case = df.groupby('Case #')['Species'].nunique()
+            df['Logistic Convergence'] = df['Case #'].map(
+                lambda x: "Yes" if species_per_case.get(x, 0) > 1 else "No"
+            )
+
+        # --- Função para normalizar texto ---
+        def normalize_text(text):
+            if not isinstance(text, str):
+                text = str(text)
+            text = text.strip().lower()
+            text = unicodedata.normalize("NFKD", text)
+            text = re.sub(r'\s+', ' ', text)
+            return text
+
+        # --- Inferred Stage ---
+        def infer_stage(row):
+            seizure = normalize_text(row.get("Seizure Status", ""))
+            transit = normalize_text(row.get("Transit Feature", ""))
+            logistic = row.get("Logistic Convergence", "No")
+
+            if any(k in seizure for k in ["planned", "trap", "attempt"]):
+                return "Preparation"
+            elif "captivity" in transit or "breeding" in transit:
+                return "Captivity"
+            elif any(k in transit for k in ["airport", "border", "highway", "port"]):
+                return "Transport"
+            elif logistic == "Yes":
+                return "Logistic Consolidation"
+            else:
+                return "Unclassified"
+
+        df["Inferred Stage"] = df.apply(infer_stage, axis=1)
+
+        st.success("✅ File uploaded and cleaned successfully!")
 
         # Opção para visualização e seleção de tipo de gráfico
         st.sidebar.markdown("---")
         st.sidebar.markdown("## 📊 Data Visualization")
 
         if st.sidebar.checkbox("Preview data"):
-            st.write("### Preview of uploaded data:")
+            st.write("### Preview of cleaned data:")
             st.dataframe(df.head())
 
         chart_type = st.sidebar.selectbox("Select chart type:", ["Bar", "Line", "Scatter", "Pie"])
