@@ -83,64 +83,20 @@ if uploaded_file is not None:
                                                         text = re.sub(r'\s+', ' ', text)
                                                         return text
 
-                                                        def infer_stage(row):
-        seizure = normalize_text(row.get("Seizure Status", ""))
-        transit = normalize_text(row.get("Transit Feature", ""))
-        logistic = row.get("Logistic Convergence", "No")
-        if any(k in seizure for k in ["planned", "trap", "attempt"]):
+def infer_stage(row):
+    seizure = normalize_text(row.get("Seizure Status", ""))
+    transit = normalize_text(row.get("Transit Feature", ""))
+    logistic = row.get("Logistic Convergence", "No")
+    if any(k in seizure for k in ["planned", "trap", "attempt"]):
         return "Preparation"
-        elif "captivity" in transit or "breeding" in transit:
+    elif "captivity" in transit or "breeding" in transit:
         return "Captivity"
-        elif any(k in transit for k in ["airport", "border", "highway", "port"]):
+    elif any(k in transit for k in ["airport", "border", "highway", "port"]):
         return "Transport"
-        elif logistic == "Yes":
+    elif logistic == "Yes":
         return "Logistic Consolidation"
-        # [REMOVIDO AUTOMATICAMENTE] else sem contexto
+    else:
         return "Unclassified"
-
-        df["Inferred Stage"] = df.apply(infer_stage, axis=1)
-
-        st.success("✅ File uploaded and cleaned successfully!")
-
-        st.sidebar.markdown("---")
-        st.sidebar.markdown("## 🧬 Select Species")
-        species_options = sorted(df['Species'].dropna().unique())
-        selected_species = st.sidebar.multiselect("Select one or more species:", species_options)
-
-        if selected_species:
-        df_selected = df[df['Species'].isin(selected_species)]
-
-        show_viz = st.sidebar.checkbox("📊 Show Data Visualization", value=False)
-        if show_viz:
-        st.markdown("## 📊 Data Visualization")
-        if st.sidebar.checkbox("Preview data"):
-        st.write("### Preview of cleaned data:")
-        st.dataframe(df_selected.head())
-
-        chart_type = st.sidebar.selectbox("Select chart type:", ["Bar", "Line", "Scatter", "Pie"])
-        x_axis = st.sidebar.selectbox("X-axis:", df_selected.columns, index=0)
-        y_axis = st.sidebar.selectbox("Y-axis:", df_selected.columns, index=1)
-
-        import plotly.express as px
-        st.markdown("### Custom Chart")
-        if chart_type == "Bar":
-        fig = px.bar(df_selected, x=x_axis, y=y_axis, color='Species')
-        elif chart_type == "Line":
-        fig = px.line(df_selected, x=x_axis, y=y_axis, color='Species')
-        elif chart_type == "Scatter":
-        fig = px.scatter(df_selected, x=x_axis, y=y_axis, color='Species')
-        elif chart_type == "Pie":
-        fig = px.pie(df_selected, names=x_axis, values=y_axis)
-        st.plotly_chart(fig)
-
-
-
-        show_trend = st.sidebar.checkbox("📈 Show Trend Analysis", value=False)
-        if show_trend:
-        st.markdown("## 📈 Trend Analysis")
-
-        breakpoint_year = st.number_input("Breakpoint year (split the trend):", 1990, 2030, value=2015)
-
         def trend_component(df, year_col='Year', count_col='N_seized', breakpoint=2015):
         df_pre = df[df[year_col] <= breakpoint]
         df_post = df[df[year_col] > breakpoint]
