@@ -1,5 +1,8 @@
 import streamlit as st
 import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
+from datetime import datetime
 import re
 import unicodedata
 import statsmodels.api as sm
@@ -20,6 +23,80 @@ st.set_page_config(page_title="Aurum Dashboard", layout="wide")
 # Título e logotipo
 st.title("Aurum - Wildlife Trafficking Analytics")
 st.markdown("**Select an analysis from the sidebar to begin.**")
+
+# --- CONFIGURAÇÃO ---
+# Nome da aba do Google Sheets
+SHEET_NAME = "Form Responses"
+SPREADSHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
+
+# Autenticação com Google via st.secrets
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+credentials = Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"],
+    scopes=scope
+)
+gc = gspread.authorize(credentials)
+sh = gc.open_by_key(SPREADSHEET_ID)
+worksheet = sh.worksheet(SHEET_NAME)
+
+# --- AUTENTICAÇÃO ---
+st.sidebar.markdown("## 🔐 Aurum Gateway")
+user = st.sidebar.text_input("Username")
+password = st.sidebar.text_input("Password", type="password")
+login = st.sidebar.button("Login")
+
+if login:
+    if user and password:
+        if user == "acarvalho" and password == "admin":
+            st.session_state["user"] = user
+            st.session_state["is_admin"] = True
+            st.success("Logged in as admin.")
+        else:
+            st.session_state["user"] = user
+            st.session_state["is_admin"] = False
+            st.success(f"Logged in as {user}")
+    else:
+        st.warning("Please provide both username and password.")
+
+# --- FORMULÁRIO ---
+if "user" in st.session_state:
+    st.markdown("## 📥 Submit New Case to Aurum")
+    with st.form("aurum_form"):
+        case_id = st.text_input("Case ID")
+        n_seized = st.text_input("N seized specimens (e.g. 2 GLT + 1 LM)")
+        year = st.number_input("Year", step=1, format="%d")
+        country = st.text_input("Country of offenders")
+        seizure_status = st.text_input("Seizure status")
+        transit = st.text_input("Transit feature")
+        notes = st.text_area("Additional notes")
+
+        submitted = st.form_submit_button("Submit Case")
+
+        if submitted:
+            new_row = [
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                case_id,
+                n_seized,
+                year,
+                country,
+                seizure_status,
+                transit,
+                notes,
+                st.session_state["user"]
+            ]
+            worksheet.append_row(new_row)
+            st.success("✅ Case submitted to Aurum successfully!")
+
+    # Visualizar dados (admin ou próprio autor)
+    st.markdown("## 📄 My Cases")
+    data = pd.DataFrame(worksheet.get_all_records())
+    if st.session_state.get("is_admin"):
+        st.dataframe(data)
+    else:
+        st.dataframe(data[data["Author"] == st.session_state["user"]])
 
 # Upload do arquivo
 st.sidebar.markdown("## 📂 Upload Data")
