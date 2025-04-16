@@ -12,3 +12,4 @@ openai
 streamlit-chat
 gspread
 google-auth
+pygsheets
