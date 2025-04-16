@@ -340,26 +340,26 @@ if uploaded_file is not None:
             st.markdown("## 🧬 Species Co-occurrence Analysis")
 
             def general_species_cooccurrence(df, species_list, case_col='Case #'):
-            presence = pd.DataFrame()
-            presence[case_col] = df[case_col].unique()
-            presence.set_index(case_col, inplace=True)
+                presence = pd.DataFrame()
+                presence[case_col] = df[case_col].unique()
+                presence.set_index(case_col, inplace=True)
 
-            for sp in species_list:
-            sp_df = df[df['Species'] == sp][[case_col]]
-            sp_df['present'] = 1
-            grouped = sp_df.groupby(case_col)['present'].max()
-            presence[sp] = grouped
+                for sp in species_list:
+                    sp_df = df[df['Species'] == sp][[case_col]]
+                    sp_df['present'] = 1
+                    grouped = sp_df.groupby(case_col)['present'].max()
+                    presence[sp] = grouped
 
-            presence.fillna(0, inplace=True)
-            presence = presence.astype(int)
+                presence.fillna(0, inplace=True)
+                presence = presence.astype(int)
 
-            results = []
-            for sp_a, sp_b in combinations(species_list, 2):
-            table = pd.crosstab(presence[sp_a], presence[sp_b])
-            if table.shape == (2, 2):
-            chi2, p, _, _ = chi2_contingency(table)
-            results.append((sp_a, sp_b, chi2, p, table))
-            return results
+                results = []
+                for sp_a, sp_b in combinations(species_list, 2):
+                    table = pd.crosstab(presence[sp_a], presence[sp_b])
+                    if table.shape == (2, 2):
+                    chi2, p, _, _ = chi2_contingency(table)
+                    results.append((sp_a, sp_b, chi2, p, table))
+                return results
 
             co_results = general_species_cooccurrence(df_selected, selected_species)
 
