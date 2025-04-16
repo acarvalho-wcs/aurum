@@ -10,3 +10,5 @@ openpyxl
 streamlit
 openai
 streamlit-chat
+gspread
+google-auth
