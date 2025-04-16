@@ -357,8 +357,8 @@ if uploaded_file is not None:
                 for sp_a, sp_b in combinations(species_list, 2):
                     table = pd.crosstab(presence[sp_a], presence[sp_b])
                     if table.shape == (2, 2):
-                    chi2, p, _, _ = chi2_contingency(table)
-                    results.append((sp_a, sp_b, chi2, p, table))
+                        chi2, p, _, _ = chi2_contingency(table)
+                        results.append((sp_a, sp_b, chi2, p, table))
                 return results
 
             co_results = general_species_cooccurrence(df_selected, selected_species)
