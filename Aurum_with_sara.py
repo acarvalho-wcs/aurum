@@ -15,6 +15,7 @@ st.sidebar.markdown("## 📂 Upload Data")
 uploaded_file = st.sidebar.file_uploader("Upload your Excel file (.xlsx):", type=["xlsx"])
 
 df = None
+df_selected = None
 if uploaded_file is not None:
     try:
         df = pd.read_excel(uploaded_file)
@@ -81,29 +82,40 @@ if uploaded_file is not None:
 
         st.success("✅ File uploaded and cleaned successfully!")
 
-        # Opção para visualização e seleção de tipo de gráfico
+        # --- Seletor de espécie ---
         st.sidebar.markdown("---")
-        st.sidebar.markdown("## 📊 Data Visualization")
+        st.sidebar.markdown("## 🧬 Select Species")
+        species_options = sorted(df['Species'].dropna().unique())
+        selected_species = st.sidebar.multiselect("Select one or more species:", species_options)
 
-        if st.sidebar.checkbox("Preview data"):
-            st.write("### Preview of cleaned data:")
-            st.dataframe(df.head())
+        if selected_species:
+            df_selected = df[df['Species'].isin(selected_species)]
 
-        chart_type = st.sidebar.selectbox("Select chart type:", ["Bar", "Line", "Scatter", "Pie"])
-        x_axis = st.sidebar.selectbox("X-axis:", df.columns, index=0)
-        y_axis = st.sidebar.selectbox("Y-axis:", df.columns, index=1)
+            # Opção para visualização e seleção de tipo de gráfico
+            st.sidebar.markdown("---")
+            st.sidebar.markdown("## 📊 Data Visualization")
 
-        import plotly.express as px
-        st.markdown("### Custom Chart")
-        if chart_type == "Bar":
-            fig = px.bar(df, x=x_axis, y=y_axis)
-        elif chart_type == "Line":
-            fig = px.line(df, x=x_axis, y=y_axis)
-        elif chart_type == "Scatter":
-            fig = px.scatter(df, x=x_axis, y=y_axis)
-        elif chart_type == "Pie":
-            fig = px.pie(df, names=x_axis, values=y_axis)
-        st.plotly_chart(fig)
+            if st.sidebar.checkbox("Preview data"):
+                st.write("### Preview of cleaned data:")
+                st.dataframe(df_selected.head())
+
+            chart_type = st.sidebar.selectbox("Select chart type:", ["Bar", "Line", "Scatter", "Pie"])
+            x_axis = st.sidebar.selectbox("X-axis:", df_selected.columns, index=0)
+            y_axis = st.sidebar.selectbox("Y-axis:", df_selected.columns, index=1)
+
+            import plotly.express as px
+            st.markdown("### Custom Chart")
+            if chart_type == "Bar":
+                fig = px.bar(df_selected, x=x_axis, y=y_axis, color='Species')
+            elif chart_type == "Line":
+                fig = px.line(df_selected, x=x_axis, y=y_axis, color='Species')
+            elif chart_type == "Scatter":
+                fig = px.scatter(df_selected, x=x_axis, y=y_axis, color='Species')
+            elif chart_type == "Pie":
+                fig = px.pie(df_selected, names=x_axis, values=y_axis)
+            st.plotly_chart(fig)
+        else:
+            st.warning("⚠️ Please select at least one species to explore the data.")
 
     except Exception as e:
         st.error(f"❌ Error reading file: {e}")
@@ -124,8 +136,8 @@ selected_analysis = st.sidebar.radio(
 )
 
 # Espaço reservado para renderizar a análise selecionada
-if df is not None:
+if df_selected is not None:
     st.markdown(f"### You selected: `{selected_analysis}`")
     st.info("The analysis module will appear here when implemented.")
 else:
-    st.warning("⚠️ Please upload a valid dataset to continue.")
+    st.warning("⚠️ Please upload a valid dataset and select species to continue.")
