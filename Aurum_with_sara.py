@@ -58,6 +58,38 @@ except Exception as e:
     st.error("❌ Error accessing Google Sheets.")
     st.exception(e)
 
+# --- BATCH UPLOAD ---
+st.markdown("## 📤 Batch Upload of Cases")
+
+batch_file = st.file_uploader("Upload an Excel file (.xlsx) with multiple cases", type=["xlsx"], key="batch")
+
+if batch_file:
+    try:
+        batch_df = pd.read_excel(batch_file)
+        required_columns = ["Case ID", "N seized specimens", "Year", "Country of offenders", "Seizure status", "Transit feature", "Notes"]
+        missing_cols = [col for col in required_columns if col not in batch_df.columns]
+
+        if missing_cols:
+            st.error(f"❌ Missing columns in the uploaded file: {', '.join(missing_cols)}")
+        else:
+            # Adiciona timestamp e autor
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            batch_df["Timestamp"] = now
+            batch_df["Author"] = st.session_state.get("user", "anonymous")
+
+            # Reordena colunas conforme o formulário
+            columns_order = ["Timestamp"] + required_columns + ["Author"]
+            batch_df = batch_df[columns_order]
+
+            # Converte para lista de listas e envia para o Google Sheets
+            rows_to_append = batch_df.values.tolist()
+            for row in rows_to_append:
+                worksheet.append_table(values=row, start='A2', overwrite=False)
+
+            st.success(f"✅ {len(rows_to_append)} case(s) successfully uploaded to Aurum!")
+    except Exception as e:
+        st.error("❌ Error processing the uploaded file.")
+        st.exception(e)
 
 # --- AUTENTICAÇÃO ---
 st.sidebar.markdown("## 🔐 Aurum Gateway")
