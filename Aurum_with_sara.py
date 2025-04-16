@@ -372,9 +372,9 @@ def place_logo_bottom_right(image_path, width=100):
         <style>
         .custom-logo {{
             position: fixed;
-            bottom: 10px;
+            bottom: 40px;
             right: 10px;
-            z-index: 100;
+            z-index: 9999;
         }}
         </style>
         <div class="custom-logo">
