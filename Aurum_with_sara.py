@@ -359,4 +359,32 @@ if uploaded_file is not None:
         st.error(f"❌ Error reading file: {e}")
 st.sidebar.markdown("---")
 
+import base64
+
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+def place_logo_bottom_right(image_path, width=100):
+    img_base64 = get_base64_image(image_path)
+    st.markdown(
+        f"""
+        <style>
+        .custom-logo {{
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            z-index: 100;
+        }}
+        </style>
+        <div class="custom-logo">
+            <img src="data:image/png;base64,{img_base64}" width="{width}"/>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# Chamada da função para exibir a logo
+place_logo_bottom_right("logo.png")
+
 st.sidebar.markdown("How to cite: Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
