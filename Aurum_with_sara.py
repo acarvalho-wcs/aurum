@@ -22,12 +22,12 @@ st.markdown("Select an analysis from the sidebar to begin.")
 
 # Upload do arquivo
 st.sidebar.markdown("## 📂 Upload Data")
-uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).** Please be sure that your file contains the following features: Case #, Year (of seizure), N seized specimens, Country of offenders, Seizure Status, Transit Feature, Logistic Convergence, Inferred Stage", type=["xlsx"])
+uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).**, type=["xlsx"])
 
 st.sidebar.markdown("**Download Template**")
 with open("Aurum_template.xlsx", "rb") as f:
     st.sidebar.download_button(
-        label="📄 Click here to download a data template",
+        label="Download a standardized data template for wildlife crime analysis in Aurum",
         data=f,
         file_name="aurum_template.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
