@@ -197,7 +197,10 @@ if uploaded_file is not None:
         species_options = sorted(df['Species'].dropna().unique())
         selected_species = st.sidebar.multiselect("Select one or more species:", species_options)
 
-        if selected_species:
+    if selected_species:
+        show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
+        show_anomaly = st.sidebar.checkbox("Anomaly Detection", value=False)
+        show_network = st.sidebar.checkbox("Network Analysis", value=False)
             df_selected = df[df['Species'].isin(selected_species)]
 
             show_viz = st.sidebar.checkbox("Data Visualization", value=False)
