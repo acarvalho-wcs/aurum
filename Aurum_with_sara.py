@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-import gspread
-from google.oauth2.service_account import Credentials
+import pygsheets
+gc = pygsheets.authorize(service_account_info=st.secrets["gcp_service_account"])
 from datetime import datetime
 import re
 import unicodedata
@@ -29,36 +29,32 @@ st.markdown("**Select an analysis from the sidebar to begin.**")
 SHEET_NAME = "Aurum Gateway Data"
 SPREADSHEET_ID = "12xmK2MlbaY-5YDsJqvULKZ8r0tbNHjW8Xy2CgHsM-dw"
 
-# Configurações de escopo e autenticação
-scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-credentials = Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"],
-    scopes=scope
-)
-client = gspread.authorize(credentials)
+import pygsheets
 
-# Tenta abrir a planilha
 try:
-    sheet_id = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"  # substitua aqui se usar outro ID
-    spreadsheet = client.open_by_key(sheet_id)
+    # Autenticação com conta de serviço via secrets
+    gc = pygsheets.authorize(service_account_info=st.secrets["gcp_service_account"])
+
+    # Abre a planilha pelo ID
+    sheet_id = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
+    spreadsheet = gc.open_by_key(sheet_id)
+
     st.success("✅ Conexão com Google Sheets realizada com sucesso!")
 
     # Lista abas disponíveis
-    sheet_titles = [ws.title for ws in spreadsheet.worksheets()]
-    st.write("📄 Abas disponíveis na planilha:", sheet_titles)
+    st.write("📄 Abas disponíveis na planilha:", [ws.title for ws in spreadsheet.worksheets()])
 
-    # Usa a aba correta (valida primeiro se existe)
-    if "Sheet1" in sheet_titles:
-        worksheet = spreadsheet.worksheet("Sheet1")
-        data = worksheet.get_all_records()
-        df = pd.DataFrame(data)
-        st.dataframe(df.head())
-    else:
-        st.warning("⚠️ Aba 'Sheet1' não encontrada na planilha. Verifique o nome da aba.")
+    # Abre a aba correta
+    worksheet = spreadsheet.worksheet_by_title("Sheet1")
+
+    # Converte para DataFrame
+    df = worksheet.get_as_df()
+    st.dataframe(df.head())
 
 except Exception as e:
-    st.error("❌ Erro ao acessar a planilha do Google Sheets.")
+    st.error("❌ Error accessing Google Sheets.")
     st.exception(e)
+
 
 # --- AUTENTICAÇÃO ---
 st.sidebar.markdown("## 🔐 Aurum Gateway")
