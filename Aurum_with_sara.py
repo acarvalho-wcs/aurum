@@ -223,11 +223,6 @@ if uploaded_file is not None:
                     fig = px.pie(df_selected, names=x_axis, values=y_axis)
                 st.plotly_chart(fig)
 
-            
-
-python
-Copiar
-Editar
             show_trend = st.sidebar.checkbox("Trend Analysis", value=False)
         if show_trend:
             st.markdown("## Trend Analysis")
