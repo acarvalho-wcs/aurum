@@ -36,7 +36,7 @@ try:
     gc = pygsheets.authorize(service_account_info=st.secrets["gcp_service_account"])
 
     # Abre a planilha pelo ID
-    sheet_id = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
+    sheet_id = "12xmK2MlbaY-5YDsJqvULKZ8r0tbNHjW8Xy2CgHsM-dw"
     spreadsheet = gc.open_by_key(sheet_id)
 
     st.success("✅ Conexão com Google Sheets realizada com sucesso!")
