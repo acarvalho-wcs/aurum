@@ -385,7 +385,7 @@ if user_msg:
 client = openai.OpenAI(api_key=st.secrets["openai_api_key"])
 
 response = client.chat.completions.create(
-    model="gpt-4-1106-preview",
+    model="gpt-3.5-turbo",
     messages=st.session_state["messages"]
 )
 
