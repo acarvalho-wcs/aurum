@@ -483,7 +483,6 @@ columns_msg = {
 
 # --- Upload do arquivo ---
 uploaded_file = st.file_uploader(file_upload_labels[lang], type=["xlsx"])
-run_trend = run_cooccurrence = run_anomaly = run_network = run_ocs = False
 co_score = 0.0
 selected_species = []
 df_selected = pd.DataFrame()
@@ -621,10 +620,6 @@ if st.session_state.get('uploaded_file') is not None:
 if selected_species:
     df_selected = df_clean[df_clean['Species'].isin(selected_species)]
 
-
-# 📊 PAINEL VISUAL DO AURUM
-# Esta seção cria uma interface mais limpa com painel lateral para seleção de análises
-
 if not df_selected.empty:
     st.markdown("## 🎛️ Visual Dashboard: Choose Your Analysis")
     st.sidebar.markdown("## 🔎 Analysis Menu")
@@ -634,17 +629,9 @@ if not df_selected.empty:
         ["Trend Analysis", "Species Co-occurrence", "Anomaly Detection", "Network Analysis", "OCS Calculation"]
     )
 
-    # Variáveis de controle para a execução das análises
-    run_trend = analysis_option == "Trend Analysis"
-    run_cooccurrence = analysis_option == "Species Co-occurrence"
-    run_anomaly = analysis_option == "Anomaly Detection"
-    run_network = analysis_option == "Network Analysis"
-    run_ocs = analysis_option == "OCS Calculation"
-
-    # Mensagens explicativas
     st.markdown(f"### ✅ Selected: `{analysis_option}`")
     st.markdown("Continue below to view the results and options for this analysis.")
-
+df_clean['Species'].isin(selected_species)]
 
     st.markdown("## 📊 Custom Visualization")
     st.markdown("Use this panel to visually explore your data before advanced analyses.")
@@ -674,13 +661,8 @@ if not df_selected.empty:
 
     st.markdown("### 📊 Choose the analyses you want to perform:")
 
-    run_trend = st.checkbox("📈 Trend Analysis", value=False)
-    run_cooccurrence = st.checkbox("🧬 Species Co-occurrence", value=False)
-    run_anomaly = st.checkbox("🚨 Anomaly Detection", value=False)
-    run_network = st.checkbox("🕸️ Network Analysis", value=False)
-    run_ocs = st.checkbox("🧮 Calculate Organized Crime Score (OCS)", value=False)
-
-    if run_trend:
+                    
+    if analysis_option == "Trend Analysis":
             st.subheader("📈 Trend Analysis")
 
             # Permitir escolher breakpoint
@@ -827,7 +809,7 @@ if not df_selected.empty:
                     "Slope (post)": "{:.2f}", "R² (post)": "{:.2f}", "p (post)": "{:.4f}"
                 }))
 
-if run_cooccurrence:
+if analysis_option == "Species Co-occurrence":
     st.subheader("🧬 Species Co-occurrence Analysis")
 
     if st.button("🔄 Run / Refresh Co-occurrence Analysis"):
@@ -968,7 +950,7 @@ if run_cooccurrence and co_results:
             - \( |P| \): total pairs tested  
             - \( w_{\chi^2} \): component weight in the final score
             """)
-if run_anomaly:
+if analysis_option == "Anomaly Detection":
     st.subheader("🚨 Anomaly Detection")
 
     # Seleciona colunas binárias para a análise (ex: 'N_seized', 'Year', etc.)
