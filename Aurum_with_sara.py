@@ -27,7 +27,7 @@ uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).**", 
 st.sidebar.markdown("**Download Template**")
 with open("Aurum_template.xlsx", "rb") as f:
     st.sidebar.download_button(
-        label="Download a standardized data template for wildlife crime analysis in Aurum",
+        label="Download a data template for wildlife trafficking analysis in Aurum",
         data=f,
         file_name="aurum_template.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
