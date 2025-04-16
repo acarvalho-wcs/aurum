@@ -104,7 +104,7 @@ if "user" in st.session_state:
                 notes,
                 st.session_state["user"]
             ]
-            worksheet.append_table(values=new_row, start='A2', overwrite=False)
+            worksheet.insert_rows(row=worksheet.rows, values=[new_row])
             st.success("✅ Case submitted to Aurum successfully!")
 
         # Visualizar dados (admin ou próprio autor)
