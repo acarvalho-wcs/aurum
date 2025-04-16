@@ -44,7 +44,7 @@ if uploaded_file is not None:
                             new_row['N_seized'] = float(qty)
                             new_row['Species'] = species
                             expanded_rows.append(new_row)
-                            else:
+# [REMOVIDO AUTOMATICAMENTE] else sem contexto
                                 expanded_rows.append(row)
                                 return pd.DataFrame(expanded_rows)
 
@@ -67,7 +67,7 @@ if uploaded_file is not None:
                                             if "Country of offenders" in df.columns:
                                                 df["Offender_value"] = df["Country of offenders"].apply(lambda x: score_countries(x, country_map))
                                                 st.markdown("✅ `Offender_value` column added using country_offenders_values.csv")
-                                                else:
+# [REMOVIDO AUTOMATICAMENTE] else sem contexto
                                                     st.warning("⚠️ File country_offenders_values.csv not found. Offender scoring skipped.")
 
 
@@ -95,7 +95,7 @@ if uploaded_file is not None:
                                                                                 return "Transport"
                                                                                 elif logistic == "Yes":
                                                                                     return "Logistic Consolidation"
-                                                                                    else:
+# [REMOVIDO AUTOMATICAMENTE] else sem contexto
                                                                                         return "Unclassified"
 
                                                                                         df["Inferred Stage"] = df.apply(infer_stage, axis=1)
@@ -260,7 +260,7 @@ if uploaded_file is not None:
                                                                                                                                                                                         st.dataframe(table)
                                                                                                                                                                                         st.markdown(f"Chi² = `{chi2:.2f}` | p = `{p:.4f}`")
                                                                                                                                                                                         st.markdown("---")
-                                                                                                                                                                                        else:
+# [REMOVIDO AUTOMATICAMENTE] else sem contexto
                                                                                                                                                                                             st.info("No co-occurrence data available for selected species.")
 
                                                                                                                                                                                             show_anomaly = st.sidebar.checkbox("🚨 Show Anomaly Detection", value=False)
@@ -322,12 +322,12 @@ if uploaded_file is not None:
                                                                                                                                                                                                                         for sp1, sp2 in combinations(species_in_group, 2):
                                                                                                                                                                                                                             if G.has_edge(sp1, sp2):
                                                                                                                                                                                                                                 G[sp1][sp2]['weight'] += 1
-                                                                                                                                                                                                                                else:
+# [REMOVIDO AUTOMATICAMENTE] else sem contexto
                                                                                                                                                                                                                                     G.add_edge(sp1, sp2, weight=1)
 
                                                                                                                                                                                                                                     if G.number_of_edges() == 0:
                                                                                                                                                                                                                                         st.info("No edges were generated with the selected features.")
-                                                                                                                                                                                                                                        else:
+# [REMOVIDO AUTOMATICAMENTE] else sem contexto
                                                                                                                                                                                                                                             pos = nx.spring_layout(G, seed=42)
 
                                                                                                                                                                                                                                             edge_x = []
@@ -373,10 +373,10 @@ if uploaded_file is not None:
                                                                                                                                                                                                                                                     margin=dict(b=20,l=5,r=5,t=40)))
 
                                                                                                                                                                                                                                                     st.plotly_chart(fig, use_container_width=True)
-                                                                                                                                                                                                                                                    else:
+# [REMOVIDO AUTOMATICAMENTE] else sem contexto
                                                                                                                                                                                                                                                         st.info("Please select at least one feature to generate the network.")
 
-                                                                                                                                                                                                                                                        else:
+# [REMOVIDO AUTOMATICAMENTE] else sem contexto
                                                                                                                                                                                                                                                             st.warning("⚠️ Please select at least one species to explore the data.")
 
                                                                                                                                                                                                                                                             except Exception as e:
