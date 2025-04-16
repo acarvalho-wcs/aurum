@@ -34,6 +34,8 @@ if uploaded_file is not None:
         if 'Year' in df.columns:
             df['Year'] = df['Year'].astype(str).str.extract(r'(\d{4})').astype(float)
 
+    except Exception as e:
+        st.error(f"❌ Error reading file: {e}")
 def expand_multi_species_rows(df):
     expanded_rows = []
     for _, row in df.iterrows():
