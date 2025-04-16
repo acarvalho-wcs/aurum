@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from io import BytesIO
 import base64
+import os
 from itertools import combinations
 from scipy.stats import chi2_contingency
 from sklearn.ensemble import IsolationForest
@@ -161,7 +162,6 @@ if selected_species:
     show_trend = st.sidebar.checkbox("Trend Analysis", value=False)
 
         # Aplicar valores numéricos aos países se o arquivo estiver disponível
-        import os
         country_score_path = "country_offenders_values.csv"
         if os.path.exists(country_score_path):
             df_country_score = pd.read_csv(country_score_path, encoding="ISO-8859-1")
