@@ -161,6 +161,7 @@ if uploaded_file is not None:
 
             
             show_trend = st.sidebar.checkbox("Trend Analysis", value=False)
+            show_trend = st.sidebar.checkbox("Trend Analysis", value=False)
             if show_trend:
                 st.markdown("## Trend Analysis")
 
@@ -191,6 +192,22 @@ if uploaded_file is not None:
                 st.markdown(f"**Trend Coordination Score (TCS):** `{tcs:.2f}`")
                 st.info(tcs_log)
 
+                with st.expander("ℹ️ Learn more about this analysis"):
+                    st.markdown("""
+                    ### 📊 About Trend Analysis
+
+                    The *Trend Analysis* section helps identify shifts in wildlife seizure patterns over time for the selected species.
+
+                    - The analysis uses segmented linear regressions based on a user-defined **breakpoint year**.
+                    - For each species, a regression is computed before and after the breakpoint to estimate the slope (i.e., the trend) of increase or decrease.
+                    - These slopes are used to calculate the **Trend Coordination Score (TCS)**, which measures the relative change between the two periods:
+                      - `TCS > 0` indicates an increase in trend after the breakpoint.
+                      - `TCS < 0` indicates a decrease.
+                      - `TCS ≈ 0` suggests stability.
+
+                    The section also generates a plot showing data points and trend lines for each species, making it easier to visualize changes over time.
+                    """)
+
                 st.markdown("### Trend Plot")
                 fig, ax = plt.subplots(figsize=(8, 5))
 
@@ -215,7 +232,6 @@ if uploaded_file is not None:
                 ax.set_ylabel("Individuals Seized")
                 ax.legend()
                 st.pyplot(fig)
-
 
             show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
             if show_cooc:
