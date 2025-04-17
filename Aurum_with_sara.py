@@ -492,7 +492,7 @@ if export_html and df_selected is not None:
     
 # --- LOGIN ---
 st.sidebar.markdown("---")
-st.sidebar.markdown("## 🔐 Login to Aurum (Under maintenance)")
+st.sidebar.markdown("## 🔐 Login to Aurum - Under maintenance")
 username = st.sidebar.text_input("Username")
 password = st.sidebar.text_input("Password", type="password")
 login_button = st.sidebar.button("Login")
