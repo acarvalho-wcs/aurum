@@ -14,7 +14,3 @@ gspread
 google-auth
 pygsheets
 bcrypt
-requests
-beautifulsoup4
-transformers
-torch
