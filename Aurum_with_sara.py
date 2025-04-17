@@ -309,13 +309,25 @@ if uploaded_file is not None:
                         ax.plot(years, cusum_pos, color='green', linestyle='--', label='CUSUM+')
                         ax.plot(years, cusum_neg, color='orange', linestyle='--', label='CUSUM-')
 
+                        # Highlight years with significant deviation
+                        highlight_years = [
+                            i for i, val in enumerate(values)
+                            if abs(val - mean_val) > 1.5 * std_dev
+                        ]
+
+                        ax.scatter(
+                            [years.iloc[i] for i in highlight_years],
+                            [values.iloc[i] for i in highlight_years],
+                            color='red', marker='x', s=100, label='Significant Deviation'
+                        )
+
                         ax.set_title(f"{species_name} - Trend & CUSUM", fontsize=14)
                         ax.set_xlabel("Year")
                         ax.set_ylabel("Seized Specimens")
                         ax.grid(True, linestyle='--', linewidth=0.5, color='lightgray')
                         ax.legend()
                         st.pyplot(fig)
-                      
+
                         # Interpretation
                         st.subheader("Automated Interpretation")
                         cusum_range = max(cusum_pos) - min(cusum_neg)
