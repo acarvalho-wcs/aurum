@@ -575,7 +575,7 @@ if st.session_state.get("is_admin"):
 def get_worksheet(sheet_name="Aurum_data"):
     gc = gspread.authorize(credentials)
     sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-    return sh.worksheet(Aurum_data)
+    return sh.worksheet("Aurum_data")
     
 if "user" in st.session_state:
     st.markdown("## Submit New Case to Aurum")
