@@ -99,13 +99,8 @@ if st.session_state.get("is_admin"):
                     users_ws.append_row([new_user, hashed_pw, str(is_admin), "TRUE"])
                     st.success(f"✅ {new_user} has been approved and added to the system.")
 
-# --- CONTINUA COM O APP NORMAL SE USUÁRIO AUTENTICADO ---
-if "user" not in st.session_state:
-    st.warning("Please log in to access the app.")
-    st.stop()
 
 # --- FORMULÁRIO ---
-st.sidebar.markdown("## Analysis")
 if "user" in st.session_state:
     st.markdown("## Submit New Case to Aurum")
     with st.form("aurum_form"):
