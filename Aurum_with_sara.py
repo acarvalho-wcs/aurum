@@ -548,9 +548,11 @@ if uploaded_file is not None:
                 st.markdown("This network connects cases that share attributes like species or offender country.")
 
                 default_features = ["Species", "Country of offenders"]
-                network_features = st.multiselect("Select features to compare across cases:", 
-                                                  options=[col for col in df_selected.columns if col != "Case ID"],
-                                                  default=default_features)
+                network_features = st.multiselect(
+                    "Select features to compare across cases:", 
+                    options=[col for col in df_selected.columns if col != "Case ID"],
+                    default=default_features
+                )
 
                 if network_features:
                     # Prepare feature sets for each Case ID
@@ -616,18 +618,19 @@ if uploaded_file is not None:
                                 showscale=False,
                                 color='lightblue',
                                 size=[8 + 2*G.degree[node] for node in G.nodes()],
-                                line_width=1))
+                                line_width=1
+                            )
+                        )
 
-                        fig = go.Figure(data=[edge_trace, node_trace],
-                                        layout=go.Layout(
-                                            title='Case Connectivity Network',
-                                            showlegend=False,
-                                            hovermode='closest',
-                                            margin=dict(b=20,l=5,r=5,t=40)))
-                        st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.info("Please select at least one feature to define connections between cases.")
-
+                        fig = go.Figure(
+                            data=[edge_trace, node_trace],
+                            layout=go.Layout(
+                                title='Case Connectivity Network',
+                                showlegend=False,
+                                hovermode='closest',
+                                margin=dict(b=20, l=5, r=5, t=40)
+                            )
+                        )
                         st.plotly_chart(fig, use_container_width=True)
 
                         with st.expander("ℹ️ Learn more about this analysis"):
@@ -659,8 +662,9 @@ if uploaded_file is not None:
 
                             - For more information on network methods in environmental crime analysis, refer to the ReadMe file and Carvalho (2025).
                             """)
-
-        
+                else:
+                    st.info("Please select at least one feature to define connections between cases.")
+                    
         else:
             st.warning("⚠️ Please select at least one species to explore the data.")
 
