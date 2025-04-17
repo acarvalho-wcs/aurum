@@ -239,7 +239,7 @@ if uploaded_file is not None:
 
             show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
             if show_cooc:
-                st.markdown("## 🧬 Species Co-occurrence Analysis")
+                st.markdown("## Species Co-occurrence Analysis")
 
                 with st.expander("ℹ️ Learn more about this analysis"):
                     st.markdown("""
@@ -287,7 +287,7 @@ if uploaded_file is not None:
                 co_results = general_species_cooccurrence(df_selected, selected_species)
 
                 if co_results:
-                    st.markdown("### 📊 Co-occurrence Results")
+                    st.markdown("### Co-occurrence Results")
                     for sp_a, sp_b, chi2, p, table in co_results:
                         st.markdown(f"**{sp_a} × {sp_b}**")
                         st.dataframe(table)
@@ -361,7 +361,7 @@ if uploaded_file is not None:
 
             show_network = st.sidebar.checkbox("Network Analysis", value=False)
             if show_network:
-                st.markdown("## 🕸️ Network Analysis")
+                st.markdown("## Network Analysis")
 
                 import networkx as nx
                 import plotly.graph_objects as go
