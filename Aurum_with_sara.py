@@ -271,8 +271,6 @@ if uploaded_file is not None:
                         else:
                             st.info("Not enough data after breakpoint.")
 
-                        st.markdown("---")
-
             show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
             if show_cooc:
                 st.markdown("## Species Co-occurrence Analysis")
