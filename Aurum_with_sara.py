@@ -602,6 +602,9 @@ if "user" in st.session_state:
 
     # Visualizar dados (admin ou próprio autor)
     st.markdown("## My Cases")
+    gc = gspread.authorize(credentials)
+    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
+    worksheet = sh.worksheet("Cases")
     data = pd.DataFrame(worksheet.get_all_records())
     if st.session_state.get("is_admin"):
         st.dataframe(data)
