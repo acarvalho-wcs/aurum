@@ -480,6 +480,37 @@ if export_html and df_selected is not None:
         mime="text/html"
     )
 
+if "show_sidebar_request" not in st.session_state:
+    st.session_state["show_sidebar_request"] = False
+
+if st.sidebar.button("📩 Request Access"):
+    st.session_state["show_sidebar_request"] = True
+
+if st.session_state["show_sidebar_request"]:
+    with st.sidebar.form("sidebar_request_form"):
+        new_username = st.text_input("Choose a username", key="sidebar_user")
+        new_password = st.text_input("Choose a password", type="password", key="sidebar_pass")
+        institution = st.text_input("Institution", key="sidebar_inst")
+        email = st.text_input("E-mail", key="sidebar_email")
+        reason = st.text_area("Why do you want access to Aurum?", key="sidebar_reason")
+        submit_request = st.form_submit_button("Submit Request")
+
+        if submit_request:
+            if not new_username or not new_password or not reason:
+                st.sidebar.warning("All fields are required.")
+            else:
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                requests_ws.append_row([
+                    timestamp,
+                    new_username,
+                    new_password,
+                    institution,
+                    email,
+                    reason
+                ])
+                st.sidebar.success("✅ Request submitted!")
+                st.session_state["show_sidebar_request"] = False  # Oculta após envio
+
 # --- AUTENTICAÇÃO E CONEXÃO COM GOOGLE SHEETS ---
 SHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
 USERS_SHEET = "Users"
