@@ -18,6 +18,11 @@ from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 import bcrypt
 import os
+import requests
+import extruct
+from w3lib.html import get_base_url
+from bs4 import BeautifulSoup
+from transformers import pipeline
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Aurum Dashboard", layout="centered")
@@ -971,6 +976,75 @@ if "user" in st.session_state:
                 st.dataframe(data[data["Author"] == st.session_state["user"]])
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
+
+st.sidebar.markdown("## 🕸️ Aurum Scraper (VIDA-style)")
+activate_scraper = st.sidebar.checkbox("🔎 Open Aurum Scraper")
+
+if activate_scraper:
+    st.header("🐾 Aurum Scraper – VIDA-style Metadata Extractor")
+    st.markdown("This tool extracts structured metadata from a product listing (e.g. Mercado Livre) and classifies its content.")
+
+    target_url = st.text_input("🔗 Paste a product URL (e.g. Mercado Livre listing):")
+    run_scraper = st.button("🚀 Extract & Classify")
+
+    if run_scraper and target_url:
+        try:
+            headers = {"User-Agent": "Mozilla/5.0"}
+            response = requests.get(target_url, headers=headers, timeout=15)
+            html = response.text
+            base_url = get_base_url(html, response.url)
+
+            metadata = extruct.extract(
+                html,
+                base_url=base_url,
+                syntaxes=["json-ld", "microdata", "opengraph", "rdfa"],
+                uniform=True
+            )
+
+            # Attempt to extract key fields from JSON-LD
+            data = {}
+            for block in metadata.get("json-ld", []):
+                if "@type" in block and block["@type"] in ["Product", "Offer"]:
+                    data.update(block)
+
+            title = data.get("name", "N/A")
+            description = data.get("description", "N/A")
+            price = data.get("offers", {}).get("price") if isinstance(data.get("offers"), dict) else "N/A"
+
+            st.subheader("🔍 Extracted Data")
+            st.write(f"**Title:** {title}")
+            st.write(f"**Description:** {description}")
+            st.write(f"**Price:** {price}")
+
+            # Zero-shot classification (title + description)
+            classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+            input_text = f"{title}. {description}"
+            labels = ["live wild animal", "beekeeping product", "trap or lure", "toy or decorative item", "uncertain"]
+            result = classifier(input_text, labels)
+            top_label = result["labels"][0]
+
+            st.subheader("🤖 Classification")
+            st.markdown(f"**Predicted category:** `{top_label}`")
+
+            # Show results as table
+            result_df = pd.DataFrame([{
+                "URL": target_url,
+                "Title": title,
+                "Description": description,
+                "Price": price,
+                "Classification": top_label
+            }])
+            st.dataframe(result_df)
+
+            st.download_button(
+                "📥 Download CSV",
+                result_df.to_csv(index=False).encode("utf-8"),
+                "aurum_scraper_result.csv",
+                "text/csv"
+            )
+
+        except Exception as e:
+            st.error(f"❌ Failed to extract or classify: {e}")
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
