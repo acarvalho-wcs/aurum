@@ -389,21 +389,6 @@ def place_logo_bottom_right(image_path, width=100):
 # Chamada da função para exibir a logo
 place_logo_bottom_right("wcs.jpg")
 
-show_about = st.sidebar.button("**About Aurum**")
-if show_about:
-    st.markdown("## About Aurum")
-    st.markdown("""
-**Aurum** is a modular and interactive toolkit designed to support the detection and analysis of **wildlife trafficking** and organized environmental crime. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly interface.
-
-The platform enables the upload and processing of case-level data and offers a suite of analytical tools, including:
-
-- **Trend Analysis**: Explore temporal patterns using segmented regression (TCS), expanding mean, and CUSUM to detect shifts in trafficking intensity over time.
-- **Species Co-occurrence**: Identify statistically significant co-trafficking relationships between species using chi-square tests and network-based representations.
-- **Anomaly Detection**: Apply multiple methods (Isolation Forest, LOF, DBSCAN, Mahalanobis distance, Z-Score) to identify outlier cases based on numerical features.
-- **Criminal Network Analysis**: Visualize co-occurrence networks to reveal potential connections and logistical consolidation among species and locations.
-- **Interactive Visualization**: Generate customized plots and dashboards based on uploaded data and selected variables.
-""")
-
 st.sidebar.markdown("## Export Options")
 export_xlsx = st.sidebar.button("Export Cleaned data.xlsx")
 export_html = st.sidebar.button("Export Analysis Report (.html)")
@@ -610,5 +595,19 @@ if "user" in st.session_state:
     else:
         st.dataframe(data[data["Author"] == st.session_state["user"]])
 
+show_about = st.sidebar.button("**About Aurum**")
+if show_about:
+    st.markdown("## About Aurum")
+    st.markdown("""
+**Aurum** is a modular and interactive toolkit designed to support the detection and analysis of **wildlife trafficking** and organized environmental crime. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly interface.
+
+The platform enables the upload and processing of case-level data and offers a suite of analytical tools, including:
+
+- **Trend Analysis**: Explore temporal patterns using segmented regression (TCS), expanding mean, and CUSUM to detect shifts in trafficking intensity over time.
+- **Species Co-occurrence**: Identify statistically significant co-trafficking relationships between species using chi-square tests and network-based representations.
+- **Anomaly Detection**: Apply multiple methods (Isolation Forest, LOF, DBSCAN, Mahalanobis distance, Z-Score) to identify outlier cases based on numerical features.
+- **Criminal Network Analysis**: Visualize co-occurrence networks to reveal potential connections and logistical consolidation among species and locations.
+- **Interactive Visualization**: Generate customized plots and dashboards based on uploaded data and selected variables.
+""")
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
