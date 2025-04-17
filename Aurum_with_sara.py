@@ -18,6 +18,9 @@ from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 import bcrypt
 import os
+import requests
+from bs4 import BeautifulSoup
+from transformers import pipeline
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Aurum Dashboard", layout="centered")
@@ -971,6 +974,139 @@ if "user" in st.session_state:
                 st.dataframe(data[data["Author"] == st.session_state["user"]])
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
+
+activate_scraper = st.sidebar.checkbox("🔎 Open Aurum Scraper (Marketplace Monitor)")
+
+if activate_scraper:
+    import requests
+    from bs4 import BeautifulSoup
+    from transformers import pipeline
+
+    st.header("📡 Aurum Scraper – Online Marketplace Monitor")
+    st.markdown("This module scans online marketplaces for potentially illegal wildlife listings.")
+
+    st.sidebar.markdown("### 🎯 Scraper Configuration")
+    keywords_input = st.sidebar.text_area("🔤 Search terms (comma-separated):", value="enxame, jataí")
+    keywords = [kw.strip() for kw in keywords_input.split(",") if kw.strip()]
+
+    marketplaces = st.sidebar.multiselect(
+        "🛒 Choose marketplaces:",
+        ["Mercado Livre", "OLX", "eBay"],
+        default=["Mercado Livre"]
+    )
+
+    run_scan = st.sidebar.button("🚀 Start Search")
+
+    if run_scan and keywords and marketplaces:
+        results = []
+        headers = {"User-Agent": "Mozilla/5.0"}
+
+        with st.spinner("🔍 Searching listings..."):
+
+            # MERCADO LIVRE
+            if "Mercado Livre" in marketplaces:
+                for term in keywords:
+                    try:
+                        url = f"https://lista.mercadolivre.com.br/{term.replace(' ', '-')}"
+                        response = requests.get(url, headers=headers, timeout=10)
+                        soup = BeautifulSoup(response.content, "html.parser")
+
+                        for item in soup.select("li.ui-search-layout__item"):
+                            title_tag = item.select_one("h2.ui-search-item__title")
+                            link_tag = item.select_one("a.ui-search-link")
+                            price_tag = item.select_one("span.ui-search-price__part")
+                            loc_tag = item.select_one("span.ui-search-item__group__element.ui-search-item__location")
+
+                            if title_tag and link_tag:
+                                results.append({
+                                    "Marketplace": "Mercado Livre",
+                                    "Search Term": term,
+                                    "Title": title_tag.text.strip(),
+                                    "Price": price_tag.text.strip() if price_tag else "N/A",
+                                    "Location": loc_tag.text.strip() if loc_tag else "N/A",
+                                    "Link": link_tag["href"]
+                                })
+                    except Exception as e:
+                        st.warning(f"Mercado Livre error with term '{term}': {e}")
+
+            # OLX
+            if "OLX" in marketplaces:
+                for term in keywords:
+                    try:
+                        term_encoded = term.replace(" ", "%20")
+                        url = f"https://www.olx.com.br/brasil?q={term_encoded}"
+                        response = requests.get(url, headers=headers, timeout=10)
+                        soup = BeautifulSoup(response.content, "html.parser")
+
+                        for item in soup.select("li.sc-1fcmfeb-2"):
+                            title_tag = item.select_one("h2")
+                            link_tag = item.select_one("a")
+                            price_tag = item.select_one("span.sc-ifAKCX")
+                            loc_tag = item.select_one("span.sc-dkzDqf")
+
+                            if title_tag and link_tag:
+                                results.append({
+                                    "Marketplace": "OLX",
+                                    "Search Term": term,
+                                    "Title": title_tag.text.strip(),
+                                    "Price": price_tag.text.strip() if price_tag else "N/A",
+                                    "Location": loc_tag.text.strip() if loc_tag else "N/A",
+                                    "Link": f"https://www.olx.com.br{link_tag['href']}"
+                                })
+                    except Exception as e:
+                        st.warning(f"OLX error with term '{term}': {e}")
+
+            # EBAY
+            if "eBay" in marketplaces:
+                for term in keywords:
+                    try:
+                        term_encoded = term.replace(" ", "+")
+                        url = f"https://www.ebay.com/sch/i.html?_nkw={term_encoded}"
+                        response = requests.get(url, headers=headers, timeout=10)
+                        soup = BeautifulSoup(response.content, "html.parser")
+
+                        for item in soup.select("li.s-item"):
+                            title_tag = item.select_one("h3.s-item__title")
+                            link_tag = item.select_one("a.s-item__link")
+                            price_tag = item.select_one("span.s-item__price")
+                            loc_tag = item.select_one("span.s-item__location")
+
+                            if title_tag and link_tag:
+                                results.append({
+                                    "Marketplace": "eBay",
+                                    "Search Term": term,
+                                    "Title": title_tag.text.strip(),
+                                    "Price": price_tag.text.strip() if price_tag else "N/A",
+                                    "Location": loc_tag.text.strip() if loc_tag else "N/A",
+                                    "Link": link_tag["href"]
+                                })
+                    except Exception as e:
+                        st.warning(f"eBay error with term '{term}': {e}")
+
+        df_ads = pd.DataFrame(results)
+
+        if df_ads.empty:
+            st.warning("⚠️ No listings found.")
+        else:
+            st.success(f"✅ {len(df_ads)} listings collected.")
+            st.markdown("### 🤖 Classifying Listings")
+
+            classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+            labels = ["live bee", "beekeeping product", "trap or lure", "live wild animal", "uncertain"]
+
+            df_ads["Classification"] = df_ads["Title"].apply(lambda x: classifier(x, labels)["labels"][0])
+
+            st.dataframe(df_ads)
+
+            st.download_button(
+                "📥 Download results (.csv)",
+                df_ads.to_csv(index=False).encode("utf-8"),
+                "aurum_scraper_results.csv",
+                "text/csv"
+            )
+
+            with st.expander("🔎 Sample classifications"):
+                st.dataframe(df_ads[["Marketplace", "Title", "Classification"]].head(10))
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
