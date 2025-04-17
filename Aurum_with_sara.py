@@ -49,11 +49,11 @@ def verify_password(password, hashed):
 
 if login_button and username and password:
     user_row = users_df[users_df["Username"] == username]
-    if not user_row.empty and user_row.iloc[0]["Approved"] == "True":
+    if not user_row.empty and user_row.iloc[0]["Approved"] == "TRUE":
         hashed_pw = user_row.iloc[0]["Password"]
         if verify_password(password, hashed_pw):
             st.session_state["user"] = username
-            st.session_state["is_admin"] = user_row.iloc[0]["Is_Admin"] == "True"
+            st.session_state["is_admin"] = user_row.iloc[0]["Is_Admin"] == "TRUE"
             st.success(f"Logged in as {username}")
         else:
             st.error("Incorrect password.")
@@ -95,7 +95,7 @@ if st.session_state.get("is_admin"):
                     st.warning("Username and password are required.")
                 else:
                     hashed_pw = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
-                    users_ws.append_row([new_user, hashed_pw, str(is_admin), "True"])
+                    users_ws.append_row([new_user, hashed_pw, str(is_admin), "TRUE"])
                     st.success(f"✅ {new_user} has been approved and added to the system.")
 
 # --- CONTINUA COM O APP NORMAL SE USUÁRIO AUTENTICADO ---
