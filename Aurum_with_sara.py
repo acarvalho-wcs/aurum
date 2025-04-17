@@ -40,17 +40,9 @@ The platform enables the upload and processing of case-level data and offers a s
 - **Criminal Network Analysis**: Visualize co-occurrence networks to reveal potential connections and logistical consolidation among species and locations.
 - **Interactive Visualization**: Generate customized plots and dashboards based on uploaded data and selected variables.
 """)
+
 st.sidebar.markdown("## 📂 Upload Data")
 uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).**", type=["xlsx"])
-
-st.sidebar.markdown("**Download Template**")
-with open("Aurum_template.xlsx", "rb") as f:
-    st.sidebar.download_button(
-        label="Download a data template for wildlife trafficking analysis in Aurum",
-        data=f,
-        file_name="aurum_template.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
 
 df = None
 df_selected = None
@@ -609,5 +601,13 @@ if "user" in st.session_state:
     else:
         st.dataframe(data[data["Author"] == st.session_state["user"]])
 
+st.sidebar.markdown("**Download Template**")
+with open("Aurum_template.xlsx", "rb") as f:
+    st.sidebar.download_button(
+        label="Download a data template for wildlife trafficking analysis in Aurum",
+        data=f,
+        file_name="aurum_template.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
