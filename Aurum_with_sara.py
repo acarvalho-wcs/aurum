@@ -1046,5 +1046,84 @@ if activate_scraper:
         except Exception as e:
             st.error(f"❌ Failed to extract or classify: {e}")
 
+st.sidebar.markdown("## 🕸️ Aurum Scraper (Keyword Search)")
+activate_scraper = st.sidebar.checkbox("🔎 Run Aurum Scraper – Mercado Livre Search")
+
+if activate_scraper:
+    st.header("🐾 Aurum Scraper – Mercado Livre Search")
+    st.markdown("Searches Mercado Livre by keyword, extracts product data, and classifies listings.")
+
+    keyword = st.text_input("🔤 Enter a keyword (e.g. 'enxame'):", value="enxame")
+    max_pages = st.slider("🔢 Number of pages to scan", min_value=1, max_value=10, value=3)
+    run_scan = st.button("🚀 Start search and analysis")
+
+    if run_scan and keyword:
+        classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+        labels = ["live wild animal", "beekeeping product", "trap or lure", "toy or decorative item", "uncertain"]
+
+        headers = {"User-Agent": "Mozilla/5.0"}
+        results = []
+
+        with st.spinner("🔍 Scanning Mercado Livre..."):
+            for page in range(1, max_pages + 1):
+                page_suffix = f"_Desde_{(page-1)*50+1}" if page > 1 else ""
+                search_url = f"https://lista.mercadolivre.com.br/{keyword}{page_suffix}"
+
+                try:
+                    res = requests.get(search_url, headers=headers, timeout=10)
+                    soup = BeautifulSoup(res.content, "html.parser")
+                    product_links = [a["href"] for a in soup.select("a.ui-search-link") if a["href"].startswith("https")]
+
+                    for url in product_links:
+                        try:
+                            prod_res = requests.get(url, headers=headers, timeout=10)
+                            html = prod_res.text
+                            base_url = get_base_url(html, url)
+                            metadata = extruct.extract(
+                                html,
+                                base_url=base_url,
+                                syntaxes=["json-ld"],
+                                uniform=True
+                            )
+
+                            data = {}
+                            for block in metadata.get("json-ld", []):
+                                if "@type" in block and block["@type"] in ["Product", "Offer"]:
+                                    data.update(block)
+
+                            title = data.get("name", "N/A")
+                            description = data.get("description", "N/A")
+                            price = data.get("offers", {}).get("price") if isinstance(data.get("offers"), dict) else "N/A"
+                            input_text = f"{title}. {description}"
+                            prediction = classifier(input_text, labels)
+                            top_label = prediction["labels"][0]
+
+                            results.append({
+                                "URL": url,
+                                "Title": title,
+                                "Description": description,
+                                "Price": price,
+                                "Classification": top_label
+                            })
+
+                        except Exception as e:
+                            st.warning(f"❌ Could not process ad: {e}")
+                except Exception as e:
+                    st.warning(f"⚠️ Could not load page {page}: {e}")
+
+        if results:
+            df_scraped = pd.DataFrame(results)
+            st.success(f"✅ {len(df_scraped)} listings processed from Mercado Livre.")
+            st.dataframe(df_scraped)
+
+            st.download_button(
+                "📥 Download results (.csv)",
+                df_scraped.to_csv(index=False).encode("utf-8"),
+                "aurum_scraper_keyword_results.csv",
+                "text/csv"
+            )
+        else:
+            st.warning("No results found or all failed.")
+
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
