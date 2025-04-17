@@ -243,7 +243,7 @@ if uploaded_file is not None:
                         df_pre = subset[subset['Year'] <= breakpoint_year]
                         df_post = subset[subset['Year'] > breakpoint_year]
 
-                        st.markdown(f"#### 📈 {species}")
+                        st.markdown(f"#### {species}")
 
                         if len(df_pre) > 1:
                             X_pre = sm.add_constant(df_pre['Year'])
