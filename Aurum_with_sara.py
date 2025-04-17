@@ -576,7 +576,7 @@ if st.session_state.get("is_admin"):
 
 # --- CONTINUA COM O APP NORMAL SE USUÁRIO AUTENTICADO ---
 if "user" not in st.session_state:
-    st.warning("Please log in to access the app.")
+    st.warning("Log in to unlock multi-user tools in Aurum.")
     st.stop()
     
 # --- FORMULÁRIO ---
