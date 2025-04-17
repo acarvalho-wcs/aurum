@@ -657,7 +657,7 @@ if uploaded_file is not None:
                             - The analysis is dynamic: users can choose which attributes to include, allowing flexible exploration of the data.
 
                             - For example:
-                                - If two cases both involve *Arara-azul-de-Lear* and occurred with offenders from Brazil, a connection is drawn.
+                                - If two cases both involve *Panthera onca* and occurred with offenders from Brazil, a connection is drawn.
                                 - If a third case shares only the species but not the country, it will also connect, but with a lower weight.
 
                             - For more information on network methods in environmental crime analysis, refer to the ReadMe file and Carvalho (2025).
