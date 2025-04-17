@@ -331,7 +331,7 @@ if uploaded_file is not None:
                             ]
 
                             if change_years:
-                                formatted_years = ", ".join(str(y) for y in change_years)
+                                formatted_years = ", and ".join(str(y) for y in change_years)
                                 st.markdown(f"🔎 Significant trend changes detected in: **{formatted_years}** (based on deviations from the historical average).")
                             else:
                                 st.markdown("🔎 CUSUM suggests change, but no single year shows strong deviation from the mean.")
