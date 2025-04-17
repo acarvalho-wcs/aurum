@@ -523,6 +523,9 @@ if "user" not in st.session_state:
     st.markdown("## Request Access to Aurum")
     with st.form("request_form"):
         new_username = st.text_input("Choose a username")
+        new_password = st.text_input("Choose a password")
+        new_institution = st.text_input("Institution")
+        new_email = st.text_input("E-mail")
         reason = st.text_area("Why do you want access to Aurum?", help="Required")
         submit_request = st.form_submit_button("Submit Request")
 
