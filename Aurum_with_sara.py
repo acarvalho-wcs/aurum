@@ -1,3 +1,4 @@
+import openai
 import streamlit as st
 import pandas as pd
 import gspread
@@ -608,6 +609,75 @@ if "user" in st.session_state:
         st.dataframe(data)
     else:
         st.dataframe(data[data["Author"] == st.session_state["user"]])
+
+def generate_gpt_summary(df, selected_species, tcs=None, co_results=None, outlier_count=None, language="English"):
+    openai.api_key = st.secrets["openai"]["api_key"]
+
+    species_str = ', '.join(selected_species)
+    years = df["Year"].dropna()
+    year_range = f"{int(years.min())}–{int(years.max())}" if not years.empty else "N/A"
+    total_seized = int(df["N_seized"].sum()) if "N_seized" in df.columns else "unknown"
+
+    # Construção do prompt
+    prompt = f"""
+Generate a narrative report about wildlife trafficking based on the following data:
+
+- Selected species: {species_str}
+- Years covered: {year_range}
+- Total individuals seized: {total_seized}
+
+"""
+
+    if tcs is not None:
+        prompt += f"- Trend Coordination Score (TCS): {tcs:.2f}\n"
+
+    if co_results:
+        for sp_a, sp_b, chi2, p, _ in co_results:
+            significance = "significant" if p < 0.05 else "not significant"
+            prompt += f"- Co-occurrence: {sp_a} x {sp_b} | Chi² = {chi2:.2f}, p = {p:.4f} ({significance})\n"
+
+    if outlier_count is not None:
+        prompt += f"- Number of anomalous cases: {outlier_count}\n"
+
+    prompt += f"\nWrite the report in **{language}**, using a professional tone. Highlight relevant findings, patterns, and anomalies."
+
+    # Chamada da API
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7,
+        max_tokens=800
+    )
+
+    return response['choices'][0]['message']['content']
+
+# --- GPT Narrative Summary ---
+st.sidebar.markdown("## 🤖 GPT Summary")
+generate_gpt = st.sidebar.button("📝 Generate with GPT")
+language = st.sidebar.selectbox("Language for report:", ["English", "Português", "Español"], index=0)
+
+if generate_gpt and df_selected is not None:
+    with st.spinner("Generating summary using GPT..."):
+        lang_map = {"English": "English", "Português": "Portuguese", "Español": "Spanish"}
+        outlier_count = int((vote_df["Outlier Votes"] > 2).sum()) if show_anomaly and 'vote_df' in locals() else None
+
+        gpt_summary = generate_gpt_summary(
+            df=df_selected,
+            selected_species=selected_species,
+            tcs=tcs if show_trend else None,
+            co_results=co_results if show_cooc else None,
+            outlier_count=outlier_count,
+            language=lang_map[language]
+        )
+
+        st.markdown("## 📄 GPT Narrative Summary")
+        st.text_area("Generated Summary", value=gpt_summary, height=400)
+
+        # Exportar como txt
+        summary_bytes = BytesIO()
+        summary_bytes.write(gpt_summary.encode("utf-8"))
+        summary_bytes.seek(0)
+        st.download_button("Download Summary (.txt)", data=summary_bytes, file_name="aurum_gpt_summary.txt", mime="text/plain")
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
