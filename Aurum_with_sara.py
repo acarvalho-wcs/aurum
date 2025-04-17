@@ -572,6 +572,11 @@ if st.session_state.get("is_admin"):
                     st.success(f"✅ {new_user} has been approved and added to the system.")
 
 # --- FORMULÁRIO ---
+def get_worksheet(sheet_name="Aurum_data"):
+    gc = gspread.authorize(credentials)
+    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
+    return sh.worksheet(Aurum_data)
+    
 if "user" in st.session_state:
     st.markdown("## Submit New Case to Aurum")
     with st.form("aurum_form"):
