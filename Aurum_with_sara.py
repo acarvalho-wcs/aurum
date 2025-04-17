@@ -277,7 +277,30 @@ if uploaded_file is not None:
 
             show_anomaly = st.sidebar.checkbox("Anomaly Detection", value=False)
             if show_anomaly:
-                st.markdown("## 🚨 Anomaly Detection")
+                st.markdown("## Anomaly Detection")
+
+                with st.expander("ℹ️ Learn more about this analysis"):
+                    st.markdown("""
+                    ### 🚨 About Anomaly Detection
+
+                    The Anomaly Detection section helps identify wildlife trafficking cases that deviate significantly from typical patterns based on selected numerical features.
+
+                    The analysis applies multiple outlier detection algorithms to highlight cases that may involve unusual species combinations, unusually large quantities of individuals, recurring offender countries, or rare time periods.
+
+                    By default, the following methods are applied in parallel:
+
+                    - **Isolation Forest**: an ensemble method that detects anomalies by isolating data points in a randomly partitioned feature space.
+                    - **Local Outlier Factor (LOF)**: detects anomalies based on the local density of data points. Cases that lie in areas of significantly lower density than their neighbors are flagged.
+                    - **DBSCAN**: a clustering algorithm that marks low-density or unclustered points as outliers.
+                    - **Z-Score**: a statistical approach that flags values deviating more than 3 standard deviations from the mean in any feature.
+                    - **Mahalanobis Distance**: a multivariate distance measure that accounts for correlations between features to identify statistically distant points.
+
+                    Each method produces a binary vote (outlier or not). The final score reflects how many methods agree in classifying a case as anomalous — forming a **consensus-based ranking**.
+
+                    A high consensus score suggests stronger evidence of atypical behavior, but anomalies do not necessarily imply criminality. They may reflect rare events, data entry issues, or unique but legitimate circumstances.
+
+                    This module is most effective when the user selects a meaningful combination of numerical features, such as year, number of individuals, or offender-related values. The output highlights the top-ranked outliers and their anomaly vote count, supporting investigation and prioritization.
+                    """)
 
                 numeric_cols = [col for col in df_selected.columns if pd.api.types.is_numeric_dtype(df_selected[col])]
                 selected_features = st.multiselect("Select numeric features for anomaly detection:", numeric_cols, default=["N_seized", "Year", "Offender_value"])
