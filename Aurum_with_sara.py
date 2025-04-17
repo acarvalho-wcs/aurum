@@ -478,5 +478,124 @@ if export_html and df_selected is not None:
         file_name="aurum_report.html",
         mime="text/html"
     )
+
+# --- AUTENTICAÇÃO E CONEXÃO COM GOOGLE SHEETS ---
+st.title("Aurum - Wildlife Trafficking Analytics")
+SHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
+USERS_SHEET = "Users"
+REQUESTS_SHEET = "Access Requests"
+
+scope = ["https://www.googleapis.com/auth/spreadsheets"]
+credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+client = gspread.authorize(credentials)
+sheets = client.open_by_key(SHEET_ID)
+
+users_ws = sheets.worksheet(USERS_SHEET)
+requests_ws = sheets.worksheet(REQUESTS_SHEET)
+users_df = pd.DataFrame(users_ws.get_all_records())
+
+# --- LOGIN ---
+st.sidebar.markdown("## 🔐 Login to Aurum")
+username = st.sidebar.text_input("Username")
+password = st.sidebar.text_input("Password", type="password")
+login_button = st.sidebar.button("Login")
+
+# Verify encrypted password
+def verify_password(password, hashed):
+    return password == hashed_pw
+
+if login_button and username and password:
+    user_row = users_df[users_df["Username"] == username]
+    if not user_row.empty and str(user_row.iloc[0]["Approved"]).strip().lower() == "true":
+        hashed_pw = user_row.iloc[0]["Password"].strip()
+        
+        if verify_password(password, hashed_pw):
+            st.session_state["user"] = username
+            st.session_state["is_admin"] = str(user_row.iloc[0]["Is_Admin"]).strip().lower() == "true"
+            st.success(f"Logged in as {username}")
+        else:
+            st.error("Incorrect password.")
+    else:
+        st.error("User not approved or does not exist.")
+
+# --- FORMULÁRIO DE ACESSO (REQUISIÇÃO) ---
+if "user" not in st.session_state:
+    st.markdown("## Request Access to Aurum")
+    with st.form("request_form"):
+        new_username = st.text_input("Choose a username")
+        reason = st.text_area("Why do you want access to Aurum?", help="Required")
+        submit_request = st.form_submit_button("Submit Request")
+
+        if submit_request:
+            if not new_username.strip() or not reason.strip():
+                st.warning("Username and reason are required.")
+            else:
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                requests_ws.append_row([timestamp, new_username.strip(), reason.strip()])
+                st.success("✅ Your request has been submitted for review.")
+    st.stop()
+
+# --- PAINEL ADMINISTRATIVO ---
+if st.session_state.get("is_admin"):
+    st.markdown("## 🛡️ Admin Panel - Approve Access Requests")
+    request_df = pd.DataFrame(requests_ws.get_all_records())
+    if not request_df.empty:
+        st.dataframe(request_df)
+
+        with st.form("approve_form"):
+            new_user = st.selectbox("Select username to approve:", request_df["Username"].unique())
+            new_password = st.text_input("Set initial password", type="password")
+            is_admin = st.checkbox("Grant admin access?")
+            approve_button = st.form_submit_button("Approve User")
+
+            if approve_button:
+                if not new_user or not new_password:
+                    st.warning("Username and password are required.")
+                else:
+                    hashed_pw = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+                    users_ws.append_row([new_user, hashed_pw, str(is_admin), "TRUE"])
+                    st.success(f"✅ {new_user} has been approved and added to the system.")
+
+# --- CONTINUA COM O APP NORMAL SE USUÁRIO AUTENTICADO ---
+if "user" not in st.session_state:
+    st.warning("Please log in to access the app.")
+    st.stop()
+    
+# --- FORMULÁRIO ---
+if "user" in st.session_state:
+    st.markdown("## Submit New Case to Aurum")
+    with st.form("aurum_form"):
+        case_id = st.text_input("Case ID")
+        n_seized = st.text_input("N seized specimens (e.g. 2 GLT + 1 LM)")
+        year = st.number_input("Year", step=1, format="%d")
+        country = st.text_input("Country of offenders")
+        seizure_status = st.text_input("Seizure status")
+        transit = st.text_input("Transit feature")
+        notes = st.text_area("Additional notes")
+
+        submitted = st.form_submit_button("Submit Case")
+
+        if submitted:
+            new_row = [
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                case_id,
+                n_seized,
+                year,
+                country,
+                seizure_status,
+                transit,
+                notes,
+                st.session_state["user"]
+            ]
+            worksheet.append_row(new_row)
+            st.success("✅ Case submitted to Aurum successfully!")
+
+    # Visualizar dados (admin ou próprio autor)
+    st.markdown("## My Cases")
+    data = pd.DataFrame(worksheet.get_all_records())
+    if st.session_state.get("is_admin"):
+        st.dataframe(data)
+    else:
+        st.dataframe(data[data["Author"] == st.session_state["user"]])
     
 st.sidebar.markdown("How to cite: Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
