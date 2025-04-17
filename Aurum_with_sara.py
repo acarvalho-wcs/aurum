@@ -322,23 +322,16 @@ if uploaded_file is not None:
                         std_dev = values.std()
 
                         if cusum_range > 2 * std_dev:
-                            peak_pos = max(cusum_pos)
-                            peak_neg = min(cusum_neg)
-
-                            if abs(peak_pos) > abs(peak_neg):
-                                change_index = cusum_pos.index(peak_pos)
-                                change_type = "increase"
-                            else:
-                                change_index = cusum_neg.index(peak_neg)
-                                change_type = "decrease"
-
-                            change_year = years.iloc[change_index]
-                            st.markdown(f"🔎 Significant trend **{change_type}** detected around **{change_year}**.")
+                            # Identify year when deviation from mean begins
+                            for i, val in enumerate(values):
+                                if abs(val - mean_val) > 1.5 * std_dev:
+                                    change_year = years.iloc[i]
+                                    break
+                            st.markdown(f"🔎 Significant trend change detected in **{change_year}**, based on deviation from historical average.")
                         else:
                             st.markdown("✅ No significant trend change detected.")
 
                     plot_cusum_trend(df_cusum, col_data=col_data, col_time=col_time)
-
 
             show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
             if show_cooc:
