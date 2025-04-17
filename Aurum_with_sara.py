@@ -338,6 +338,35 @@ if uploaded_file is not None:
                         else:
                             st.markdown("✅ No significant trend change detected.")
 
+                        # Explanation toggle
+                        with st.expander("ℹ️ Learn more about this analysis"):
+                            st.markdown("""
+                            ### About CUSUM Analysis
+
+                            The *CUSUM Analysis* section is designed to detect significant changes in the temporal trend of wildlife seizures by evaluating how yearly values deviate from the historical average.
+
+                            - The method is based on **Cumulative Sum (CUSUM)** analysis, which tracks the cumulative deviation of observed values from their overall mean.
+                            - Two cumulative paths are calculated:
+                              - **CUSUM+** accumulates positive deviations (above the mean).
+                              - **CUSUM−** accumulates negative deviations (below the mean).
+                            - This dual-track approach highlights the **direction and magnitude of long-term deviations**, making it easier to identify sustained changes.
+
+                            - Unlike methods that directly model trends (e.g., segmented regression), CUSUM reacts **only when there is consistent deviation**, amplifying the signal of real change over time.
+                            - The method does **not identify the exact year of change by itself**, but instead signals that a shift in the distribution has occurred—often **triggered by a single or small set of high-impact events**.
+                            - To estimate the timing more precisely, the analysis **identifies years where the seizure counts deviate sharply from the historical mean** (greater than 1.5 standard deviations).
+                            - These years are reported as **likely points of trend change**.
+
+                            - CUSUM is especially useful when changes are not gradual or linear, and when a single anomalous year can drive broader shifts.
+                            - The results should be interpreted in light of species-specific context and enforcement history, as well as any known conservation events, policy changes, or trafficking routes.
+
+                            - The section also generates a plot combining:
+                              - Observed seizure counts (black line),
+                              - CUSUM+ and CUSUM− paths (green and orange dashed lines),
+                              - Highlighted years with significant deviations (when present).
+
+                            - For more details, refer to the ReadMe file and/or Carvalho (2025).
+                            """)
+
                     plot_cusum_trend(df_cusum, col_data=col_data, col_time=col_time)
 
             show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
