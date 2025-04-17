@@ -194,22 +194,7 @@ if uploaded_file is not None:
                 with st.expander("ℹ️ Learn more about this analysis"):
                     st.markdown("""
                     ### About Trend Analysis
-
-                    The *Trend Analysis* section helps identify shifts in wildlife seizure patterns over time for the selected species.
-
-                    - The analysis uses segmented linear regressions based on a user-defined **breakpoint year**.
-                    - For each species, a regression is computed before and after the breakpoint to estimate the slope (i.e., the trend) of increase or decrease.
-                    - These slopes are used to calculate the **Trend Coordination Score (TCS)**, which measures the relative change between the two periods:
-                      - `TCS > 0` indicates an increase in trend after the breakpoint.
-                      - `TCS < 0` indicates a decrease.
-                      - `TCS ≈ 0` suggests stability.
-
-                    - The score is normalized to reduce instability when the pre-breakpoint slope is close to zero. While TCS has no strict bounds, in practice it typically falls between −1 and +1. 
-                    - Extreme values may indicate sharp shifts in trend intensity or imbalances in the temporal distribution of data. Although wildlife trafficking patterns are rarely linear in reality, this method adopts linear segments as a practical approximation to detect directional shifts. 
-                    - It does not assume true linear behavior, but rather uses regression slopes as a comparative metric across time intervals. The analysis requires at least two observations on each side of the breakpoint to produce meaningful estimates. 
-                    - The score can be sensitive to outliers or sparsely populated time ranges, and should be interpreted in light of the broader case context.
-                    - The section also generates a plot showing data points and trend lines for each species, making it easier to visualize changes over time.
-                    - Find more details in the ReadMe file and/or in Carvalho (2025).
+                    [ ... seu texto completo aqui ... ]
                     """)
 
                 st.markdown("### Trend Plot")
@@ -270,6 +255,54 @@ if uploaded_file is not None:
                             st.markdown(f"- p-value = `{pval_post:.4f}`")
                         else:
                             st.info("Not enough data after breakpoint.")
+
+                # Optional CUSUM
+                if st.checkbox("Activate CUSUM analysis"):
+                    st.subheader("CUSUM - Trend Change Detection")
+
+                    cusum_option = st.radio(
+                        "Choose the metric to analyze:",
+                        ["Total individuals seized per year", "Average individuals per seizure (per year)"]
+                    )
+
+                    if cusum_option == "Total individuals seized per year":
+                        df_cusum = df_selected.groupby("Year")["N_seized"].sum().reset_index()
+                        col_data = "N_seized"
+                        col_time = "Year"
+                    else:
+                        df_cusum = df_selected.groupby("Year")["N_seized"].mean().reset_index()
+                        col_data = "N_seized"
+                        col_time = "Year"
+
+                    def cusum_analysis(df, col_data, col_time):
+                        df_sorted = df.sort_values(by=col_time).reset_index(drop=True)
+
+                        mean_val = df_sorted[col_data].mean()
+                        cusum = [0]
+                        for i in range(1, len(df_sorted)):
+                            delta = df_sorted.loc[i, col_data] - mean_val
+                            cusum.append(cusum[-1] + delta)
+
+                        fig, ax = plt.subplots()
+                        ax.plot(df_sorted[col_time], cusum, marker='o', label='CUSUM')
+                        ax.axhline(0, color='gray', linestyle='--', linewidth=1)
+                        ax.grid(True, linestyle='--', linewidth=0.5, color='lightgray')
+                        ax.set_title("CUSUM - Trend Change Detection")
+                        ax.set_xlabel(col_time)
+                        ax.set_ylabel("CUSUM Value")
+                        ax.legend()
+                        st.pyplot(fig)
+
+                        st.subheader("Automated Interpretation")
+                        cusum_range = max(cusum) - min(cusum)
+                        std_dev = df_sorted[col_data].std()
+                        if cusum_range > 2 * std_dev:
+                            st.markdown("🔎 Significant trend change detected.")
+                        else:
+                            st.markdown("✅ No significant trend change detected.")
+
+                    cusum_analysis(df_cusum, col_data=col_data, col_time=col_time)
+
 
             show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
             if show_cooc:
