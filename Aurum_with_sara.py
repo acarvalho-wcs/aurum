@@ -204,9 +204,12 @@ if uploaded_file is not None:
                       - `TCS < 0` indicates a decrease.
                       - `TCS ≈ 0` suggests stability.
 
-                    The score is normalized to reduce instability when the pre-breakpoint slope is close to zero. While TCS has no strict bounds, in practice it typically falls between −1 and +1. Extreme values may indicate sharp shifts in trend intensity or imbalances in the temporal distribution of data.
-                    Although wildlife trafficking patterns are rarely linear in reality, this method adopts linear segments as a practical approximation to detect directional shifts. It does not assume true linear behavior, but rather uses regression slopes as a comparative metric across time intervals.
-                    The analysis requires at least two observations on each side of the breakpoint to produce meaningful estimates. The score can be sensitive to outliers or sparsely populated time ranges, and should be interpreted in light of the broader case context.
+                    The score is normalized to reduce instability when the pre-breakpoint slope is close to zero. While TCS has no strict bounds, in practice it typically falls between −1 and +1. 
+                    Extreme values may indicate sharp shifts in trend intensity or imbalances in the temporal distribution of data.
+                    Although wildlife trafficking patterns are rarely linear in reality, this method adopts linear segments as a practical approximation to detect directional shifts. 
+                    It does not assume true linear behavior, but rather uses regression slopes as a comparative metric across time intervals.
+                    The analysis requires at least two observations on each side of the breakpoint to produce meaningful estimates. 
+                    The score can be sensitive to outliers or sparsely populated time ranges, and should be interpreted in light of the broader case context.
                     The section also generates a plot showing data points and trend lines for each species, making it easier to visualize changes over time.
                     """)
                     
