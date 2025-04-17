@@ -606,7 +606,9 @@ if "user" in st.session_state:
     sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
     worksheet = sh.worksheet("Aurum_data")
     data = pd.DataFrame(worksheet.get_all_records())
-    if st.session_state.get("is_admin"):
+    if data.empty:
+        st.info("No data available at the moment.")
+    elif st.session_state.get("is_admin"):
         st.dataframe(data)
     else:
         st.dataframe(data[data["Author"] == st.session_state["user"]])
