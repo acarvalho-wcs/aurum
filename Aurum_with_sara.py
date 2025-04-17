@@ -604,7 +604,7 @@ if "user" in st.session_state:
     st.markdown("## My Cases")
     gc = gspread.authorize(credentials)
     sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-    worksheet = sh.worksheet("Cases")
+    worksheet = sh.worksheet("Aurum_data")
     data = pd.DataFrame(worksheet.get_all_records())
     if st.session_state.get("is_admin"):
         st.dataframe(data)
