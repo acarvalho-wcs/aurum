@@ -576,7 +576,7 @@ if "user" in st.session_state:
     st.markdown("## Submit New Case to Aurum")
     with st.form("aurum_form"):
         case_id = st.text_input("Case ID")
-        n_seized = st.text_input("N seized specimens (e.g. 2 GLT + 1 LM)")
+        n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)")
         year = st.number_input("Year", step=1, format="%d")
         country = st.text_input("Country of offenders")
         seizure_status = st.text_input("Seizure status")
@@ -613,37 +613,6 @@ if "user" in st.session_state:
         st.dataframe(data)
     else:
         st.dataframe(data[data["Author"] == st.session_state["user"]])
-
-st.subheader("Upload Multiple Cases (Batch Mode)")
-
-uploaded_file = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"])
-
-if uploaded_file is not None:
-    try:
-        # Read file
-        if uploaded_file.name.endswith(".csv"):
-            batch_data = pd.read_csv(uploaded_file)
-        else:
-            batch_data = pd.read_excel(uploaded_file)
-
-        # Add 'Author' column
-        batch_data["Author"] = st.session_state["user"]
-
-        # Convert to list of lists (as expected by Google Sheets)
-        rows_to_append = batch_data.values.tolist()
-
-        # Access worksheet
-        gc = gspread.authorize(credentials)
-        sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-        worksheet = sh.worksheet("Aurum_data")
-
-        # Append in batch
-        worksheet.append_rows(rows_to_append, value_input_option="USER_ENTERED")
-
-        st.success("✅ Batch upload completed successfully!")
-
-    except Exception as e:
-        st.error(f"❌ Error during upload: {e}")
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
