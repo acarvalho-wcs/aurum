@@ -105,6 +105,7 @@ if "user" not in st.session_state:
     st.stop()
 
 # --- FORMULÁRIO ---
+st.sidebar.markdown("## Analysis")
 if "user" in st.session_state:
     st.markdown("## Submit New Case to Aurum")
     with st.form("aurum_form"):
