@@ -395,80 +395,6 @@ def place_logo_bottom_right(image_path, width=100):
 # Chamada da função para exibir a logo
 place_logo_bottom_right("wcs.jpg")
 
-st.sidebar.markdown("## Export Options")
-export_xlsx = st.sidebar.button("Export Cleaned data.xlsx")
-export_html = st.sidebar.button("Export Analysis Report (.html)")
-
-if export_xlsx and df_selected is not None:
-    from io import BytesIO
-    towrite = BytesIO()
-    df_selected.to_excel(towrite, index=False, engine='openpyxl')
-    towrite.seek(0)
-    st.download_button(
-        label="Download Cleaned Excel File",
-        data=towrite,
-        file_name="aurum_cleaned_data.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-if export_html and df_selected is not None:
-    from datetime import datetime
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    html_sections = []
-    html_sections.append(f"<h1>Aurum Wildlife Trafficking Report</h1>")
-    html_sections.append(f"<p><strong>Generated:</strong> {now}</p>")
-    html_sections.append(f"<p><strong>Selected Species:</strong> {', '.join(selected_species)}</p>")
-
-    # Tabela de dados
-    html_sections.append("<h2>Data Sample</h2>")
-    html_sections.append(df_selected.head(10).to_html(index=False))
-
-    # Resultados de tendência
-    if show_trend:
-        html_sections.append("<h2>Trend Analysis</h2>")
-        html_sections.append(f"<p><strong>TCS:</strong> {tcs:.2f}</p>")
-
-        # Salvar figura
-        trend_buf = BytesIO()
-        fig.savefig(trend_buf, format="png", bbox_inches="tight")
-        trend_buf.seek(0)
-        trend_base64 = base64.b64encode(trend_buf.read()).decode("utf-8")
-        html_sections.append(f'<img src="data:image/png;base64,{trend_base64}" width="700">')
-
-    # Coocorrência
-    if show_cooc and co_results:
-        html_sections.append("<h2>Species Co-occurrence</h2>")
-        for sp_a, sp_b, chi2, p, table in co_results:
-            html_sections.append(f"<h4>{sp_a} × {sp_b}</h4>")
-            html_sections.append(table.to_html())
-            html_sections.append(f"<p>Chi² = {chi2:.2f} | p = {p:.4f}</p>")
-
-    # Anomalias
-    if show_anomaly and 'vote_df' in locals():
-        html_sections.append("<h2>Anomaly Detection</h2>")
-        html_sections.append(f"<p><strong>Consensus Outlier Ratio:</strong> {consensus_ratio:.2%}</p>")
-        html_sections.append("<h4>Top Anomalies</h4>")
-        html_sections.append(top_outliers.to_html(index=False))
-
-    # Finaliza o HTML
-    html_report = f"""
-    <html>
-    <head><meta charset='utf-8'><title>Aurum Report</title></head>
-    <body>{''.join(html_sections)}</body>
-    </html>
-    """
-
-    report_bytes = BytesIO()
-    report_bytes.write(html_report.encode("utf-8"))
-    report_bytes.seek(0)
-
-    st.download_button(
-        label="Download HTML Report",
-        data=report_bytes,
-        file_name="aurum_report.html",
-        mime="text/html"
-    )
-
 # --- AUTENTICAÇÃO E CONEXÃO COM GOOGLE SHEETS ---
 SHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
 USERS_SHEET = "Users"
@@ -609,5 +535,80 @@ with open("Aurum_template.xlsx", "rb") as f:
         file_name="aurum_template.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+st.sidebar.markdown("## Export Options")
+export_xlsx = st.sidebar.button("Export Cleaned data.xlsx")
+export_html = st.sidebar.button("Export Analysis Report (.html)")
+
+if export_xlsx and df_selected is not None:
+    from io import BytesIO
+    towrite = BytesIO()
+    df_selected.to_excel(towrite, index=False, engine='openpyxl')
+    towrite.seek(0)
+    st.download_button(
+        label="Download Cleaned Excel File",
+        data=towrite,
+        file_name="aurum_cleaned_data.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+if export_html and df_selected is not None:
+    from datetime import datetime
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    html_sections = []
+    html_sections.append(f"<h1>Aurum Wildlife Trafficking Report</h1>")
+    html_sections.append(f"<p><strong>Generated:</strong> {now}</p>")
+    html_sections.append(f"<p><strong>Selected Species:</strong> {', '.join(selected_species)}</p>")
+
+    # Tabela de dados
+    html_sections.append("<h2>Data Sample</h2>")
+    html_sections.append(df_selected.head(10).to_html(index=False))
+
+    # Resultados de tendência
+    if show_trend:
+        html_sections.append("<h2>Trend Analysis</h2>")
+        html_sections.append(f"<p><strong>TCS:</strong> {tcs:.2f}</p>")
+
+        # Salvar figura
+        trend_buf = BytesIO()
+        fig.savefig(trend_buf, format="png", bbox_inches="tight")
+        trend_buf.seek(0)
+        trend_base64 = base64.b64encode(trend_buf.read()).decode("utf-8")
+        html_sections.append(f'<img src="data:image/png;base64,{trend_base64}" width="700">')
+
+    # Coocorrência
+    if show_cooc and co_results:
+        html_sections.append("<h2>Species Co-occurrence</h2>")
+        for sp_a, sp_b, chi2, p, table in co_results:
+            html_sections.append(f"<h4>{sp_a} × {sp_b}</h4>")
+            html_sections.append(table.to_html())
+            html_sections.append(f"<p>Chi² = {chi2:.2f} | p = {p:.4f}</p>")
+
+    # Anomalias
+    if show_anomaly and 'vote_df' in locals():
+        html_sections.append("<h2>Anomaly Detection</h2>")
+        html_sections.append(f"<p><strong>Consensus Outlier Ratio:</strong> {consensus_ratio:.2%}</p>")
+        html_sections.append("<h4>Top Anomalies</h4>")
+        html_sections.append(top_outliers.to_html(index=False))
+
+    # Finaliza o HTML
+    html_report = f"""
+    <html>
+    <head><meta charset='utf-8'><title>Aurum Report</title></head>
+    <body>{''.join(html_sections)}</body>
+    </html>
+    """
+
+    report_bytes = BytesIO()
+    report_bytes.write(html_report.encode("utf-8"))
+    report_bytes.seek(0)
+
+    st.download_button(
+        label="Download HTML Report",
+        data=report_bytes,
+        file_name="aurum_report.html",
+        mime="text/html"
+    )
+
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
