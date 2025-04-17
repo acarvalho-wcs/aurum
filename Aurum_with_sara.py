@@ -281,7 +281,7 @@ if uploaded_file is not None:
 
                 with st.expander("ℹ️ Learn more about this analysis"):
                     st.markdown("""
-                    ### 🚨 About Anomaly Detection
+                    ### About Anomaly Detection
 
                     The Anomaly Detection section helps identify wildlife trafficking cases that deviate significantly from typical patterns based on selected numerical features.
 
@@ -333,7 +333,7 @@ if uploaded_file is not None:
                     consensus_ratio = (vote_df["Outlier Votes"] > 2).sum() / len(vote_df)
                     st.markdown(f"**Consensus Outlier Ratio:** `{consensus_ratio:.2%}`")
 
-                    st.markdown("### 📋 Most anomalous cases")
+                    st.markdown("### Most anomalous cases")
                     top_outliers = vote_df.sort_values(by="Outlier Votes", ascending=False).head(10)
                     st.dataframe(top_outliers.set_index("Case #"))
 
