@@ -320,7 +320,7 @@ if uploaded_file is not None:
                 else:
                     st.info("No co-occurrence data available for selected species.")
 
-                st.markdown("### Co-trafficked Species Cases")
+                st.markdown("### Co-trafficked Species")
 
                 grouped = df_selected.groupby('Case #')
                 multi_species_cases = grouped.filter(lambda x: x['Species'].nunique() > 1)
