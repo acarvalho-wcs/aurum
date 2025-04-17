@@ -320,7 +320,16 @@ if uploaded_file is not None:
                 else:
                     st.info("No co-occurrence data available for selected species.")
 
-                co_results = general_species_cooccurrence(df_selected, selected_species)
+                st.markdown("### 📋 Co-trafficked Species Cases")
+
+                grouped = df_selected.groupby('Case #')
+                multi_species_cases = grouped.filter(lambda x: x['Species'].nunique() > 1)
+
+                if multi_species_cases.empty:
+                    st.info("No multi-species trafficking cases found for the selected species.")
+                else:
+                    summary = multi_species_cases[['Case #', 'Country of offenders', 'Species', 'N_seized']].sort_values(by='Case #')
+                    st.dataframe(summary)
 
             show_anomaly = st.sidebar.checkbox("Anomaly Detection", value=False)
             if show_anomaly:
