@@ -241,6 +241,27 @@ if uploaded_file is not None:
             if show_cooc:
                 st.markdown("## 🧬 Species Co-occurrence Analysis")
 
+                with st.expander("ℹ️ Learn more about this analysis"):
+                    st.markdown("""
+                    ### 🧬 About Species Co-occurrence
+
+                    The Species Co-occurrence section identifies pairs of species that tend to be trafficked together within the same cases, revealing potential patterns of coordinated extraction, transport, or market demand.
+
+                    This analysis uses a binary presence-absence matrix for each selected species across all case IDs. For every species pair, a **chi-square test of independence** is performed to evaluate whether the observed co-occurrence is statistically significant beyond what would be expected by chance.
+
+                    - A **2×2 contingency table** is generated for each pair, indicating joint presence or absence across cases.
+                    - The **Chi² statistic** quantifies the degree of association: higher values suggest stronger deviation from independence (i.e., a stronger link between the species).
+                    - The associated **p-value** indicates whether this deviation is statistically significant. A p-value below 0.05 typically means the co-occurrence is unlikely to be due to chance.
+
+                    **Interpretation**:
+                    - **High Chi² values** signal that the two species co-occur more (or less) than expected — implying possible ecological overlap, shared trafficking routes, or joint market targeting.
+                    - **Low Chi² values** suggest weak or no association, even if species occasionally appear together.
+
+                    This method is particularly useful for identifying species that may be captured, transported, or traded together due to logistical, ecological, or commercial drivers.
+
+                    The results are displayed in an interactive table showing co-occurrence counts, the Chi² statistic, and p-values for each species pair — helping analysts prioritize combinations for deeper investigation.
+                    """)
+
                 def general_species_cooccurrence(df, species_list, case_col='Case #'):
                     presence = pd.DataFrame()
                     presence[case_col] = df[case_col].unique()
@@ -274,6 +295,7 @@ if uploaded_file is not None:
                         st.markdown("---")
                 else:
                     st.info("No co-occurrence data available for selected species.")
+
 
             show_anomaly = st.sidebar.checkbox("Anomaly Detection", value=False)
             if show_anomaly:
