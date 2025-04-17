@@ -612,7 +612,7 @@ if "user" in st.session_state:
 
             # Add 'Author' column
             batch_data["Author"] = st.session_state["user"]
-            df = df.fillna("")
+            df = df.fillna("None")
             df["Author"] = st.session_state["user"]
 
             # Convert to list of lists (as expected by Google Sheets)
