@@ -13,3 +13,4 @@ streamlit-chat
 gspread
 google-auth
 pygsheets
+bcrypt
