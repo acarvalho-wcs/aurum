@@ -320,14 +320,21 @@ if uploaded_file is not None:
                         st.subheader("🧠 Automated Interpretation")
                         cusum_range = max(cusum_pos) - min(cusum_neg)
                         std_dev = values.std()
+                        mean_val = values.mean()
 
                         if cusum_range > 2 * std_dev:
-                            # Identify year when deviation from mean begins
-                            for i, val in enumerate(values):
-                                if abs(val - mean_val) > 1.5 * std_dev:
-                                    change_year = years.iloc[i]
-                                    break
-                            st.markdown(f"🔎 Significant trend change detected in **{change_year}**, based on deviation from historical average.")
+                            # Detect all years with significant deviation from the mean
+                            change_years = [
+                                years.iloc[i]
+                                for i, val in enumerate(values)
+                                if abs(val - mean_val) > 1.5 * std_dev
+                            ]
+
+                            if change_years:
+                                formatted_years = ", ".join(str(y) for y in change_years)
+                                st.markdown(f"🔎 Significant trend changes detected in: **{formatted_years}** (based on deviations from the historical average).")
+                            else:
+                                st.markdown("🔎 CUSUM suggests change, but no single year shows strong deviation from the mean.")
                         else:
                             st.markdown("✅ No significant trend change detected.")
 
