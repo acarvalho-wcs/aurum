@@ -24,6 +24,7 @@ st.set_page_config(page_title="Aurum Dashboard", layout="wide")
 st.title("Aurum - Wildlife Trafficking Analytics")
 
 # Upload do arquivo
+st.sidebar.markdown("## Aurum sidebar")
 st.sidebar.markdown("## 📂 Upload Data")
 uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).**", type=["xlsx"])
 
