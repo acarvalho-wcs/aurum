@@ -37,21 +37,20 @@ users_ws = sheets.worksheet(USERS_SHEET)
 requests_ws = sheets.worksheet(REQUESTS_SHEET)
 users_df = pd.DataFrame(users_ws.get_all_records())
 
-# --- LOGIN ---
+# Login na sidebar
 st.sidebar.markdown("## 🔐 Login to Aurum")
 username = st.sidebar.text_input("Username")
 password = st.sidebar.text_input("Password", type="password")
 login_button = st.sidebar.button("Login")
 
-# Verify encrypted password
-def verify_password(password, hashed):
+# Verificação sem criptografia (temporário)
+def verify_password(password, hashed_pw):
     return password == hashed_pw
 
 if login_button and username and password:
     user_row = users_df[users_df["Username"] == username]
     if not user_row.empty and str(user_row.iloc[0]["Approved"]).strip().lower() == "true":
         hashed_pw = user_row.iloc[0]["Password"].strip()
-        
         if verify_password(password, hashed_pw):
             st.session_state["user"] = username
             st.session_state["is_admin"] = str(user_row.iloc[0]["Is_Admin"]).strip().lower() == "true"
@@ -61,14 +60,13 @@ if login_button and username and password:
     else:
         st.error("User not approved or does not exist.")
 
-# --- FORMULÁRIO DE ACESSO (REQUISIÇÃO) ---
+# Formulário de pedido de acesso (para quem não está logado)
 if "user" not in st.session_state:
     st.markdown("## Request Access to Aurum")
     with st.form("request_form"):
         new_username = st.text_input("Choose a username")
         reason = st.text_area("Why do you want access to Aurum?", help="Required")
         submit_request = st.form_submit_button("Submit Request")
-
         if submit_request:
             if not new_username.strip() or not reason.strip():
                 st.warning("Username and reason are required.")
@@ -76,9 +74,8 @@ if "user" not in st.session_state:
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 requests_ws.append_row([timestamp, new_username.strip(), reason.strip()])
                 st.success("✅ Your request has been submitted for review.")
-    st.stop()
 
-# --- PAINEL ADMINISTRATIVO ---
+# Painel administrativo para admins
 if st.session_state.get("is_admin"):
     st.markdown("## 🛡️ Admin Panel - Approve Access Requests")
     request_df = pd.DataFrame(requests_ws.get_all_records())
@@ -95,9 +92,18 @@ if st.session_state.get("is_admin"):
                 if not new_user or not new_password:
                     st.warning("Username and password are required.")
                 else:
-                    hashed_pw = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
-                    users_ws.append_row([new_user, hashed_pw, str(is_admin), "TRUE"])
+                    users_ws.append_row([new_user, new_password, str(is_admin), "TRUE"])
                     st.success(f"✅ {new_user} has been approved and added to the system.")
+
+# Mensagem ao usuário autenticado
+if "user" in st.session_state:
+    st.sidebar.markdown(f"✅ Logged in as **{st.session_state['user']}**")
+else:
+    st.sidebar.markdown("🟡 Not logged in — only public features available.")
+
+# A partir daqui: análises e visualizações públicas
+st.title("Aurum - Wildlife Trafficking Analytics")
+st.write("📊 This section contains public analysis and exploration tools.")
 
 # --- CONTINUA COM O APP NORMAL SE USUÁRIO AUTENTICADO ---
 if "user" not in st.session_state:
