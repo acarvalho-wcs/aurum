@@ -633,6 +633,26 @@ if uploaded_file is not None:
                         )
                         st.plotly_chart(fig, use_container_width=True)
 
+                        st.markdown("### Network Metrics")
+
+                        num_nodes = G.number_of_nodes()
+                        num_edges = G.number_of_edges()
+                        density = nx.density(G)
+                        components = nx.number_connected_components(G)
+                        degrees = dict(G.degree())
+                        avg_degree = sum(degrees.values()) / num_nodes if num_nodes else 0
+                        top_central = sorted(degrees.items(), key=lambda x: x[1], reverse=True)[:5]
+
+                        st.write(f"- **Nodes:** {num_nodes}")
+                        st.write(f"- **Edges:** {num_edges}")
+                        st.write(f"- **Density:** `{density:.3f}`")
+                        st.write(f"- **Connected components:** {components}")
+                        st.write(f"- **Average degree:** `{avg_degree:.2f}`")
+
+                        st.markdown("**Top central cases by degree:**")
+                        for case_id, degree in top_central:
+                            st.markdown(f"- Case `{case_id}`: {degree} connections")
+                        
                         with st.expander("ℹ️ Learn more about this analysis"):
                             st.markdown("""
                             ### About Case Network Analysis
