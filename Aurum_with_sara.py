@@ -575,8 +575,8 @@ if st.session_state.get("is_admin"):
 def get_worksheet(sheet_name="Aurum_data"):
     gc = gspread.authorize(credentials)
     sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-    return sh.worksheet("Aurum_data")
-    
+    return sh.worksheet(sheet_name)
+
 if "user" in st.session_state:
     st.markdown("## Submit New Case to Aurum")
     with st.form("aurum_form"):
@@ -602,6 +602,7 @@ if "user" in st.session_state:
                 notes,
                 st.session_state["user"]
             ]
+            worksheet = get_worksheet()
             worksheet.append_row(new_row)
             st.success("✅ Case submitted to Aurum successfully!")
 
@@ -609,26 +610,16 @@ if "user" in st.session_state:
     uploaded_file = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"])
     if uploaded_file is not None:
         try:
-            # Read file
             if uploaded_file.name.endswith(".csv"):
                 batch_data = pd.read_csv(uploaded_file)
             else:
                 batch_data = pd.read_excel(uploaded_file)
 
-            # Add 'Author' column
+            batch_data = batch_data.fillna("")
             batch_data["Author"] = st.session_state["user"]
-            df = df.fillna("")
-            df["Author"] = st.session_state["user"]
+            rows_to_append = batch_data.values.tolist()
 
-            # Convert to list of lists (as expected by Google Sheets)
-            rows_to_append = df.values.tolist()
-
-            # Access worksheet
-            gc = gspread.authorize(credentials)
-            sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-            worksheet = sh.worksheet("Aurum_data")
-
-            # Append in batch
+            worksheet = get_worksheet()
             worksheet.append_rows(rows_to_append, value_input_option="USER_ENTERED")
 
             st.success("✅ Batch upload completed successfully!")
@@ -636,12 +627,8 @@ if "user" in st.session_state:
         except Exception as e:
             st.error(f"❌ Error during upload: {e}")
 
-    
-    # Visualizar dados (admin ou próprio autor)
     st.markdown("## My Cases")
-    gc = gspread.authorize(credentials)
-    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-    worksheet = sh.worksheet("Aurum_data")
+    worksheet = get_worksheet()
     data = pd.DataFrame(worksheet.get_all_records())
     if data.empty:
         st.info("No data available at the moment.")
