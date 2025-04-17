@@ -320,12 +320,25 @@ if uploaded_file is not None:
                         st.subheader("🧠 Automated Interpretation")
                         cusum_range = max(cusum_pos) - min(cusum_neg)
                         std_dev = values.std()
+
                         if cusum_range > 2 * std_dev:
-                            st.markdown("🔎 Significant trend change detected.")
+                            peak_pos = max(cusum_pos)
+                            peak_neg = min(cusum_neg)
+
+                            if abs(peak_pos) > abs(peak_neg):
+                                change_index = cusum_pos.index(peak_pos)
+                                change_type = "increase"
+                            else:
+                                change_index = cusum_neg.index(peak_neg)
+                                change_type = "decrease"
+
+                            change_year = years.iloc[change_index]
+                            st.markdown(f"🔎 Significant trend **{change_type}** detected around **{change_year}**.")
                         else:
                             st.markdown("✅ No significant trend change detected.")
 
                     plot_cusum_trend(df_cusum, col_data=col_data, col_time=col_time)
+
 
             show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
             if show_cooc:
