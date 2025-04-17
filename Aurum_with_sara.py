@@ -612,9 +612,11 @@ if "user" in st.session_state:
 
             # Add 'Author' column
             batch_data["Author"] = st.session_state["user"]
+            df = df.fillna("")
+            df["Author"] = st.session_state["user"]
 
             # Convert to list of lists (as expected by Google Sheets)
-            rows_to_append = batch_data.values.tolist()
+            rows_to_append = df.values.tolist()
 
             # Access worksheet
             gc = gspread.authorize(credentials)
