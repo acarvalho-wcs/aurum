@@ -26,7 +26,6 @@ st.title("Aurum - Wildlife Trafficking Analytics")
 # Upload do arquivo
 st.sidebar.markdown("## Welcome to Aurum")
 st.sidebar.markdown("Log in below to unlock multi-user tools.")
-st.sidebar.markdown("**Start analysis here.**")
 st.sidebar.markdown("## 📂 Upload Data")
 uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).**", type=["xlsx"])
 
