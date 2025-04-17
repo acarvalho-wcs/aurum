@@ -545,24 +545,38 @@ if uploaded_file is not None:
                 import networkx as nx
                 import plotly.graph_objects as go
 
-                st.markdown("This network will be generated based on selected features.")
+                st.markdown("This network connects cases that share attributes like species or offender country.")
 
-                available_features = [col for col in df_selected.columns if col not in ['N_seized'] and df_selected[col].nunique() > 1]
-                selected_network_features = st.multiselect("Select features to define network connections:", available_features, default=["Case #"])
+                default_features = ["Species", "Offender Country"]
+                network_features = st.multiselect("Select features to compare across cases:", 
+                                                  options=[col for col in df_selected.columns if col != "Case ID"],
+                                                  default=default_features)
 
-                if selected_network_features:
+                if network_features:
+                    # Prepare feature sets for each Case ID
+                    case_feature_sets = (
+                        df_selected
+                        .groupby("Case ID")[network_features]
+                        .agg(lambda x: set(x.dropna()))
+                        .apply(lambda row: set().union(*row), axis=1)
+                    )
+
                     G = nx.Graph()
 
-                    for key, group in df_selected.groupby(selected_network_features):
-                        species_in_group = group['Species'].unique()
-                        for sp1, sp2 in combinations(species_in_group, 2):
-                            if G.has_edge(sp1, sp2):
-                                G[sp1][sp2]['weight'] += 1
-                            else:
-                                G.add_edge(sp1, sp2, weight=1)
+                    # Create nodes
+                    for case_id in case_feature_sets.index:
+                        G.add_node(case_id)
+
+                    # Create edges between cases that share features
+                    case_ids = list(case_feature_sets.index)
+                    for i in range(len(case_ids)):
+                        for j in range(i + 1, len(case_ids)):
+                            shared = case_feature_sets[case_ids[i]].intersection(case_feature_sets[case_ids[j]])
+                            if shared:
+                                G.add_edge(case_ids[i], case_ids[j], weight=len(shared))
 
                     if G.number_of_edges() == 0:
-                        st.info("No edges were generated with the selected features.")
+                        st.info("No connections were found between cases using the selected features.")
                     else:
                         pos = nx.spring_layout(G, seed=42)
 
@@ -576,9 +590,11 @@ if uploaded_file is not None:
 
                         edge_trace = go.Scatter(
                             x=edge_x, y=edge_y,
-                            line=dict(width=0.5, color='#888'),
-                            hoverinfo='none',
-                            mode='lines')
+                            line=dict(width=1, color='#888'),
+                            hoverinfo='text',
+                            mode='lines',
+                            text=[f"Shared features: {G[u][v]['weight']}" for u, v in G.edges()]
+                        )
 
                         node_x = []
                         node_y = []
@@ -587,7 +603,8 @@ if uploaded_file is not None:
                             x, y = pos[node]
                             node_x.append(x)
                             node_y.append(y)
-                            node_text.append(f"{node} ({G.degree[node]} connections)")
+                            degree = G.degree[node]
+                            node_text.append(f"Case ID: {node} ({degree} connections)")
 
                         node_trace = go.Scatter(
                             x=node_x, y=node_y,
@@ -602,15 +619,14 @@ if uploaded_file is not None:
                                 line_width=1))
 
                         fig = go.Figure(data=[edge_trace, node_trace],
-                                     layout=go.Layout(
-                                         title='Dynamic Species Co-occurrence Network',
-                                         showlegend=False,
-                                         hovermode='closest',
-                                         margin=dict(b=20,l=5,r=5,t=40)))
-
+                                        layout=go.Layout(
+                                            title='Case Connectivity Network',
+                                            showlegend=False,
+                                            hovermode='closest',
+                                            margin=dict(b=20,l=5,r=5,t=40)))
                         st.plotly_chart(fig, use_container_width=True)
                 else:
-                    st.info("Please select at least one feature to generate the network.")
+                    st.info("Please select at least one feature to define connections between cases.")
 
         else:
             st.warning("⚠️ Please select at least one species to explore the data.")
