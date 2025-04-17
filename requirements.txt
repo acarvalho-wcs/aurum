@@ -14,3 +14,6 @@ gspread
 google-auth
 pygsheets
 bcrypt
+extruct
+w3lib
+lxml
