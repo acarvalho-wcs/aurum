@@ -193,7 +193,7 @@ if uploaded_file is not None:
 
                 with st.expander("ℹ️ Learn more about this analysis"):
                     st.markdown("""
-                    ### 📊 About Trend Analysis
+                    ### About Trend Analysis
 
                     The *Trend Analysis* section helps identify shifts in wildlife seizure patterns over time for the selected species.
 
