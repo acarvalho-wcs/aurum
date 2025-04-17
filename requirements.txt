@@ -16,3 +16,5 @@ pygsheets
 bcrypt
 requests
 beautifulsoup4
+transformers
+torch
