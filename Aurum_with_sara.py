@@ -316,8 +316,16 @@ if uploaded_file is not None:
                         ax.legend()
                         st.pyplot(fig)
 
-                    plot_cusum_trend(df_cusum, col_data=col_data, col_time=col_time)
+                        # Interpretation
+                        st.subheader("🧠 Automated Interpretation")
+                        cusum_range = max(cusum_pos) - min(cusum_neg)
+                        std_dev = values.std()
+                        if cusum_range > 2 * std_dev:
+                            st.markdown("🔎 Significant trend change detected.")
+                        else:
+                            st.markdown("✅ No significant trend change detected.")
 
+                    plot_cusum_trend(df_cusum, col_data=col_data, col_time=col_time)
 
             show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
             if show_cooc:
