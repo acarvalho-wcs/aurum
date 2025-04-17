@@ -519,24 +519,39 @@ if login_button and username and password:
         st.error("User not approved or does not exist.")
 
 # --- FORMULÁRIO DE ACESSO (REQUISIÇÃO) ---
-if "user" not in st.session_state:
-    st.markdown("## Request Access to Aurum")
-    with st.form("request_form"):
-        new_username = st.text_input("Choose a username")
-        new_password = st.text_input("Choose a password")
-        new_institution = st.text_input("Institution")
-        new_email = st.text_input("E-mail")
-        reason = st.text_area("Why do you want access to Aurum?", help="Required")
+# Inicializa estado
+if "show_sidebar_request" not in st.session_state:
+    st.session_state["show_sidebar_request"] = False
+
+# Botão na sidebar
+if st.sidebar.button("📩 Request Access"):
+    st.session_state["show_sidebar_request"] = True
+
+# Exibe o formulário de solicitação na sidebar se o botão foi clicado
+if st.session_state["show_sidebar_request"]:
+    with st.sidebar.form("sidebar_request_form"):
+        new_username = st.text_input("Choose a username", key="sidebar_user")
+        new_password = st.text_input("Choose a password", type="password", key="sidebar_pass")
+        institution = st.text_input("Institution", key="sidebar_inst")
+        email = st.text_input("E-mail", key="sidebar_email")
+        reason = st.text_area("Why do you want access to Aurum?", key="sidebar_reason")
         submit_request = st.form_submit_button("Submit Request")
 
         if submit_request:
-            if not new_username.strip() or not reason.strip():
-                st.warning("Username, password, institution, email and reason are required.")
+            if not new_username or not new_password or not reason:
+                st.sidebar.warning("All fields are required.")
             else:
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                requests_ws.append_row([timestamp, new_username.strip(), new_password.strip(), new_institution.strip(), new_email.strip(), reason.strip()])
-                st.success("✅ Your request has been submitted for review.")
-    st.stop()
+                requests_ws.append_row([
+                    timestamp,
+                    new_username,
+                    new_password,
+                    institution,
+                    email,
+                    reason
+                ])
+                st.sidebar.success("✅ Request submitted!")
+                st.session_state["show_sidebar_request"] = False
 
 # --- PAINEL ADMINISTRATIVO ---
 if st.session_state.get("is_admin"):
