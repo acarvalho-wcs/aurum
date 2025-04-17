@@ -567,7 +567,7 @@ if st.session_state.get("is_admin"):
                 if not new_user or not new_password:
                     st.warning("Username and password are required.")
                 else:
-                    hashed_pw = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+                    hashed_pw = new_password
                     users_ws.append_row([new_user, hashed_pw, str(is_admin), "TRUE"])
                     st.success(f"✅ {new_user} has been approved and added to the system.")
 
