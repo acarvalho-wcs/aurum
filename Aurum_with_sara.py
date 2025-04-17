@@ -480,37 +480,6 @@ if export_html and df_selected is not None:
         mime="text/html"
     )
 
-if "show_sidebar_request" not in st.session_state:
-    st.session_state["show_sidebar_request"] = False
-
-if st.sidebar.button("📩 Request Access"):
-    st.session_state["show_sidebar_request"] = True
-
-if st.session_state["show_sidebar_request"]:
-    with st.sidebar.form("sidebar_request_form"):
-        new_username = st.text_input("Choose a username", key="sidebar_user")
-        new_password = st.text_input("Choose a password", type="password", key="sidebar_pass")
-        institution = st.text_input("Institution", key="sidebar_inst")
-        email = st.text_input("E-mail", key="sidebar_email")
-        reason = st.text_area("Why do you want access to Aurum?", key="sidebar_reason")
-        submit_request = st.form_submit_button("Submit Request")
-
-        if submit_request:
-            if not new_username or not new_password or not reason:
-                st.sidebar.warning("All fields are required.")
-            else:
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                requests_ws.append_row([
-                    timestamp,
-                    new_username,
-                    new_password,
-                    institution,
-                    email,
-                    reason
-                ])
-                st.sidebar.success("✅ Request submitted!")
-                st.session_state["show_sidebar_request"] = False  # Oculta após envio
-
 # --- AUTENTICAÇÃO E CONEXÃO COM GOOGLE SHEETS ---
 SHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
 USERS_SHEET = "Users"
@@ -550,37 +519,24 @@ if login_button and username and password:
         st.error("User not approved or does not exist.")
 
 # --- FORMULÁRIO DE ACESSO (REQUISIÇÃO) ---
-if "show_sidebar_request" not in st.session_state:
-    st.session_state["show_sidebar_request"] = False
+if "user" not in st.session_state:
+    st.markdown("## Request Access to Aurum")
+    with st.form("request_form"):
+        new_username = st.text_input("Choose a username")
+        new_password = st.text_input("Choose a password")
+        new_institution = st.text_input("Institution")
+        new_email = st.text_input("E-mail")
+        reason = st.text_area("Why do you want access to Aurum?", help="Required")
+        submit_request = st.form_submit_button("Submit Request")
 
-if not st.session_state.get("user"):
-    if st.sidebar.button("📩 Request Access"):
-        st.session_state["show_sidebar_request"] = True
-
-    if st.session_state["show_sidebar_request"]:
-        with st.sidebar.form("sidebar_request_form"):
-            new_username = st.text_input("Choose a username", key="sidebar_user")
-            new_password = st.text_input("Choose a password", type="password", key="sidebar_pass")
-            new_institution = st.text_input("Institution", key="sidebar_inst")
-            new_email = st.text_input("E-mail", key="sidebar_email")
-            reason = st.text_area("Why do you want access to Aurum?", key="sidebar_reason")
-            submit_request = st.form_submit_button("Submit Request")
-
-            if submit_request:
-                if not new_username or not new_password or not reason:
-                    st.sidebar.warning("All fields are required.")
-                else:
-                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    requests_ws.append_row([
-                        timestamp,
-                        new_username,
-                        new_password,
-                        new_institution,
-                        new_email,
-                        reason
-                    ])
-                    st.sidebar.success("✅ Request submitted!")
-                    st.session_state["show_sidebar_request"] = False
+        if submit_request:
+            if not new_username.strip() or not reason.strip():
+                st.warning("Username, password, institution, email and reason are required.")
+            else:
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                requests_ws.append_row([timestamp, new_username.strip(), new_password.strip(), new_institution.strip(), new_email.strip(), reason.strip()])
+                st.success("✅ Your request has been submitted for review.")
+    st.stop()
 
 # --- PAINEL ADMINISTRATIVO ---
 if st.session_state.get("is_admin"):
