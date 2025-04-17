@@ -628,6 +628,39 @@ if uploaded_file is not None:
                 else:
                     st.info("Please select at least one feature to define connections between cases.")
 
+                        st.plotly_chart(fig, use_container_width=True)
+
+                        with st.expander("ℹ️ Learn more about this analysis"):
+                            st.markdown("""
+                            ### About Case Network Analysis
+
+                            This section visualizes a network of wildlife trafficking cases based on shared attributes such as species, offender countries, or other relevant fields.
+
+                            - **Each node in the network represents a unique case** (`Case ID`).
+                            - **An edge between two cases indicates that they share one or more selected attributes**, such as:
+                                - The same species involved,
+                                - The same offender country,
+                                - Other user-selected fields (e.g., seizure location, transport method).
+
+                            - The more attributes two cases have in common, the **stronger their connection** (i.e., higher edge weight).
+                            - **Edge weight** represents the number of shared elements between the two cases, and is displayed interactively when hovering over connections.
+
+                            - This type of network helps to:
+                                - **Identify clusters of related cases**, which may signal recurrent patterns, shared trafficking routes, or organizational links.
+                                - **Visualize potential case consolidation** (e.g., repeated behavior by the same actors or coordinated multi-species trafficking).
+                                - Reveal connections that may not be obvious in tabular data.
+
+                            - Node size reflects the number of connections (degree), helping to identify central or highly connected cases.
+                            - The analysis is dynamic: users can choose which attributes to include, allowing flexible exploration of the data.
+
+                            - For example:
+                                - If two cases both involve *Arara-azul-de-Lear* and occurred with offenders from Brazil, a connection is drawn.
+                                - If a third case shares only the species but not the country, it will also connect, but with a lower weight.
+
+                            - For more information on network methods in environmental crime analysis, refer to the ReadMe file and Carvalho (2025).
+                            """)
+
+        
         else:
             st.warning("⚠️ Please select at least one species to explore the data.")
 
