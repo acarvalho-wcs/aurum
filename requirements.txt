@@ -19,3 +19,5 @@ w3lib
 lxml
 transformers
 torch
+beautifulsoup4
+requests
