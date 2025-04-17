@@ -284,6 +284,42 @@ if uploaded_file is not None:
                             results.append((sp_a, sp_b, chi2, p, table))
                     return results
 
+                def interpret_cooccurrence(table, chi2, p):
+                    a = table.iloc[0, 0]
+                    b = table.iloc[0, 1]
+                    c = table.iloc[1, 0]
+                    d = table.iloc[1, 1]
+
+                    threshold = 0.05
+
+                    if p >= threshold:
+                        st.info("📊 No statistically significant association between these species was found (p ≥ 0.05).")
+                        return
+
+                    if d == 0:
+                        st.warning("⚠️ These species were never trafficked together. This pattern suggests **mutual exclusivity**, possibly due to distinct trafficking chains or ecological separation.")
+                    elif b + c == 0:
+                        st.success("✅ These species always appear together. This indicates a **perfect positive association**, potentially reflecting joint capture, transport, or market demand.")
+                    elif d > b + c:
+                        st.success("🔗 These species frequently appear together and are **positively associated** in trafficking records. The co-occurrence is unlikely to be due to chance.")
+                    elif d < min(b, c):
+                        st.error("❌ These species are almost always recorded **separately**, suggesting a **strong negative association** or operational separation in trafficking routes.")
+                    else:
+                        st.info("ℹ️ A statistically significant association was detected. While co-occurrence exists, it is not dominant — suggesting **partial overlap** in trafficking patterns.")
+
+                co_results = general_species_cooccurrence(df_selected, selected_species)
+
+                if co_results:
+                    st.markdown("### Co-occurrence Results")
+                    for sp_a, sp_b, chi2, p, table in co_results:
+                        st.markdown(f"**{sp_a} × {sp_b}**")
+                        st.dataframe(table)
+                        st.markdown(f"Chi² = `{chi2:.2f}` | p = `{p:.4f}`")
+                        interpret_cooccurrence(table, chi2, p)
+                        st.markdown("---")
+                else:
+                    st.info("No co-occurrence data available for selected species.")
+
                 co_results = general_species_cooccurrence(df_selected, selected_species)
 
                 if co_results:
