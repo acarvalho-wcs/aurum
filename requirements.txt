@@ -17,3 +17,5 @@ bcrypt
 extruct
 w3lib
 lxml
+transformers
+torch
