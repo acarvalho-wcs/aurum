@@ -322,17 +322,6 @@ if uploaded_file is not None:
 
                 co_results = general_species_cooccurrence(df_selected, selected_species)
 
-                if co_results:
-                    st.markdown("### Co-occurrence Results")
-                    for sp_a, sp_b, chi2, p, table in co_results:
-                        st.markdown(f"**{sp_a} × {sp_b}**")
-                        st.dataframe(table)
-                        st.markdown(f"Chi² = `{chi2:.2f}` | p = `{p:.4f}`")
-                        st.markdown("---")
-                else:
-                    st.info("No co-occurrence data available for selected species.")
-
-
             show_anomaly = st.sidebar.checkbox("Anomaly Detection", value=False)
             if show_anomaly:
                 st.markdown("## Anomaly Detection")
