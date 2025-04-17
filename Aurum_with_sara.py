@@ -295,6 +295,7 @@ if uploaded_file is not None:
                         values = df_sorted[col_data]
 
                         mean_val = values.mean()
+                        std_dev = values.std()
                         cusum_pos = [0]
                         cusum_neg = [0]
 
