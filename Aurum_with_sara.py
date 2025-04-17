@@ -161,7 +161,6 @@ if uploaded_file is not None:
 
             
             show_trend = st.sidebar.checkbox("Trend Analysis", value=False)
-            show_trend = st.sidebar.checkbox("Trend Analysis", value=False)
             if show_trend:
                 st.markdown("## Trend Analysis")
 
