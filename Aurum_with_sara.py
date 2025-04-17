@@ -44,6 +44,14 @@ The platform enables the upload and processing of case-level data and offers a s
 st.sidebar.markdown("## 📂 Upload Data")
 uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).**", type=["xlsx"])
 
+st.sidebar.markdown("**Download Template**")
+with open("Aurum_template.xlsx", "rb") as f:
+    st.sidebar.download_button(
+        label="Download a data template for wildlife trafficking analysis in Aurum",
+        data=f,
+        file_name="aurum_template.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 df = None
 df_selected = None
 if uploaded_file is not None:
@@ -526,15 +534,6 @@ if "user" in st.session_state:
         st.dataframe(data)
     else:
         st.dataframe(data[data["Author"] == st.session_state["user"]])
-
-st.sidebar.markdown("**Download Template**")
-with open("Aurum_template.xlsx", "rb") as f:
-    st.sidebar.download_button(
-        label="Download a data template for wildlife trafficking analysis in Aurum",
-        data=f,
-        file_name="aurum_template.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
 
 st.sidebar.markdown("## Export Options")
 export_xlsx = st.sidebar.button("Export Cleaned data.xlsx")
