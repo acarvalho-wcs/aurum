@@ -45,7 +45,7 @@ login_button = st.sidebar.button("Login")
 
 # Verify encrypted password
 def verify_password(password, hashed):
-    return bcrypt.checkpw(password.encode(), hashed.encode())
+    return password == stored
 
 if login_button and username and password:
     user_row = users_df[users_df["Username"] == username]
