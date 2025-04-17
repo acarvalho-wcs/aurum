@@ -211,7 +211,7 @@ if uploaded_file is not None:
                     - The section also generates a plot showing data points and trend lines for each species, making it easier to visualize changes over time.
                     - Find more details in the ReadMe file and/or in Carvalho (2025).
                     """)
-                    
+
                 st.markdown("### Trend Plot")
                 fig, ax = plt.subplots(figsize=(8, 5))
 
@@ -236,6 +236,42 @@ if uploaded_file is not None:
                 ax.set_ylabel("Individuals Seized")
                 ax.legend()
                 st.pyplot(fig)
+
+                with st.expander("📉 Show regression details by species"):
+                    for species in selected_species:
+                        subset = df_selected[df_selected['Species'] == species]
+                        df_pre = subset[subset['Year'] <= breakpoint_year]
+                        df_post = subset[subset['Year'] > breakpoint_year]
+
+                        st.markdown(f"#### 📈 {species}")
+
+                        if len(df_pre) > 1:
+                            X_pre = sm.add_constant(df_pre['Year'])
+                            y_pre = df_pre['N_seized']
+                            model_pre = sm.OLS(y_pre, X_pre).fit()
+                            slope_pre = model_pre.params['Year']
+                            r2_pre = model_pre.rsquared
+                            pval_pre = model_pre.pvalues['Year']
+                            st.markdown(f"- Pre-breakpoint slope: β = `{slope_pre:.2f}`")
+                            st.markdown(f"- R² = `{r2_pre:.2f}`")
+                            st.markdown(f"- p-value = `{pval_pre:.4f}`")
+                        else:
+                            st.info("Not enough data before breakpoint.")
+
+                        if len(df_post) > 1:
+                            X_post = sm.add_constant(df_post['Year'])
+                            y_post = df_post['N_seized']
+                            model_post = sm.OLS(y_post, X_post).fit()
+                            slope_post = model_post.params['Year']
+                            r2_post = model_post.rsquared
+                            pval_post = model_post.pvalues['Year']
+                            st.markdown(f"- Post-breakpoint slope: β = `{slope_post:.2f}`")
+                            st.markdown(f"- R² = `{r2_post:.2f}`")
+                            st.markdown(f"- p-value = `{pval_post:.4f}`")
+                        else:
+                            st.info("Not enough data after breakpoint.")
+
+                        st.markdown("---")
 
             show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
             if show_cooc:
