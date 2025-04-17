@@ -25,7 +25,7 @@ st.title("Aurum - Wildlife Trafficking Analytics")
 
 # Upload do arquivo
 st.sidebar.markdown("## Welcome to Aurum")
-st.sidebar.markdown("Start analysis here")
+st.sidebar.markdown("Start analysis here. Log in to unlock multi-user tools in Aurum.")
 st.sidebar.markdown("## 📂 Upload Data")
 uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).**", type=["xlsx"])
 
@@ -573,11 +573,6 @@ if st.session_state.get("is_admin"):
                     users_ws.append_row([new_user, hashed_pw, str(is_admin), "TRUE"])
                     st.success(f"✅ {new_user} has been approved and added to the system.")
 
-# --- CONTINUA COM O APP NORMAL SE USUÁRIO AUTENTICADO ---
-if "user" not in st.session_state:
-    st.warning("Log in to unlock multi-user tools in Aurum.")
-    st.stop()
-    
 # --- FORMULÁRIO ---
 if "user" in st.session_state:
     st.markdown("## Submit New Case to Aurum")
