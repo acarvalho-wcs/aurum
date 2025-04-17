@@ -547,7 +547,7 @@ if uploaded_file is not None:
 
                 st.markdown("This network connects cases that share attributes like species or offender country.")
 
-                default_features = ["Species", "Offender Country"]
+                default_features = ["Species", "Country of offenders"]
                 network_features = st.multiselect("Select features to compare across cases:", 
                                                   options=[col for col in df_selected.columns if col != "Case ID"],
                                                   default=default_features)
