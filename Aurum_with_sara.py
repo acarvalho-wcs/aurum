@@ -16,53 +16,92 @@ from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
+import bcrypt
+import os
 
-# Configuração da página
-st.set_page_config(page_title="Aurum Dashboard", layout="centered")
+# --- CONFIGURAÇÃO DA PÁGINA ---
+st.set_page_config(page_title="Aurum Dashboard", layout="wide")
 
-# Título e logotipo
+# --- AUTENTICAÇÃO E CONEXÃO COM GOOGLE SHEETS ---
 st.title("Aurum - Wildlife Trafficking Analytics")
-st.markdown("**Select an analysis from the sidebar to begin.**")
+SHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
+USERS_SHEET = "Users"
+REQUESTS_SHEET = "Access Requests"
 
-# --- CONFIGURAÇÃO ---
-# Nome da aba do Google Sheets
-SHEET_NAME = "Aurum Form"
-SPREADSHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
-
-# Configurações de escopo e autenticação
 scope = ["https://www.googleapis.com/auth/spreadsheets"]
 credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
 client = gspread.authorize(credentials)
+sheets = client.open_by_key(SHEET_ID)
 
-# ID da planilha e nome da aba
-sheet_id = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
-sheet_name = "Aurum_data"  # ou o nome correto da aba
+users_ws = sheets.worksheet(USERS_SHEET)
+requests_ws = sheets.worksheet(REQUESTS_SHEET)
+users_df = pd.DataFrame(users_ws.get_all_records())
 
-# Leitura da planilha
-worksheet = client.open_by_key(sheet_id).Aurum_data
-data = worksheet.get_all_records()
-df = pd.DataFrame(data)
-
-sheets = client.open_by_key(sheet_id)
-
-# --- AUTENTICAÇÃO ---
-st.sidebar.markdown("## 🔐 Aurum Gateway")
-user = st.sidebar.text_input("Username")
+# --- LOGIN ---
+st.sidebar.markdown("## 🔐 Login to Aurum")
+username = st.sidebar.text_input("Username")
 password = st.sidebar.text_input("Password", type="password")
-login = st.sidebar.button("Login")
+login_button = st.sidebar.button("Login")
 
-if login:
-    if user and password:
-        if user == "acarvalho" and password == "admin":
-            st.session_state["user"] = user
-            st.session_state["is_admin"] = True
-            st.success("Logged in as admin.")
+# Verify encrypted password
+def verify_password(password, hashed):
+    return bcrypt.checkpw(password.encode(), hashed.encode())
+
+if login_button and username and password:
+    user_row = users_df[users_df["Username"] == username]
+    if not user_row.empty and user_row.iloc[0]["Approved"] == "True":
+        hashed_pw = user_row.iloc[0]["Password"]
+        if verify_password(password, hashed_pw):
+            st.session_state["user"] = username
+            st.session_state["is_admin"] = user_row.iloc[0]["Is_Admin"] == "True"
+            st.success(f"Logged in as {username}")
         else:
-            st.session_state["user"] = user
-            st.session_state["is_admin"] = False
-            st.success(f"Logged in as {user}")
+            st.error("Incorrect password.")
     else:
-        st.warning("Please provide both username and password.")
+        st.error("User not approved or does not exist.")
+
+# --- FORMULÁRIO DE ACESSO (REQUISIÇÃO) ---
+if "user" not in st.session_state:
+    st.markdown("## 📝 Request Access to Aurum")
+    with st.form("request_form"):
+        new_username = st.text_input("Choose a username")
+        reason = st.text_area("Why do you want access to Aurum?", help="Required")
+        submit_request = st.form_submit_button("Submit Request")
+
+        if submit_request:
+            if not new_username.strip() or not reason.strip():
+                st.warning("Username and reason are required.")
+            else:
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                requests_ws.append_row([timestamp, new_username.strip(), reason.strip()])
+                st.success("✅ Your request has been submitted for review.")
+    st.stop()
+
+# --- PAINEL ADMINISTRATIVO ---
+if st.session_state.get("is_admin"):
+    st.markdown("## 🛡️ Admin Panel - Approve Access Requests")
+    request_df = pd.DataFrame(requests_ws.get_all_records())
+    if not request_df.empty:
+        st.dataframe(request_df)
+
+        with st.form("approve_form"):
+            new_user = st.selectbox("Select username to approve:", request_df["Username"].unique())
+            new_password = st.text_input("Set initial password", type="password")
+            is_admin = st.checkbox("Grant admin access?")
+            approve_button = st.form_submit_button("Approve User")
+
+            if approve_button:
+                if not new_user or not new_password:
+                    st.warning("Username and password are required.")
+                else:
+                    hashed_pw = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+                    users_ws.append_row([new_user, hashed_pw, str(is_admin), "True"])
+                    st.success(f"✅ {new_user} has been approved and added to the system.")
+
+# --- CONTINUA COM O APP NORMAL SE USUÁRIO AUTENTICADO ---
+if "user" not in st.session_state:
+    st.warning("Please log in to access the app.")
+    st.stop()
 
 # --- FORMULÁRIO ---
 if "user" in st.session_state:
