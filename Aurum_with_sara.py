@@ -293,7 +293,7 @@ if uploaded_file is not None:
                     threshold = 0.05
 
                     if p >= threshold:
-                        st.info("📊 No statistically significant association between these species was found (p ≥ 0.05).")
+                        st.info("No statistically significant association between these species was found (p ≥ 0.05).")
                         return
 
                     if d == 0:
@@ -320,7 +320,7 @@ if uploaded_file is not None:
                 else:
                     st.info("No co-occurrence data available for selected species.")
 
-                st.markdown("### 📋 Co-trafficked Species Cases")
+                st.markdown("### Co-trafficked Species Cases")
 
                 grouped = df_selected.groupby('Case #')
                 multi_species_cases = grouped.filter(lambda x: x['Species'].nunique() > 1)
