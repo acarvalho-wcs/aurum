@@ -211,6 +211,7 @@ if uploaded_file is not None:
                     The analysis requires at least two observations on each side of the breakpoint to produce meaningful estimates. 
                     The score can be sensitive to outliers or sparsely populated time ranges, and should be interpreted in light of the broader case context.
                     The section also generates a plot showing data points and trend lines for each species, making it easier to visualize changes over time.
+                    Find more details in the ReadMe file and/or in Carvalho (2025).
                     """)
                     
                 st.markdown("### Trend Plot")
