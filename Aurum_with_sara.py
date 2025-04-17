@@ -114,7 +114,6 @@ if uploaded_file is not None:
 
         st.success("✅ File uploaded and cleaned successfully!")
 
-        st.sidebar.markdown("---")
         st.sidebar.markdown("## Select Species")
         species_options = sorted(df['Species'].dropna().unique())
         selected_species = st.sidebar.multiselect("Select one or more species:", species_options)
@@ -359,7 +358,6 @@ if uploaded_file is not None:
 
     except Exception as e:
         st.error(f"❌ Error reading file: {e}")
-st.sidebar.markdown("---")
 
 import base64
 
@@ -389,7 +387,6 @@ def place_logo_bottom_right(image_path, width=100):
 # Chamada da função para exibir a logo
 place_logo_bottom_right("wcs.jpg")
 
-st.sidebar.markdown("---")
 show_about = st.sidebar.button("**About Aurum**")
 if show_about:
     st.markdown("## About Aurum")
@@ -405,7 +402,6 @@ The platform enables the upload and processing of case-level data and offers a s
 - **Interactive Visualization**: Generate customized plots and dashboards based on uploaded data and selected variables.
 """)
 
-st.sidebar.markdown("---")
 st.sidebar.markdown("## Export Options")
 export_xlsx = st.sidebar.button("Export Cleaned data.xlsx")
 export_html = st.sidebar.button("Export Analysis Report (.html)")
@@ -495,6 +491,7 @@ requests_ws = sheets.worksheet(REQUESTS_SHEET)
 users_df = pd.DataFrame(users_ws.get_all_records())
 
 # --- LOGIN ---
+st.sidebar.markdown("---")
 st.sidebar.markdown("## 🔐 Login to Aurum")
 username = st.sidebar.text_input("Username")
 password = st.sidebar.text_input("Password", type="password")
@@ -615,5 +612,6 @@ if "user" in st.session_state:
         st.dataframe(data)
     else:
         st.dataframe(data[data["Author"] == st.session_state["user"]])
-    
+
+st.sidebar.markdown("---")    
 st.sidebar.markdown("How to cite: Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
