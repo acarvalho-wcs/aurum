@@ -21,6 +21,7 @@ import os
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Aurum Dashboard", layout="wide")
+st.title("Aurum - Wildlife Trafficking Analytics")
 
 # Upload do arquivo
 st.sidebar.markdown("## 📂 Upload Data")
@@ -480,7 +481,6 @@ if export_html and df_selected is not None:
     )
 
 # --- AUTENTICAÇÃO E CONEXÃO COM GOOGLE SHEETS ---
-st.title("Aurum - Wildlife Trafficking Analytics")
 SHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
 USERS_SHEET = "Users"
 REQUESTS_SHEET = "Access Requests"
