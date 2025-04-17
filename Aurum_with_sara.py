@@ -193,7 +193,7 @@ if uploaded_file is not None:
 
                 with st.expander("ℹ️ Learn more about this analysis"):
                     st.markdown("""
-                 ### About Trend Analysis
+                    ### About Trend Analysis
 
                     The *Trend Analysis* section helps identify shifts in wildlife seizure patterns over time for the selected species.
 
@@ -211,6 +211,7 @@ if uploaded_file is not None:
                     - The section also generates a plot showing data points and trend lines for each species, making it easier to visualize changes over time.
                     - Find more details in the ReadMe file and/or in Carvalho (2025).
                     """)
+
                 st.markdown("### Trend Plot")
                 fig, ax = plt.subplots(figsize=(8, 5))
 
@@ -316,6 +317,7 @@ if uploaded_file is not None:
                         st.pyplot(fig)
 
                     plot_cusum_trend(df_cusum, col_data=col_data, col_time=col_time)
+
 
             show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
             if show_cooc:
