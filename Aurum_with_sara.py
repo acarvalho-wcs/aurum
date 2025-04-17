@@ -141,9 +141,6 @@ if "user" in st.session_state:
     else:
         st.dataframe(data[data["Author"] == st.session_state["user"]])
 
-st.sidebar.title("Aurum Menu")
-option = st.sidebar.selectbox("Select analysis", ["Overview", "Trends", "Co-occurrence", "Anomalies"])
-
 # Upload do arquivo
 st.sidebar.markdown("## 📂 Upload Data")
 uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).**", type=["xlsx"])
