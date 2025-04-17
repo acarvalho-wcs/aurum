@@ -316,6 +316,21 @@ if uploaded_file is not None:
                         ax.legend()
                         st.pyplot(fig)
 
+                        # Highlight years with significant deviation
+                        highlight_years = [
+                            i for i, val in enumerate(values)
+                            if abs(val - mean_val) > 1.5 * std_dev
+                        ]
+
+                        ax.scatter(
+                            [years.iloc[i] for i in highlight_years],
+                            [values.iloc[i] for i in highlight_years],
+                            color='red', marker='x', s=100, label='Significant Deviation'
+                        )
+
+                        ax.legend()
+                        st.pyplot(fig)
+                        
                         # Interpretation
                         st.subheader("Automated Interpretation")
                         cusum_range = max(cusum_pos) - min(cusum_neg)
