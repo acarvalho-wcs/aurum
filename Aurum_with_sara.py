@@ -93,8 +93,7 @@ if uploaded_file is not None:
                 return sum(country_map.get(c, 0) for c in countries)
 
             if "Country of offenders" in df.columns:
-                df["Offender_value"] = df["Country of offenders"].apply(lambda x: score_countries(x, country_map))
-                st.markdown("✅ `Offender_value` column added using country_offenders_values.csv")
+                df["Offender_value"] = df["Country of offenders"].apply(lambda x: score_countries(x, country_map))                
         else:
             st.warning("⚠️ File country_offenders_values.csv not found. Offender scoring skipped.")
 
