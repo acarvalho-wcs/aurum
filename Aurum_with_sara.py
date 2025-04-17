@@ -317,7 +317,7 @@ if uploaded_file is not None:
                         st.pyplot(fig)
 
                         # Interpretation
-                        st.subheader("🧠 Automated Interpretation")
+                        st.subheader("Automated Interpretation")
                         cusum_range = max(cusum_pos) - min(cusum_neg)
                         std_dev = values.std()
                         mean_val = values.mean()
@@ -332,9 +332,9 @@ if uploaded_file is not None:
 
                             if change_years:
                                 formatted_years = " and ".join(str(y) for y in change_years)
-                                st.markdown(f"🔎 Significant trend changes detected in: **{formatted_years}** (based on deviations from the historical average).")
+                                st.markdown(f"Significant trend changes detected in: **{formatted_years}** (based on deviations from the historical average).")
                             else:
-                                st.markdown("🔎 CUSUM suggests change, but no single year shows strong deviation from the mean.")
+                                st.markdown("CUSUM suggests change, but no single year shows strong deviation from the mean.")
                         else:
                             st.markdown("✅ No significant trend change detected.")
 
