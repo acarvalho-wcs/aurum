@@ -49,11 +49,11 @@ def verify_password(password, hashed):
 
 if login_button and username and password:
     user_row = users_df[users_df["Username"] == username]
-    if not user_row.empty and user_row.iloc[0]["Approved"].strip().lower() == "true":
+    if not user_row.empty and str(user_row.iloc[0]["Approved"]).strip().lower() == "true":
         hashed_pw = user_row.iloc[0]["Password"].strip()
         if verify_password(password, hashed_pw):
             st.session_state["user"] = username
-            st.session_state["is_admin"] = user_row.iloc[0]["Is_Admin"].strip().lower() == "true"
+            st.session_state["is_admin"] = str(user_row.iloc[0]["Is_Admin"]).strip().lower() == "true"
             st.success(f"Logged in as {username}")
         else:
             st.error("Incorrect password.")
