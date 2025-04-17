@@ -36,10 +36,10 @@ client = gspread.authorize(credentials)
 
 # ID da planilha e nome da aba
 sheet_id = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
-sheet_name = "Sheet1"  # ou o nome correto da aba
+sheet_name = "Aurum_data"  # ou o nome correto da aba
 
 # Leitura da planilha
-worksheet = client.open_by_key(sheet_id).sheet1
+worksheet = client.open_by_key(sheet_id).Aurum_data
 data = worksheet.get_all_records()
 df = pd.DataFrame(data)
 
