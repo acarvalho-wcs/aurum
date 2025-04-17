@@ -615,10 +615,23 @@ if "user" in st.session_state:
             else:
                 batch_data = pd.read_excel(uploaded_file)
 
+            # Preenche colunas obrigatórias
             batch_data = batch_data.fillna("")
+            batch_data["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             batch_data["Author"] = st.session_state["user"]
-            rows_to_append = batch_data.values.tolist()
 
+            # Reordena colunas se necessário
+            ordered_cols = [
+                "Timestamp", "Case ID", "N seized specimens", "Year",
+                "Country of offenders", "Seizure status", "Transit feature",
+                "Notes", "Author"
+            ]
+            for col in ordered_cols:
+                if col not in batch_data.columns:
+                    batch_data[col] = ""
+            batch_data = batch_data[ordered_cols]
+
+            rows_to_append = batch_data.values.tolist()
             worksheet = get_worksheet()
             worksheet.append_rows(rows_to_append, value_input_option="USER_ENTERED")
 
@@ -629,13 +642,18 @@ if "user" in st.session_state:
 
     st.markdown("## My Cases")
     worksheet = get_worksheet()
-    data = pd.DataFrame(worksheet.get_all_records())
-    if data.empty:
-        st.info("No data available at the moment.")
-    elif st.session_state.get("is_admin"):
-        st.dataframe(data)
-    else:
-        st.dataframe(data[data["Author"] == st.session_state["user"]])
+    try:
+        records = worksheet.get_all_records()
+        if not records:
+            st.info("No data available at the moment.")
+        else:
+            data = pd.DataFrame(records)
+            if st.session_state.get("is_admin"):
+                st.dataframe(data)
+            else:
+                st.dataframe(data[data["Author"] == st.session_state["user"]])
+    except Exception as e:
+        st.error(f"❌ Failed to load data: {e}")
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
