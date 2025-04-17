@@ -639,8 +639,6 @@ Generate a narrative report about wildlife trafficking based on the following da
         prompt += f"- Number of anomalous cases: {outlier_count}\n"
 
     prompt += f"\nWrite the report in **{language}**, using a professional tone. Highlight relevant findings, patterns, and anomalies."
-    models = client.models.list()
-    st.write([m.id for m in models.data])
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}],
