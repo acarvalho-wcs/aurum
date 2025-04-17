@@ -34,7 +34,7 @@ if show_about:
 
 The platform enables the upload and processing of case-level data and offers a suite of analytical tools, including:
 
-- **Trend Analysis**: Explore temporal patterns using segmented regression (TCS), expanding mean, and CUSUM to detect shifts in trafficking intensity over time.
+- **Trend Analysis**: Explore temporal patterns using segmented regression (TCS) to measure directional changes in trends before and after a chosen breakpoint year. Additionally, detect significant deviations from historical averages with CUSUM.
 - **Species Co-occurrence**: Identify statistically significant co-trafficking relationships between species using chi-square tests and network-based representations.
 - **Anomaly Detection**: Apply multiple methods (Isolation Forest, LOF, DBSCAN, Mahalanobis distance, Z-Score) to identify outlier cases based on numerical features.
 - **Criminal Network Analysis**: Visualize co-occurrence networks to reveal potential connections and logistical consolidation among species and locations.
