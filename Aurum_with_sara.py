@@ -534,7 +534,7 @@ if "user" not in st.session_state:
                 st.warning("Username, password, institution, email and reason are required.")
             else:
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                requests_ws.append_row([timestamp, new_username.strip(), new_password.strip(), new_institution.strip(), new_email.strip(), reason.strip()])
+                requests_ws.append_row([timestamp, new_username.strip(), new_password.strip(), reason.strip(), new_institution.strip(), new_email.strip()])
                 st.success("✅ Your request has been submitted for review.")
     st.stop()
 
