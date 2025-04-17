@@ -63,7 +63,7 @@ if login_button and username and password:
 
 # --- FORMULÁRIO DE ACESSO (REQUISIÇÃO) ---
 if "user" not in st.session_state:
-    st.markdown("## 📝 Request Access to Aurum")
+    st.markdown("## Request Access to Aurum")
     with st.form("request_form"):
         new_username = st.text_input("Choose a username")
         reason = st.text_area("Why do you want access to Aurum?", help="Required")
@@ -106,7 +106,7 @@ if "user" not in st.session_state:
 
 # --- FORMULÁRIO ---
 if "user" in st.session_state:
-    st.markdown("## 📥 Submit New Case to Aurum")
+    st.markdown("## Submit New Case to Aurum")
     with st.form("aurum_form"):
         case_id = st.text_input("Case ID")
         n_seized = st.text_input("N seized specimens (e.g. 2 GLT + 1 LM)")
@@ -140,6 +140,9 @@ if "user" in st.session_state:
         st.dataframe(data)
     else:
         st.dataframe(data[data["Author"] == st.session_state["user"]])
+
+st.sidebar.title("Aurum Menu")
+option = st.sidebar.selectbox("Select analysis", ["Overview", "Trends", "Co-occurrence", "Anomalies"])
 
 # Upload do arquivo
 st.sidebar.markdown("## 📂 Upload Data")
