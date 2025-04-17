@@ -243,7 +243,7 @@ if uploaded_file is not None:
 
                 with st.expander("ℹ️ Learn more about this analysis"):
                     st.markdown("""
-                    ### 🧬 About Species Co-occurrence
+                    ### About Species Co-occurrence
 
                     The Species Co-occurrence section identifies pairs of species that tend to be trafficked together within the same cases, revealing potential patterns of coordinated extraction, transport, or market demand.
 
