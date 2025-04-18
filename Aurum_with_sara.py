@@ -1019,18 +1019,22 @@ def run_single_url_scraper():
     st.subheader("Single URL Scraper")
     url = st.text_input("Product or Search Page URL:")
     if st.button("Extract & Classify URL") and url:
-        # Detect search page pattern
-        if "lista.mercadolivre.com.br" in url.split('#')[0]:
-            st.info("Detected a search page. Scanning all listings...")
+        # Determine if URL is a search results page
+        base = url.split('#')[0]
+        if "lista.mercadolivre.com.br" in base:
+            st.info("Detected a search page. Scanning product listings...")
             import requests
             from bs4 import BeautifulSoup
             headers = {"User-Agent": "Mozilla/5.0"}
             try:
                 resp = requests.get(url, headers=headers, timeout=15)
                 soup = BeautifulSoup(resp.content, "html.parser")
-                links = [a['href'] for a in soup.select("a.ui-search-link") if a.get('href')]
+                # Collect all potential listing links
+                all_links = [a['href'] for a in soup.select("a.ui-search-link") if a.get('href')]
+                # Filter only actual product pages (not search facets)
+                product_links = [link for link in all_links if ("produto.mercadolivre.com.br" in link or "/MLB" in link)]
                 results = []
-                for link in links:
+                for link in product_links:
                     try:
                         data = extract_product_data(link)
                         text = f"{data['title']}. {data['description']}"
@@ -1046,11 +1050,11 @@ def run_single_url_scraper():
                         continue
                 if results:
                     df = pd.DataFrame(results)
-                    st.success(f"Processed {len(df)} listings from search page.")
+                    st.success(f"Processed {len(df)} product listings.")
                     st.dataframe(df)
                     st.download_button("Download CSV", df.to_csv(index=False).encode(), "search_page_results.csv")
                 else:
-                    st.warning("No listings found on that search page.")
+                    st.warning("No valid product listings found on that page.")
             except Exception as e:
                 st.error(f"Error loading search page: {e}")
         else:
