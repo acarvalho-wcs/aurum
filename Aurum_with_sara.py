@@ -22,6 +22,10 @@ import os
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Aurum Dashboard", layout="centered")
 st.title("Aurum - Wildlife Trafficking Analytics")
+st.markdown("""
+**Aurum** is an analytical tool developed to support the monitoring and analysis of wildlife trafficking data. 
+By employing advanced statistical methods and interactive visualizations, Aurum helps researchers and law enforcement agents identify patterns and effectively combat illegal wildlife trade.
+""")
 
 # Upload do arquivo
 st.sidebar.markdown("## Welcome to Aurum")
@@ -133,6 +137,15 @@ if uploaded_file is not None:
         species_options = sorted(df['Species'].dropna().unique())
         selected_species = st.sidebar.multiselect("Select one or more species:", species_options)
 
+if not selected_species:
+    st.markdown("""
+    **Aurum** is an analytical tool developed to support the monitoring and analysis of wildlife trafficking data. 
+    By employing advanced statistical methods and interactive visualizations, Aurum helps researchers and environmental agents identify patterns and effectively combat illegal wildlife trade.
+
+    **👈 Click on the sidebar to start your analyses.**  
+    For the full Aurum experience, please request access or log in if you already have an account.
+    """)
+    
         if selected_species:
             df_selected = df[df['Species'].isin(selected_species)]
 
