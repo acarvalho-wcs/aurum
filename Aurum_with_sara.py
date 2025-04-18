@@ -18,11 +18,6 @@ from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 import bcrypt
 import os
-import requests
-import extruct
-from w3lib.html import get_base_url
-from bs4 import BeautifulSoup
-from transformers import pipeline
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Aurum Dashboard", layout="centered")
@@ -977,153 +972,119 @@ if "user" in st.session_state:
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
 
-st.sidebar.markdown("## 🕸️ Aurum Scraper (VIDA-style)")
-activate_scraper = st.sidebar.checkbox("🔎 Open Aurum Scraper")
+def extract_product_data(url, user_agent="Mozilla/5.0"):  
+    """Fetch a product page and extract structured metadata via extruct."""
+    import requests
+    import extruct
+    from w3lib.html import get_base_url
+    from bs4 import BeautifulSoup
 
-if activate_scraper:
-    st.header("🐾 Aurum Scraper – VIDA-style Metadata Extractor")
-    st.markdown("This tool extracts structured metadata from a product listing (e.g. Mercado Livre) and classifies its content.")
+    headers = {"User-Agent": user_agent}
+    response = requests.get(url, headers=headers, timeout=15)
+    html = response.text
+    base_url = get_base_url(html, response.url)
 
-    target_url = st.text_input("🔗 Paste a product URL (e.g. Mercado Livre listing):")
-    run_scraper = st.button("🚀 Extract & Classify")
+    # Extract JSON-LD metadata
+    meta = extruct.extract(
+        html,
+        base_url=base_url,
+        syntaxes=["json-ld", "microdata", "opengraph", "rdfa"],
+        uniform=True
+    )
+    data = {}
+    for block in meta.get("json-ld", []):
+        if "@type" in block and block["@type"] in ["Product", "Offer"]:
+            data.update(block)
 
-    if run_scraper and target_url:
-        try:
-            headers = {"User-Agent": "Mozilla/5.0"}
-            response = requests.get(target_url, headers=headers, timeout=15)
-            html = response.text
-            base_url = get_base_url(html, response.url)
+    title = data.get("name", "N/A")
+    description = data.get("description", "N/A")
+    offers = data.get("offers", {})
+    price = offers.get("price") if isinstance(offers, dict) else "N/A"
 
-            metadata = extruct.extract(
-                html,
-                base_url=base_url,
-                syntaxes=["json-ld", "microdata", "opengraph", "rdfa"],
-                uniform=True
-            )
+    return {"title": title, "description": description, "price": price}
 
-            # Attempt to extract key fields from JSON-LD
-            data = {}
-            for block in metadata.get("json-ld", []):
-                if "@type" in block and block["@type"] in ["Product", "Offer"]:
-                    data.update(block)
 
-            title = data.get("name", "N/A")
-            description = data.get("description", "N/A")
-            price = data.get("offers", {}).get("price") if isinstance(data.get("offers"), dict) else "N/A"
-
-            st.subheader("🔍 Extracted Data")
-            st.write(f"**Title:** {title}")
-            st.write(f"**Description:** {description}")
-            st.write(f"**Price:** {price}")
-
-            # Zero-shot classification (title + description)
-            classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
-            input_text = f"{title}. {description}"
-            labels = ["live wild animal", "beekeeping product", "trap or lure", "toy or decorative item", "uncertain"]
-            result = classifier(input_text, labels)
-            top_label = result["labels"][0]
-
-            st.subheader("🤖 Classification")
-            st.markdown(f"**Predicted category:** `{top_label}`")
-
-            # Show results as table
-            result_df = pd.DataFrame([{
-                "URL": target_url,
-                "Title": title,
-                "Description": description,
-                "Price": price,
-                "Classification": top_label
-            }])
-            st.dataframe(result_df)
-
-            st.download_button(
-                "📥 Download CSV",
-                result_df.to_csv(index=False).encode("utf-8"),
-                "aurum_scraper_result.csv",
-                "text/csv"
-            )
-
-        except Exception as e:
-            st.error(f"❌ Failed to extract or classify: {e}")
-
-st.sidebar.markdown("## 🕸️ Aurum Scraper (Keyword Search)")
-activate_scraper = st.sidebar.checkbox("🔎 Run Aurum Scraper – Mercado Livre Search")
-
-if activate_scraper:
-    st.header("🐾 Aurum Scraper – Mercado Livre Search")
-    st.markdown("Searches Mercado Livre by keyword, extracts product data, and classifies listings.")
-
-    keyword = st.text_input("🔤 Enter a keyword (e.g. 'enxame'):", value="enxame")
-    max_pages = st.slider("🔢 Number of pages to scan", min_value=1, max_value=10, value=3)
-    run_scan = st.button("🚀 Start search and analysis")
-
-    if run_scan and keyword:
-        classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+def classify_text(text, model="facebook/bart-large-mnli", labels=None):  
+    """Perform zero-shot classification on the given text."""
+    from transformers import pipeline
+    if labels is None:
         labels = ["live wild animal", "beekeeping product", "trap or lure", "toy or decorative item", "uncertain"]
+    classifier = pipeline("zero-shot-classification", model=model)
+    result = classifier(text, labels)
+    return result["labels"][0]
 
-        headers = {"User-Agent": "Mozilla/5.0"}
+
+def run_single_url_scraper():
+    """Streamlit block: extract and classify one URL."""
+    st.subheader("Single URL Scraper")
+    url = st.text_input("Product URL:")
+    if st.button("Extract & Classify URL") and url:
+        try:
+            data = extract_product_data(url)
+            text = f"{data['title']}. {data['description']}"
+            label = classify_text(text)
+
+            df = pd.DataFrame([{
+                "URL": url,
+                "Title": data['title'],
+                "Description": data['description'],
+                "Price": data['price'],
+                "Classification": label
+            }])
+            st.dataframe(df)
+            st.download_button("Download CSV", df.to_csv(index=False).encode(), "single_url_results.csv")
+        except Exception as e:
+            st.error(f"Error processing URL: {e}")
+
+
+def run_keyword_search_scraper():
+    """Streamlit block: search by keyword across multiple pages."""
+    st.subheader("Keyword Search Scraper")
+    keyword = st.text_input("Keyword:", value="enxame")
+    pages = st.slider("Pages to scan:", 1, 10, 3)
+    if st.button("Search & Analyze"):
+        import requests
+        from bs4 import BeautifulSoup
         results = []
-
-        with st.spinner("🔍 Scanning Mercado Livre..."):
-            for page in range(1, max_pages + 1):
-                page_suffix = f"_Desde_{(page-1)*50+1}" if page > 1 else ""
-                search_url = f"https://lista.mercadolivre.com.br/{keyword}{page_suffix}"
-
-                try:
-                    res = requests.get(search_url, headers=headers, timeout=10)
-                    soup = BeautifulSoup(res.content, "html.parser")
-                    product_links = [a["href"] for a in soup.select("a.ui-search-link") if a["href"].startswith("https")]
-
-                    for url in product_links:
-                        try:
-                            prod_res = requests.get(url, headers=headers, timeout=10)
-                            html = prod_res.text
-                            base_url = get_base_url(html, url)
-                            metadata = extruct.extract(
-                                html,
-                                base_url=base_url,
-                                syntaxes=["json-ld"],
-                                uniform=True
-                            )
-
-                            data = {}
-                            for block in metadata.get("json-ld", []):
-                                if "@type" in block and block["@type"] in ["Product", "Offer"]:
-                                    data.update(block)
-
-                            title = data.get("name", "N/A")
-                            description = data.get("description", "N/A")
-                            price = data.get("offers", {}).get("price") if isinstance(data.get("offers"), dict) else "N/A"
-                            input_text = f"{title}. {description}"
-                            prediction = classifier(input_text, labels)
-                            top_label = prediction["labels"][0]
-
-                            results.append({
-                                "URL": url,
-                                "Title": title,
-                                "Description": description,
-                                "Price": price,
-                                "Classification": top_label
-                            })
-
-                        except Exception as e:
-                            st.warning(f"❌ Could not process ad: {e}")
-                except Exception as e:
-                    st.warning(f"⚠️ Could not load page {page}: {e}")
-
+        headers = {"User-Agent": "Mozilla/5.0"}
+        for page in range(1, pages + 1):
+            suffix = f"_Desde_{(page-1)*50+1}" if page > 1 else ""
+            url = f"https://lista.mercadolivre.com.br/{keyword}{suffix}"
+            try:
+                resp = requests.get(url, headers=headers, timeout=10)
+                soup = BeautifulSoup(resp.content, "html.parser")
+                links = [a['href'] for a in soup.select("a.ui-search-link") if a.get('href')]
+                for link in links:
+                    try:
+                        data = extract_product_data(link)
+                        text = f"{data['title']}. {data['description']}"
+                        label = classify_text(text)
+                        results.append({
+                            "URL": link,
+                            "Title": data['title'],
+                            "Description": data['description'],
+                            "Price": data['price'],
+                            "Classification": label
+                        })
+                    except Exception:
+                        continue
+            except Exception as e:
+                st.warning(f"Page {page} load error: {e}")
         if results:
-            df_scraped = pd.DataFrame(results)
-            st.success(f"✅ {len(df_scraped)} listings processed from Mercado Livre.")
-            st.dataframe(df_scraped)
-
-            st.download_button(
-                "📥 Download results (.csv)",
-                df_scraped.to_csv(index=False).encode("utf-8"),
-                "aurum_scraper_keyword_results.csv",
-                "text/csv"
-            )
+            df = pd.DataFrame(results)
+            st.success(f"Processed {len(df)} listings.")
+            st.dataframe(df)
+            st.download_button("Download CSV", df.to_csv(index=False).encode(), "keyword_search_results.csv")
         else:
-            st.warning("No results found or all failed.")
+            st.warning("No listings found.")
+
+# === Sidebar Integration ===
+st.sidebar.markdown("## 🕸️ Aurum Scraper Modes")
+mode = st.sidebar.radio("Select mode:", ["Single URL", "Keyword Search"])
+if mode == "Single URL":
+    run_single_url_scraper()
+else:
+    run_keyword_search_scraper()
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
