@@ -22,7 +22,6 @@ import os
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Aurum Dashboard", layout="centered")
 st.title("Aurum - Wildlife Trafficking Analytics")
-if not selected_species:
     st.markdown("""
     **Aurum** is an analytical tool developed to support the monitoring and analysis of wildlife trafficking data. 
     By employing advanced statistical methods and interactive visualizations, Aurum helps researchers and environmental agents identify patterns and effectively combat illegal wildlife trade.
