@@ -59,6 +59,16 @@ with open("Aurum_template.xlsx", "rb") as f:
         file_name="aurum_template.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+if uploaded_file is None:
+    st.markdown("""
+    **Aurum** is an analytical tool developed to support the monitoring and analysis of wildlife trafficking data.  
+    By employing advanced statistical methods and interactive visualizations, Aurum helps researchers and environmental agents identify patterns and effectively combat illegal wildlife trade.
+
+    **Upload your XLSX data file in the sidebar to begin.**  
+    For the full Aurum experience, please request access or log in if you already have an account.
+    """)
+
 df = None
 df_selected = None
 if uploaded_file is not None:
@@ -85,7 +95,6 @@ if uploaded_file is not None:
 
         df = expand_multi_species_rows(df).reset_index(drop=True)
 
-
         # Aplicar valores numéricos aos países se o arquivo estiver disponível
         import os
         country_score_path = "country_offenders_values.csv"
@@ -104,7 +113,6 @@ if uploaded_file is not None:
         else:
             st.warning("⚠️ File country_offenders_values.csv not found. Offender scoring skipped.")
 
-
         if 'Case #' in df.columns and 'Species' in df.columns:
             species_per_case = df.groupby('Case #')['Species'].nunique()
             df['Logistic Convergence'] = df['Case #'].map(lambda x: "1" if species_per_case.get(x, 0) > 1 else "0")
@@ -114,7 +122,7 @@ if uploaded_file is not None:
                 text = str(text)
             text = text.strip().lower()
             text = unicodedata.normalize("NFKD", text)
-            text = re.sub(r'\s+', ' ', text)
+            text = re.sub(r'\\s+', ' ', text)
             return text
 
         def infer_stage(row):
