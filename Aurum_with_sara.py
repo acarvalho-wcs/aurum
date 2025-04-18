@@ -1015,26 +1015,62 @@ def classify_text(text, model="facebook/bart-large-mnli", labels=None):
 
 
 def run_single_url_scraper():
-    """Streamlit block: extract and classify one URL."""
+    """Streamlit block: extract and classify one URL or scan a search page."""
     st.subheader("Single URL Scraper")
-    url = st.text_input("Product URL:")
+    url = st.text_input("Product or Search Page URL:")
     if st.button("Extract & Classify URL") and url:
-        try:
-            data = extract_product_data(url)
-            text = f"{data['title']}. {data['description']}"
-            label = classify_text(text)
+        # Detect search page pattern
+        if "lista.mercadolivre.com.br" in url.split('#')[0]:
+            st.info("Detected a search page. Scanning all listings...")
+            import requests
+            from bs4 import BeautifulSoup
+            headers = {"User-Agent": "Mozilla/5.0"}
+            try:
+                resp = requests.get(url, headers=headers, timeout=15)
+                soup = BeautifulSoup(resp.content, "html.parser")
+                links = [a['href'] for a in soup.select("a.ui-search-link") if a.get('href')]
+                results = []
+                for link in links:
+                    try:
+                        data = extract_product_data(link)
+                        text = f"{data['title']}. {data['description']}"
+                        label = classify_text(text)
+                        results.append({
+                            "URL": link,
+                            "Title": data['title'],
+                            "Description": data['description'],
+                            "Price": data['price'],
+                            "Classification": label
+                        })
+                    except Exception:
+                        continue
+                if results:
+                    df = pd.DataFrame(results)
+                    st.success(f"Processed {len(df)} listings from search page.")
+                    st.dataframe(df)
+                    st.download_button("Download CSV", df.to_csv(index=False).encode(), "search_page_results.csv")
+                else:
+                    st.warning("No listings found on that search page.")
+            except Exception as e:
+                st.error(f"Error loading search page: {e}")
+        else:
+            # Single product page
+            try:
+                data = extract_product_data(url)
+                text = f"{data['title']}. {data['description']}"
+                label = classify_text(text)
 
-            df = pd.DataFrame([{
-                "URL": url,
-                "Title": data['title'],
-                "Description": data['description'],
-                "Price": data['price'],
-                "Classification": label
-            }])
-            st.dataframe(df)
-            st.download_button("Download CSV", df.to_csv(index=False).encode(), "single_url_results.csv")
-        except Exception as e:
-            st.error(f"Error processing URL: {e}")
+                df = pd.DataFrame([{
+                    "URL": url,
+                    "Title": data['title'],
+                    "Description": data['description'],
+                    "Price": data['price'],
+                    "Classification": label
+                }])
+                st.dataframe(df)
+                st.download_button("Download CSV", df.to_csv(index=False).encode(), "single_url_results.csv")
+            except Exception as e:
+                st.error(f"Error processing URL: {e}")
 
 
 def run_keyword_search_scraper():
@@ -1078,55 +1114,15 @@ def run_keyword_search_scraper():
         else:
             st.warning("No listings found.")
 
-
-def run_search_page_scraper():
-    """Streamlit block: scan listings from a search page URL."""
-    st.subheader("Search Page Scraper")
-    search_url = st.text_input("Search Page URL:")
-    if st.button("Extract from Search Page") and search_url:
-        import requests
-        from bs4 import BeautifulSoup
-        headers = {"User-Agent": "Mozilla/5.0"}
-        try:
-            resp = requests.get(search_url, headers=headers, timeout=10)
-            soup = BeautifulSoup(resp.content, "html.parser")
-            links = [a['href'] for a in soup.select("a.ui-search-link") if a.get('href')]
-            results = []
-            for link in links:
-                try:
-                    data = extract_product_data(link)
-                    text = f"{data['title']}. {data['description']}"
-                    label = classify_text(text)
-                    results.append({
-                        "URL": link,
-                        "Title": data['title'],
-                        "Description": data['description'],
-                        "Price": data['price'],
-                        "Classification": label
-                    })
-                except Exception:
-                    continue
-            if results:
-                df = pd.DataFrame(results)
-                st.success(f"Collected {len(df)} listings from search page.")
-                st.dataframe(df)
-                st.download_button("Download CSV", df.to_csv(index=False).encode(), "search_page_results.csv")
-            else:
-                st.warning("No listings found on that search page.")
-        except Exception as e:
-            st.error(f"Error loading search page: {e}")
-
 # === Sidebar Toggle ===
 show_scraper = st.sidebar.checkbox("🔎 Show Aurum Scraper")
 if show_scraper:
     st.sidebar.markdown("## 🕸️ Aurum Scraper Modes")
-    mode = st.sidebar.radio("Select mode:", ["Single URL", "Keyword Search", "Search Page"])
+    mode = st.sidebar.radio("Select mode:", ["Single URL", "Keyword Search"])
     if mode == "Single URL":
         run_single_url_scraper()
-    elif mode == "Keyword Search":
-        run_keyword_search_scraper()
     else:
-        run_search_page_scraper()
+        run_keyword_search_scraper()
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
