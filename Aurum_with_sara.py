@@ -555,7 +555,7 @@ if uploaded_file is not None:
                 default_features = ["Species", "Country of offenders"]
                 network_features = st.multiselect(
                     "Select features to compare across cases:", 
-                    options=[col for col in df_selected.columns if col != "Case ID"],
+                    options=[col for col in df_selected.columns if col != "Case #"],
                     default=default_features
                 )
 
@@ -563,7 +563,7 @@ if uploaded_file is not None:
                     # Prepare feature sets for each Case ID
                     case_feature_sets = (
                         df_selected
-                        .groupby("Case ID")[network_features]
+                        .groupby("Case #")[network_features]
                         .agg(lambda x: set(x.dropna()))
                         .apply(lambda row: set().union(*row), axis=1)
                     )
@@ -611,7 +611,7 @@ if uploaded_file is not None:
                             node_x.append(x)
                             node_y.append(y)
                             degree = G.degree[node]
-                            node_text.append(f"Case ID: {node} ({degree} connections)")
+                            node_text.append(f"Case #: {node} ({degree} connections)")
 
                         node_trace = go.Scatter(
                             x=node_x, y=node_y,
@@ -664,7 +664,7 @@ if uploaded_file is not None:
 
                             This section visualizes a network of wildlife trafficking cases based on shared attributes such as species, offender countries, or other relevant fields.
 
-                            - **Each node in the network represents a unique case** (`Case ID`).
+                            - **Each node in the network represents a unique case** (`Case #`).
                             - **An edge between two cases indicates that they share one or more selected attributes**, such as:
                                 - The same species involved,
                                 - The same offender country,
@@ -902,7 +902,7 @@ def get_worksheet(sheet_name="Aurum_data"):
 if "user" in st.session_state:
     st.markdown("## Submit New Case to Aurum")
     with st.form("aurum_form"):
-        case_id = st.text_input("Case ID")
+        case_id = st.text_input("Case #")
         n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)")
         year = st.number_input("Year", step=1, format="%d")
         country = st.text_input("Country of offenders")
@@ -944,7 +944,7 @@ if "user" in st.session_state:
 
             # Reordena colunas se necessário
             ordered_cols = [
-                "Timestamp", "Case ID", "N seized specimens", "Year",
+                "Timestamp", "Case #", "N seized specimens", "Year",
                 "Country of offenders", "Seizure status", "Transit feature",
                 "Notes", "Author"
             ]
