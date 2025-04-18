@@ -1045,13 +1045,13 @@ def run_keyword_search_scraper():
     if st.button("Search & Analyze"):
         import requests
         from bs4 import BeautifulSoup
-        results = []
         headers = {"User-Agent": "Mozilla/5.0"}
+        results = []
         for page in range(1, pages + 1):
             suffix = f"_Desde_{(page-1)*50+1}" if page > 1 else ""
-            url = f"https://lista.mercadolivre.com.br/{keyword}{suffix}"
+            search_url = f"https://lista.mercadolivre.com.br/{keyword}{suffix}"
             try:
-                resp = requests.get(url, headers=headers, timeout=10)
+                resp = requests.get(search_url, headers=headers, timeout=10)
                 soup = BeautifulSoup(resp.content, "html.parser")
                 links = [a['href'] for a in soup.select("a.ui-search-link") if a.get('href')]
                 for link in links:
@@ -1078,15 +1078,55 @@ def run_keyword_search_scraper():
         else:
             st.warning("No listings found.")
 
+
+def run_search_page_scraper():
+    """Streamlit block: scan listings from a search page URL."""
+    st.subheader("Search Page Scraper")
+    search_url = st.text_input("Search Page URL:")
+    if st.button("Extract from Search Page") and search_url:
+        import requests
+        from bs4 import BeautifulSoup
+        headers = {"User-Agent": "Mozilla/5.0"}
+        try:
+            resp = requests.get(search_url, headers=headers, timeout=10)
+            soup = BeautifulSoup(resp.content, "html.parser")
+            links = [a['href'] for a in soup.select("a.ui-search-link") if a.get('href')]
+            results = []
+            for link in links:
+                try:
+                    data = extract_product_data(link)
+                    text = f"{data['title']}. {data['description']}"
+                    label = classify_text(text)
+                    results.append({
+                        "URL": link,
+                        "Title": data['title'],
+                        "Description": data['description'],
+                        "Price": data['price'],
+                        "Classification": label
+                    })
+                except Exception:
+                    continue
+            if results:
+                df = pd.DataFrame(results)
+                st.success(f"Collected {len(df)} listings from search page.")
+                st.dataframe(df)
+                st.download_button("Download CSV", df.to_csv(index=False).encode(), "search_page_results.csv")
+            else:
+                st.warning("No listings found on that search page.")
+        except Exception as e:
+            st.error(f"Error loading search page: {e}")
+
 # === Sidebar Toggle ===
 show_scraper = st.sidebar.checkbox("🔎 Show Aurum Scraper")
 if show_scraper:
     st.sidebar.markdown("## 🕸️ Aurum Scraper Modes")
-    mode = st.sidebar.radio("Select mode:", ["Single URL", "Keyword Search"])
+    mode = st.sidebar.radio("Select mode:", ["Single URL", "Keyword Search", "Search Page"])
     if mode == "Single URL":
         run_single_url_scraper()
-    else:
+    elif mode == "Keyword Search":
         run_keyword_search_scraper()
+    else:
+        run_search_page_scraper()
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
