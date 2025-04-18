@@ -560,7 +560,7 @@ if uploaded_file is not None:
                 )
 
                 if network_features:
-                    # Prepare feature sets for each Case ID
+                    # Prepare feature sets for each Case #
                     case_feature_sets = (
                         df_selected
                         .groupby("Case #")[network_features]
