@@ -1078,13 +1078,15 @@ def run_keyword_search_scraper():
         else:
             st.warning("No listings found.")
 
-# === Sidebar Integration ===
-st.sidebar.markdown("## 🕸️ Aurum Scraper Modes")
-mode = st.sidebar.radio("Select mode:", ["Single URL", "Keyword Search"])
-if mode == "Single URL":
-    run_single_url_scraper()
-else:
-    run_keyword_search_scraper()
+# === Sidebar Toggle ===
+show_scraper = st.sidebar.checkbox("🔎 Show Aurum Scraper")
+if show_scraper:
+    st.sidebar.markdown("## 🕸️ Aurum Scraper Modes")
+    mode = st.sidebar.radio("Select mode:", ["Single URL", "Keyword Search"])
+    if mode == "Single URL":
+        run_single_url_scraper()
+    else:
+        run_keyword_search_scraper()
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Detecting Organized Wildlife Crime with *Aurum*: A Toolkit for Wildlife Trafficking Analysis. Wildlife Conservation Society, 2025.")
