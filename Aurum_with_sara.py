@@ -59,7 +59,7 @@ if uploaded_file is None:
     By employing advanced statistical methods and interactive visualizations, Aurum helps researchers, NGOs, and law enforcement agencies identify patterns and effectively combat illegal wildlife trade.
 
     **Upload your XLSX data file in the sidebar to begin.**  
-    For the full Aurum experience, please request access or log in if you already have an account. 
+    For the full Aurum experience, please request access or log in if you already have an account.  
     Click **About Aurum** to learn more about each analysis module.
     """)
 
