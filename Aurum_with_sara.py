@@ -626,7 +626,7 @@ if uploaded_file is not None:
                             marker=dict(
                                 showscale=False,
                                 color='lightblue',
-                                size=[8 + 2*G.degree[node] for node in G.nodes()],
+                                size=[4 + 0.5*G.degree[node] for node in G.nodes()],
                                 line_width=1
                             )
                         )
