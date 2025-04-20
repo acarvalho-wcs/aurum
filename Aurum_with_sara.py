@@ -42,7 +42,99 @@ The platform enables the upload and processing of case-level data and offers a s
 """)
 
 st.sidebar.markdown("## 📂 Upload Data")
-uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).**", type=["xlsx"])
+st.sidebar.markdown("## 📥 Data Input")
+data_source = st.sidebar.radio("Select data source:", ["📂 Upload file", "🗃️ Use my submitted cases"])
+
+uploaded_file = None
+
+df = None
+if data_source == "📂 Upload file":
+    uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).**", type=["xlsx"])
+    if uploaded_file is not None:
+        df = pd.read_excel(uploaded_file)
+
+elif data_source == "🗃️ Use my submitted cases" and "user" in st.session_state:
+    try:
+        worksheet = get_worksheet()
+        records = worksheet.get_all_records()
+        user_data = pd.DataFrame(records)
+        user_data = user_data[user_data["Author"] == st.session_state["user"]]
+        if user_data.empty:
+            st.sidebar.warning("⚠️ You haven't submitted any cases yet.")
+        else:
+            df = user_data.copy()
+            st.sidebar.success("✅ Using your submitted cases.")
+    except Exception as e:
+        st.sidebar.error(f"❌ Failed to load your cases: {e}")
+
+# --- PRÉ-PROCESSAMENTO PADRÃO DO AURUM ---
+df_selected = None
+if df is not None:
+    df.columns = df.columns.str.strip().str.replace('\xa0', '', regex=True)
+    if 'Year' in df.columns:
+        df['Year'] = df['Year'].astype(str).str.extract(r'(\d{4})').astype(float)
+
+    def expand_multi_species_rows(df):
+        expanded_rows = []
+        for _, row in df.iterrows():
+            matches = re.findall(r'(\d+)\s*([A-Z]{2,}\d{0,3})', str(row.get('N seized specimens', '')))
+            if matches:
+                for qty, species in matches:
+                    new_row = row.copy()
+                    new_row['N_seized'] = float(qty)
+                    new_row['Species'] = species
+                    expanded_rows.append(new_row)
+            else:
+                expanded_rows.append(row)
+        return pd.DataFrame(expanded_rows)
+
+    df = expand_multi_species_rows(df).reset_index(drop=True)
+
+    country_score_path = "country_offenders_values.csv"
+    if os.path.exists(country_score_path):
+        df_country_score = pd.read_csv(country_score_path, encoding="ISO-8859-1")
+        country_map = dict(zip(df_country_score["Country"].str.strip(), df_country_score["Value"]))
+
+        def score_countries(cell_value, country_map):
+            if not isinstance(cell_value, str):
+                return 0
+            countries = [c.strip() for c in cell_value.split("+")]
+            return sum(country_map.get(c, 0) for c in countries)
+
+        if "Country of offenders" in df.columns:
+            df["Offender_value"] = df["Country of offenders"].apply(lambda x: score_countries(x, country_map))
+    else:
+        st.warning("⚠️ File country_offenders_values.csv not found. Offender scoring skipped.")
+
+    if 'Case #' in df.columns and 'Species' in df.columns:
+        species_per_case = df.groupby('Case #')['Species'].nunique()
+        df['Logistic Convergence'] = df['Case #'].map(lambda x: "1" if species_per_case.get(x, 0) > 1 else "0")
+
+    def normalize_text(text):
+        if not isinstance(text, str):
+            text = str(text)
+        text = text.strip().lower()
+        text = unicodedata.normalize("NFKD", text)
+        text = re.sub(r'\\s+', ' ', text)
+        return text
+
+    def infer_stage(row):
+        seizure = normalize_text(row.get("Seizure Status", ""))
+        transit = normalize_text(row.get("Transit Feature", ""))
+        logistic = row.get("Logistic Convergence", "0")
+        if any(k in seizure for k in ["planned", "trap", "attempt"]):
+            return "Preparation"
+        elif "captivity" in transit or "breeding" in transit:
+            return "Captivity"
+        elif any(k in transit for k in ["airport", "border", "highway", "port"]):
+            return "Transport"
+        elif logistic == "1":
+            return "Logistic Consolidation"
+        else:
+            return "Unclassified"
+
+    df["Inferred Stage"] = df.apply(infer_stage, axis=1)
+    st.success("✅ Data loaded and preprocessed successfully!")
 
 st.sidebar.markdown("**Download Template**")
 with open("Aurum_template.xlsx", "rb") as f:
