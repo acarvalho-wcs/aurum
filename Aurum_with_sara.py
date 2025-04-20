@@ -1093,13 +1093,15 @@ if "user" in st.session_state:
                     batch_data["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     batch_data["Author"] = st.session_state["user"]
 
-                    # Usa os nomes originais para manter a ordem correta
+                    # Renomeia colunas normalizadas de volta para os nomes originais
+                    rename_map = dict(zip(required_cols_normalized, required_cols_original))
+                    batch_data.rename(columns=rename_map, inplace=True)
+
                     ordered_cols = [
                         "Timestamp", "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
                         "Country of offenders", "Seizure status", "Transit feature",
                         "Notes", "Author"
                     ]
-                    batch_data.columns = required_cols_original  # renomeia colunas de volta para padrão
                     batch_data = batch_data[ordered_cols]
 
                     rows_to_append = batch_data.values.tolist()
