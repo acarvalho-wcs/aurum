@@ -1039,7 +1039,7 @@ if "user" in st.session_state:
 
     if uploaded_file is not None:
         st.info("📄 File uploaded. Click the button below to confirm batch submission.")
-        submit_batch = st.button("📥 **Submit Batch Upload**")
+        submit_batch = st.button("🚀 Submit Batch Upload")
 
         if submit_batch:
             try:
@@ -1058,44 +1058,46 @@ if "user" in st.session_state:
                 if missing_cols:
                     st.error("🚫 Upload blocked: the uploaded file has incorrect formatting.")
                     st.markdown(f"""
-                    The file must include the following required columns:
-
-                    - `Case #`
-                    - `N seized specimens`
-                    - `Year`
-                    - `Country of offenders`
-                    - `Seizure status`
-                    - `Transit feature`
-                    - `Notes`
-
                     The following columns are missing:  
                     **{', '.join(missing_cols)}**
-
-                    > 💡 Tip: You can download the correct template from the sidebar (“Download Template”) and fill it with your data.
                     """)
                 else:
-                    # Fill missing values and add metadata before reordering
-                    batch_data = batch_data.fillna("")
-                    batch_data["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    batch_data["Author"] = st.session_state["user"]
-
-                    # Reorder columns to match expected format
-                    ordered_cols = [
-                        "Timestamp", "Case #", "N seized specimens", "Year",
-                        "Country of offenders", "Seizure status", "Transit feature",
-                        "Notes", "Author"
-                    ]
-                    batch_data = batch_data[ordered_cols]
-
-                    rows_to_append = batch_data.values.tolist()
+                    # Verifica duplicação de Case #
                     worksheet = get_worksheet()
-                    worksheet.append_rows(rows_to_append, value_input_option="USER_ENTERED")
+                    existing_records = worksheet.get_all_records()
+                    existing_df = pd.DataFrame(existing_records)
 
-                    st.success("✅ Batch upload completed successfully!")
+                    existing_case_ids = set(existing_df["Case #"]) if "Case #" in existing_df.columns else set()
+                    incoming_case_ids = set(batch_data["Case #"].astype(str))
 
-                    # 🔁 Clear uploaded file
-                    st.session_state["uploaded_file"] = None
-                    st.rerun()
+                    duplicated = incoming_case_ids.intersection(existing_case_ids)
+
+                    if duplicated:
+                        st.error("🚫 Upload blocked: some Case # identifiers already exist in Aurum.")
+                        st.markdown(f"""
+                        The following case identifiers are already present in the system:  
+                        **{', '.join(sorted(duplicated))}**
+
+                        > Please remove these from your batch or rename the IDs before resubmitting.
+                        """)
+                    else:
+                        # Preencher valores e subir
+                        batch_data = batch_data.fillna("")
+                        batch_data["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        batch_data["Author"] = st.session_state["user"]
+
+                        ordered_cols = [
+                            "Timestamp", "Case #", "N seized specimens", "Year",
+                            "Country of offenders", "Seizure status", "Transit feature",
+                            "Notes", "Author"
+                        ]
+                        batch_data = batch_data[ordered_cols]
+
+                        worksheet.append_rows(batch_data.values.tolist(), value_input_option="USER_ENTERED")
+                        st.success("✅ Batch upload completed successfully!")
+
+                        st.session_state["uploaded_file"] = None
+                        st.rerun()
 
             except Exception as e:
                 st.error(f"❌ Error during upload: {e}")
