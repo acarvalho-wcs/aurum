@@ -819,17 +819,21 @@ if export_html and df_selected is not None:
 # --- LOGIN ---
 st.sidebar.markdown("---")
 
-# Se usuário estiver logado, exibir status e botão de logout
 if "user" in st.session_state:
     st.sidebar.markdown(f"✅ **{st.session_state['user']}** is connected.")
     if st.sidebar.button("Logout"):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
-
-# Se não estiver logado, exibir campos de login
 else:
     st.sidebar.markdown("## 🔐 Login to Aurum")
+
+    # Usando keys explícitos para controlar valores via session_state
+    if "login_username" not in st.session_state:
+        st.session_state["login_username"] = ""
+    if "login_password" not in st.session_state:
+        st.session_state["login_password"] = ""
+
     username = st.sidebar.text_input("Username", key="login_username")
     password = st.sidebar.text_input("Password", type="password", key="login_password")
 
@@ -848,9 +852,9 @@ else:
                 st.session_state["user"] = username
                 st.session_state["is_admin"] = str(user_row.iloc[0]["Is_Admin"]).strip().lower() == "true"
 
-                # Limpa campos de entrada
-                st.session_state["login_username"] = ""
-                st.session_state["login_password"] = ""
+                # Limpa os campos após login bem-sucedido
+                st.session_state.pop("login_username", None)
+                st.session_state.pop("login_password", None)
 
                 st.rerun()
             else:
