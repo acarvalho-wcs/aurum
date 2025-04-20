@@ -916,33 +916,42 @@ def get_worksheet(sheet_name="Aurum_data"):
     return sh.worksheet(sheet_name)
 
 if "user" in st.session_state:
-    st.markdown("## Submit New Case to Aurum")
-    with st.form("aurum_form"):
-        case_id = st.text_input("Case #")
-        n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)")
-        year = st.number_input("Year", step=1, format="%d")
-        country = st.text_input("Country of offenders")
-        seizure_status = st.text_input("Seizure status")
-        transit = st.text_input("Transit feature")
-        notes = st.text_area("Additional notes")
+    with st.expander("📥 Submit New Case to Aurum", expanded=False):
+        # Inicializa os campos do formulário na sessão, se ainda não estiverem lá
+        for key in ["case_id", "n_seized", "year", "country", "seizure_status", "transit", "notes"]:
+            if key not in st.session_state:
+                st.session_state[key] = ""
 
-        submitted = st.form_submit_button("Submit Case")
+        with st.form("aurum_form"):
+            case_id = st.text_input("Case #", value=st.session_state.case_id, key="case_id")
+            n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)", value=st.session_state.n_seized, key="n_seized")
+            year = st.number_input("Year", step=1, format="%d", value=int(st.session_state.year) if st.session_state.year else 2024, key="year")
+            country = st.text_input("Country of offenders", value=st.session_state.country, key="country")
+            seizure_status = st.text_input("Seizure status", value=st.session_state.seizure_status, key="seizure_status")
+            transit = st.text_input("Transit feature", value=st.session_state.transit, key="transit")
+            notes = st.text_area("Additional notes", value=st.session_state.notes, key="notes")
 
-        if submitted:
-            new_row = [
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                case_id,
-                n_seized,
-                year,
-                country,
-                seizure_status,
-                transit,
-                notes,
-                st.session_state["user"]
-            ]
-            worksheet = get_worksheet()
-            worksheet.append_row(new_row)
-            st.success("✅ Case submitted to Aurum successfully!")
+            submitted = st.form_submit_button("Submit Case")
+
+            if submitted:
+                new_row = [
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    st.session_state.case_id,
+                    st.session_state.n_seized,
+                    st.session_state.year,
+                    st.session_state.country,
+                    st.session_state.seizure_status,
+                    st.session_state.transit,
+                    st.session_state.notes,
+                    st.session_state["user"]
+                ]
+                worksheet = get_worksheet()
+                worksheet.append_row(new_row)
+                st.success("✅ Case submitted to Aurum successfully!")
+
+                # Limpa os campos do formulário
+                for key in ["case_id", "n_seized", "year", "country", "seizure_status", "transit", "notes"]:
+                    st.session_state[key] = ""
 
     st.subheader("Upload Multiple Cases (Batch Mode)")
     uploaded_file = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"])
