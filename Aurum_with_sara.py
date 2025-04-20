@@ -1035,7 +1035,7 @@ if "user" in st.session_state:
             st.error(f"❌ Failed to load or update your cases: {e}")
 
     st.subheader("Upload Multiple Cases (Batch Mode)")
-    uploaded_file = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"])
+    uploaded_file = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"], key="uploaded_file")
     if uploaded_file is not None:
         try:
             if uploaded_file.name.endswith(".csv"):
@@ -1087,6 +1087,10 @@ if "user" in st.session_state:
                 worksheet.append_rows(rows_to_append, value_input_option="USER_ENTERED")
 
                 st.success("✅ Batch upload completed successfully!")
+
+                # 🔁 Clear uploaded file to prevent duplicate submission
+                st.session_state["uploaded_file"] = None
+                st.rerun()
 
         except Exception as e:
             st.error(f"❌ Error during upload: {e}")
