@@ -1039,7 +1039,7 @@ if "user" in st.session_state:
 
     if uploaded_file is not None:
         st.info("📄 File uploaded. Click the button below to confirm batch submission.")
-        submit_batch = st.button("🚀 Submit Batch Upload")
+        submit_batch = st.button("📥 **Submit Batch Upload**")
 
         if submit_batch:
             try:
