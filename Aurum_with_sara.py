@@ -917,7 +917,19 @@ def get_worksheet(sheet_name="Aurum_data"):
 
 if "user" in st.session_state:
     with st.expander("📥 Submit New Case to Aurum", expanded=False):
-        default_fields = {
+        # Chaves dos campos para controlar o form
+        field_keys = {
+            "case_id": "case_id_input",
+            "n_seized": "n_seized_input",
+            "year": "year_input",
+            "country": "country_input",
+            "seizure_status": "seizure_status_input",
+            "transit": "transit_input",
+            "notes": "notes_input"
+        }
+
+        # Define valores padrão
+        default_values = {
             "case_id": "",
             "n_seized": "",
             "year": 2024,
@@ -927,24 +939,18 @@ if "user" in st.session_state:
             "notes": ""
         }
 
-        # Inicializa session_state se necessário
-        for key, default in default_fields.items():
-            st.session_state.setdefault(key, default)
+        # Cria valores no session_state se ainda não existem
+        for key, default in default_values.items():
+            st.session_state.setdefault(field_keys[key], default)
 
         with st.form("aurum_form"):
-            case_id = st.text_input("Case #", value=st.session_state.case_id, key="case_id_input")
-            n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)", value=st.session_state.n_seized, key="n_seized_input")
-
-            try:
-                initial_year = int(st.session_state.year)
-            except (ValueError, TypeError):
-                initial_year = 2024
-            year = st.number_input("Year", step=1, format="%d", value=initial_year, min_value=1900, max_value=2100, key="year_input")
-
-            country = st.text_input("Country of offenders", value=st.session_state.country, key="country_input")
-            seizure_status = st.text_input("Seizure status", value=st.session_state.seizure_status, key="seizure_status_input")
-            transit = st.text_input("Transit feature", value=st.session_state.transit, key="transit_input")
-            notes = st.text_area("Additional notes", value=st.session_state.notes, key="notes_input")
+            case_id = st.text_input("Case #", key=field_keys["case_id"])
+            n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)", key=field_keys["n_seized"])
+            year = st.number_input("Year", step=1, format="%d", min_value=1900, max_value=2100, key=field_keys["year"])
+            country = st.text_input("Country of offenders", key=field_keys["country"])
+            seizure_status = st.text_input("Seizure status", key=field_keys["seizure_status"])
+            transit = st.text_input("Transit feature", key=field_keys["transit"])
+            notes = st.text_area("Additional notes", key=field_keys["notes"])
 
             submitted = st.form_submit_button("Submit Case")
 
@@ -960,18 +966,18 @@ if "user" in st.session_state:
                 notes,
                 st.session_state["user"]
             ]
+
             worksheet = get_worksheet()
             worksheet.append_row(new_row)
             st.success("✅ Case submitted to Aurum successfully!")
 
-            # Limpa o estado e força o reset visual
-            for key in default_fields:
-                st.session_state[key] = default_fields[key]
-            for k in ["case_id_input", "n_seized_input", "year_input", "country_input", "seizure_status_input", "transit_input", "notes_input"]:
+            # Limpa os valores do formulário no session_state
+            for k in field_keys.values():
                 if k in st.session_state:
                     del st.session_state[k]
 
-            st.rerun()  # força atualização da UI com campos limpos
+            # Força a atualização para limpar o form visualmente
+            st.rerun()
 
     st.subheader("Upload Multiple Cases (Batch Mode)")
     uploaded_file = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"])
