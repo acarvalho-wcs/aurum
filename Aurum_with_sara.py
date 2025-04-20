@@ -841,7 +841,8 @@ if login_button and username and password:
     else:
         st.error("User not approved or does not exist.")
 
-    # Botão de logout
+# --- LOGOUT ---
+if "user" in st.session_state:
     if st.sidebar.button("🚪 Logout"):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
