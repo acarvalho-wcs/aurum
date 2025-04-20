@@ -726,6 +726,11 @@ if uploaded_file is not None:
         else:
             st.warning("⚠️ Please select at least one species to explore the data.")
 
+        if assumptions_issues:
+            with st.expander("⚠️ Assumptions & Validity"):
+                for issue in assumptions_issues:
+                    st.warning(issue)
+    
     except Exception as e:
         st.error(f"❌ Error reading file: {e}")
 
