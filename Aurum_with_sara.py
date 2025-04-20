@@ -904,6 +904,53 @@ def get_worksheet(sheet_name="Aurum_data"):
     return sh.worksheet(sheet_name)
 
 if "user" in st.session_state:
+
+    st.markdown("## 📊 My Dashboard - Wildlife Trafficking Overview")
+
+    st.markdown("Use the filters below to explore cases involving specific countries, species, or transit types.")
+
+    if df is not None:
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            selected_species = st.multiselect("Filter by species:", df['Species'].dropna().unique())
+        with col2:
+            selected_country = st.multiselect("Filter by country:", df['Country of offenders'].dropna().unique())
+        with col3:
+            selected_transit = st.multiselect("Filter by transit type:", df['Transit Feature'].dropna().unique())
+
+        df_dash = df.copy()
+        if selected_species:
+            df_dash = df_dash[df_dash["Species"].isin(selected_species)]
+        if selected_country:
+            df_dash = df_dash[df_dash["Country of offenders"].isin(selected_country)]
+        if selected_transit:
+            df_dash = df_dash[df_dash["Transit Feature"].isin(selected_transit)]
+
+        st.write(f"🔎 **{len(df_dash)} cases found** matching the selected filters.")
+
+        # KPIs
+        kpi1, kpi2, kpi3 = st.columns(3)
+        kpi1.metric("Unique species", df_dash["Species"].nunique())
+        kpi2.metric("Unique countries", df_dash["Country of offenders"].nunique())
+        kpi3.metric("Total individuals", int(df_dash["N_seized"].sum()))
+
+        # Line chart (cases per year)
+        st.subheader("📈 Seizures over time")
+        if "Year" in df_dash.columns:
+            year_counts = df_dash.groupby("Year").size().reset_index(name="Cases")
+            st.line_chart(year_counts.set_index("Year"))
+
+        # Pie chart (species)
+        st.subheader("🧬 Species Distribution")
+        species_counts = df_dash["Species"].value_counts().head(10)
+        st.bar_chart(species_counts)
+
+        # Table
+        st.subheader("📄 Filtered Cases")
+        st.dataframe(df_dash.reset_index(drop=True), use_container_width=True)
+    else:
+        st.info("Please upload a dataset to access the dashboard.")
     st.markdown("## Submit New Case to Aurum")
     with st.form("aurum_form"):
         case_id = st.text_input("Case #")
