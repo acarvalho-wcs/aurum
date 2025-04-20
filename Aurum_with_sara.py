@@ -929,6 +929,7 @@ if "user" in st.session_state:
         # Chaves dos campos para controlar o form
         field_keys = {
             "case_id": "case_id_input",
+            "country": "country_input",
             "n_seized": "n_seized_input",
             "year": "year_input",
             "country": "country_input",
@@ -940,6 +941,7 @@ if "user" in st.session_state:
         # Define valores padrão
         default_values = {
             "case_id": "",
+            "country_id": "",
             "n_seized": "",
             "year": 2024,
             "country": "",
@@ -954,6 +956,7 @@ if "user" in st.session_state:
 
         with st.form("aurum_form"):
             case_id = st.text_input("Case #", key=field_keys["case_id"])
+            country_id = st.text_input(Country of seizure or shipment", key=field_keys["country_id"])
             n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)", key=field_keys["n_seized"])
             year = st.number_input("Year", step=1, format="%d", min_value=1900, max_value=2100, key=field_keys["year"])
             country = st.text_input("Country of offenders", key=field_keys["country"])
@@ -967,6 +970,7 @@ if "user" in st.session_state:
             new_row = [
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 case_id,
+                country_id,
                 n_seized,
                 year,
                 country,
@@ -1006,6 +1010,7 @@ if "user" in st.session_state:
 
                     with st.form("edit_case_form"):
                         new_case_id = st.text_input("Case #", value=current_row["Case #"])
+                        new_country_id = st.text_input("Country of seizure or shipemnt", value=current_row["Country of seizure or shipemnt"])
                         new_n_seized = st.text_input("N seized specimens", value=current_row["N seized specimens"])
                         new_year = st.number_input("Year", step=1, format="%d", value=int(current_row["Year"]))
                         new_country = st.text_input("Country of offenders", value=current_row["Country of offenders"])
@@ -1019,6 +1024,7 @@ if "user" in st.session_state:
                         updated_row = [
                             current_row["Timestamp"],
                             new_case_id,
+                            new_country_id,
                             new_n_seized,
                             new_year,
                             new_country,
@@ -1049,7 +1055,7 @@ if "user" in st.session_state:
                     batch_data = pd.read_excel(uploaded_file)
 
                 required_cols = [
-                    "Case #", "N seized specimens", "Year",
+                    "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
                     "Country of offenders", "Seizure status", "Transit feature", "Notes"
                 ]
 
@@ -1061,6 +1067,7 @@ if "user" in st.session_state:
                     The file must include the following required columns:
 
                     - `Case #`
+                    - `Country of seizure or shipment`
                     - `N seized specimens`
                     - `Year`
                     - `Country of offenders`
@@ -1081,7 +1088,7 @@ if "user" in st.session_state:
 
                     # Reorder columns to match expected format
                     ordered_cols = [
-                        "Timestamp", "Case #", "N seized specimens", "Year",
+                        "Timestamp", "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
                         "Country of offenders", "Seizure status", "Transit feature",
                         "Notes", "Author"
                     ]
