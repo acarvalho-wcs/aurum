@@ -66,21 +66,10 @@ if uploaded_file is None:
 df = None
 df_selected = None
 
-if uploaded_file is not None:
-    try:
-        df = pd.read_excel(uploaded_file)
-
-        df.columns = df.columns.str.strip().str.replace('\xa0', '', regex=True)
-        if 'Year' in df.columns:
-            df['Year'] = df['Year'].astype(str).str.extract(r'(\d{4})').astype(float)
-
-    except Exception as e:
-        st.error(f"Erro: {e}")
-
 def expand_multi_species_rows(df):
     expanded_rows = []
     for _, row in df.iterrows():
-        # Novo regex para capturar quantidade + nome científico com underscore
+        # Regex para capturar quantidade + nome científico com underscore (ex: 3 Homo_sapiens)
         matches = re.findall(r'(\d+)\s*([A-Z][a-z]+_[a-z]+)', str(row.get('N seized specimens', '')))
         if matches:
             for qty, species in matches:
@@ -92,10 +81,21 @@ def expand_multi_species_rows(df):
             expanded_rows.append(row)
     return pd.DataFrame(expanded_rows)
 
+df = None
+df_selected = None
+
+if uploaded_file is not None:
+    try:
+        df = pd.read_excel(uploaded_file)
+
+        df.columns = df.columns.str.strip().str.replace('\xa0', '', regex=True)
+        if 'Year' in df.columns:
+            df['Year'] = df['Year'].astype(str).str.extract(r'(\d{4})').astype(float)
+
+        # Aplicar expansão das espécies em múltiplas linhas
         df = expand_multi_species_rows(df).reset_index(drop=True)
 
-        # Aplicar valores numéricos aos países se o arquivo estiver disponível
-        import os
+        # Aplicar valores numéricos aos países, se o arquivo estiver disponível
         country_score_path = "country_offenders_values.csv"
         if os.path.exists(country_score_path):
             df_country_score = pd.read_csv(country_score_path, encoding="ISO-8859-1")
@@ -106,6 +106,9 @@ def expand_multi_species_rows(df):
                     return 0
                 countries = [c.strip() for c in cell_value.split("+")]
                 return sum(country_map.get(c, 0) for c in countries)
+
+    except Exception as e:
+        st.error(f"Erro: {e}")
 
             if "Country of offenders" in df.columns:
                 df["Offender_value"] = df["Country of offenders"].apply(lambda x: score_countries(x, country_map))                
