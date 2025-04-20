@@ -307,8 +307,6 @@ if uploaded_file is not None:
                         else:
                             st.info("Not enough data after breakpoint.")
 
-                assumptions_issues += validate_trend_assumptions(df_selected)                            
-            
                 # Optional CUSUM
                 if st.checkbox("Activate CUSUM analysis"):
                     st.subheader("CUSUM - Trend Change Detection")
@@ -725,11 +723,18 @@ if uploaded_file is not None:
                     
         else:
             st.warning("⚠️ Please select at least one species to explore the data.")
-
-        if assumptions_issues:
-            with st.expander("⚠️ Assumptions & Validity"):
-                for issue in assumptions_issues:
-                    st.warning(issue)
+            
+            assumptions_issues += validate_trend_assumptions(df_selected)
+            assumptions_issues += validate_cooccurrence_assumptions(df_selected, selected_species)
+            assumptions_issues += validate_anomaly_assumptions(df_selected, selected_features)
+            assumptions_issues += validate_network_assumptions(df_selected)
+    
+            if assumptions_issues:
+                with st.expander("⚠️ Assumptions & Validity"):
+                    for issue in assumptions_issues:
+                        st.warning(issue)
+            else:
+                st.success("All premisses validated successfully")
     
     except Exception as e:
         st.error(f"❌ Error reading file: {e}")
