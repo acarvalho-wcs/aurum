@@ -1036,64 +1036,69 @@ if "user" in st.session_state:
 
     st.subheader("Upload Multiple Cases (Batch Mode)")
     uploaded_file = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"], key="uploaded_file")
+
     if uploaded_file is not None:
-        try:
-            if uploaded_file.name.endswith(".csv"):
-                batch_data = pd.read_csv(uploaded_file)
-            else:
-                batch_data = pd.read_excel(uploaded_file)
+        st.info("📄 File uploaded. Click the button below to confirm batch submission.")
+        submit_batch = st.button("🚀 Submit Batch Upload")
 
-            required_cols = [
-                "Case #", "N seized specimens", "Year",
-                "Country of offenders", "Seizure status", "Transit feature", "Notes"
-            ]
+        if submit_batch:
+            try:
+                if uploaded_file.name.endswith(".csv"):
+                    batch_data = pd.read_csv(uploaded_file)
+                else:
+                    batch_data = pd.read_excel(uploaded_file)
 
-            missing_cols = [col for col in required_cols if col not in batch_data.columns]
-
-            if missing_cols:
-                st.error("🚫 Upload blocked: the uploaded file has incorrect formatting.")
-                st.markdown(f"""
-                The file must include the following required columns:
-
-                - `Case #`
-                - `N seized specimens`
-                - `Year`
-                - `Country of offenders`
-                - `Seizure status`
-                - `Transit feature`
-                - `Notes`
-
-                The following columns are missing:  
-                **{', '.join(missing_cols)}**
-
-                > 💡 Tip: You can download the correct template from the sidebar (“Download Template”) and fill it with your data.
-                """)
-            else:
-                # Fill missing values and add metadata before reordering
-                batch_data = batch_data.fillna("")
-                batch_data["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                batch_data["Author"] = st.session_state["user"]
-
-                # Reorder columns to match expected format
-                ordered_cols = [
-                    "Timestamp", "Case #", "N seized specimens", "Year",
-                    "Country of offenders", "Seizure status", "Transit feature",
-                    "Notes", "Author"
+                required_cols = [
+                    "Case #", "N seized specimens", "Year",
+                    "Country of offenders", "Seizure status", "Transit feature", "Notes"
                 ]
-                batch_data = batch_data[ordered_cols]
 
-                rows_to_append = batch_data.values.tolist()
-                worksheet = get_worksheet()
-                worksheet.append_rows(rows_to_append, value_input_option="USER_ENTERED")
+                missing_cols = [col for col in required_cols if col not in batch_data.columns]
 
-                st.success("✅ Batch upload completed successfully!")
+                if missing_cols:
+                    st.error("🚫 Upload blocked: the uploaded file has incorrect formatting.")
+                    st.markdown(f"""
+                    The file must include the following required columns:
 
-                # 🔁 Clear uploaded file to prevent duplicate submission
-                st.session_state["uploaded_file"] = None
-                st.rerun()
+                    - `Case #`
+                    - `N seized specimens`
+                    - `Year`
+                    - `Country of offenders`
+                    - `Seizure status`
+                    - `Transit feature`
+                    - `Notes`
 
-        except Exception as e:
-            st.error(f"❌ Error during upload: {e}")
+                    The following columns are missing:  
+                    **{', '.join(missing_cols)}**
+
+                    > 💡 Tip: You can download the correct template from the sidebar (“Download Template”) and fill it with your data.
+                    """)
+                else:
+                    # Fill missing values and add metadata before reordering
+                    batch_data = batch_data.fillna("")
+                    batch_data["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    batch_data["Author"] = st.session_state["user"]
+
+                    # Reorder columns to match expected format
+                    ordered_cols = [
+                        "Timestamp", "Case #", "N seized specimens", "Year",
+                        "Country of offenders", "Seizure status", "Transit feature",
+                        "Notes", "Author"
+                    ]
+                    batch_data = batch_data[ordered_cols]
+
+                    rows_to_append = batch_data.values.tolist()
+                    worksheet = get_worksheet()
+                    worksheet.append_rows(rows_to_append, value_input_option="USER_ENTERED")
+
+                    st.success("✅ Batch upload completed successfully!")
+
+                    # 🔁 Clear uploaded file
+                    st.session_state["uploaded_file"] = None
+                    st.rerun()
+
+            except Exception as e:
+                st.error(f"❌ Error during upload: {e}")
 
     st.markdown("## My Cases")
     worksheet = get_worksheet()
