@@ -65,6 +65,7 @@ if uploaded_file is None:
 
 df = None
 df_selected = None
+
 if uploaded_file is not None:
     try:
         df = pd.read_excel(uploaded_file)
@@ -72,10 +73,10 @@ if uploaded_file is not None:
         df.columns = df.columns.str.strip().str.replace('\xa0', '', regex=True)
         if 'Year' in df.columns:
             df['Year'] = df['Year'].astype(str).str.extract(r'(\d{4})').astype(float)
-    
+
     except Exception as e:
-    st.error(f"Erro: {e}")
-    
+        st.error(f"Erro: {e}")
+
 def expand_multi_species_rows(df):
     expanded_rows = []
     for _, row in df.iterrows():
