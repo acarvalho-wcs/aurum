@@ -916,53 +916,6 @@ def get_worksheet(sheet_name="Aurum_data"):
     return sh.worksheet(sheet_name)
 
 if "user" in st.session_state:
-    st.markdown("## ✏️ Edit My Cases")
-
-    try:
-        worksheet = get_worksheet()
-        records = worksheet.get_all_records()
-        df_user = pd.DataFrame(records)
-        df_user = df_user[df_user["Author"] == st.session_state["user"]]
-
-        if df_user.empty:
-            st.info("You haven't submitted any cases yet.")
-        else:
-            selected_case = st.selectbox("Select a case to edit:", df_user["Case #"].unique())
-
-            if selected_case:
-                row_index = df_user[df_user["Case #"] == selected_case].index[0] + 2  # +2 because of header + 1-based index
-                current_row = df_user.loc[df_user["Case #"] == selected_case].iloc[0]
-
-                with st.form("edit_case_form"):
-                    new_case_id = st.text_input("Case #", value=current_row["Case #"])
-                    new_n_seized = st.text_input("N seized specimens", value=current_row["N seized specimens"])
-                    new_year = st.number_input("Year", step=1, format="%d", value=int(current_row["Year"]))
-                    new_country = st.text_input("Country of offenders", value=current_row["Country of offenders"])
-                    new_status = st.text_input("Seizure status", value=current_row["Seizure status"])
-                    new_transit = st.text_input("Transit feature", value=current_row["Transit feature"])
-                    new_notes = st.text_area("Additional notes", value=current_row["Notes"])
-
-                    submitted_edit = st.form_submit_button("Save Changes")
-
-                if submitted_edit:
-                    updated_row = [
-                        current_row["Timestamp"],  # keep original timestamp
-                        new_case_id,
-                        new_n_seized,
-                        new_year,
-                        new_country,
-                        new_status,
-                        new_transit,
-                        new_notes,
-                        st.session_state["user"]
-                    ]
-                    worksheet.update(f"A{row_index}:I{row_index}", [updated_row])
-                    st.success("✅ Case updated successfully!")
-                    st.rerun()
-
-    except Exception as e:
-        st.error(f"❌ Failed to load or update your cases: {e}")
-        
     with st.expander("📥 Submit New Case to Aurum", expanded=False):
         # Chaves dos campos para controlar o form
         field_keys = {
@@ -1025,6 +978,53 @@ if "user" in st.session_state:
 
             # Força a atualização para limpar o form visualmente
             st.rerun()
+            
+    with st.expander("Edit My Cases", expanded=False):
+
+    try:
+        worksheet = get_worksheet()
+        records = worksheet.get_all_records()
+        df_user = pd.DataFrame(records)
+        df_user = df_user[df_user["Author"] == st.session_state["user"]]
+
+        if df_user.empty:
+            st.info("You haven't submitted any cases yet.")
+        else:
+            selected_case = st.selectbox("Select a case to edit:", df_user["Case #"].unique())
+
+            if selected_case:
+                row_index = df_user[df_user["Case #"] == selected_case].index[0] + 2  # +2 because of header + 1-based index
+                current_row = df_user.loc[df_user["Case #"] == selected_case].iloc[0]
+
+                with st.form("edit_case_form"):
+                    new_case_id = st.text_input("Case #", value=current_row["Case #"])
+                    new_n_seized = st.text_input("N seized specimens", value=current_row["N seized specimens"])
+                    new_year = st.number_input("Year", step=1, format="%d", value=int(current_row["Year"]))
+                    new_country = st.text_input("Country of offenders", value=current_row["Country of offenders"])
+                    new_status = st.text_input("Seizure status", value=current_row["Seizure status"])
+                    new_transit = st.text_input("Transit feature", value=current_row["Transit feature"])
+                    new_notes = st.text_area("Additional notes", value=current_row["Notes"])
+
+                    submitted_edit = st.form_submit_button("Save Changes")
+
+                if submitted_edit:
+                    updated_row = [
+                        current_row["Timestamp"],  # keep original timestamp
+                        new_case_id,
+                        new_n_seized,
+                        new_year,
+                        new_country,
+                        new_status,
+                        new_transit,
+                        new_notes,
+                        st.session_state["user"]
+                    ]
+                    worksheet.update(f"A{row_index}:I{row_index}", [updated_row])
+                    st.success("✅ Case updated successfully!")
+                    st.rerun()
+
+    except Exception as e:
+        st.error(f"❌ Failed to load or update your cases: {e}")
 
     st.subheader("Upload Multiple Cases (Batch Mode)")
     uploaded_file = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"])
