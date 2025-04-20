@@ -921,7 +921,7 @@ if "user" in st.session_state:
         default_fields = {
             "case_id": "",
             "n_seized": "",
-            "year": 2024,
+            "year": 2025,
             "country": "",
             "seizure_status": "",
             "transit": "",
