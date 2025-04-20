@@ -956,7 +956,7 @@ if "user" in st.session_state:
 
         with st.form("aurum_form"):
             case_id = st.text_input("Case #", key=field_keys["case_id"])
-            country_id = st.text_input(Country of seizure or shipment", key=field_keys["country_id"])
+            country_id = st.text_input("Country of seizure or shipment", key=field_keys["country_id"])
             n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)", key=field_keys["n_seized"])
             year = st.number_input("Year", step=1, format="%d", min_value=1900, max_value=2100, key=field_keys["year"])
             country = st.text_input("Country of offenders", key=field_keys["country"])
