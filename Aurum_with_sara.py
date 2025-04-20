@@ -306,8 +306,8 @@ if uploaded_file is not None:
                             st.markdown(f"- p-value = `{pval_post:.4f}`")
                         else:
                             st.info("Not enough data after breakpoint.")
-                            
-            assumptions_issues += validate_trend_assumptions(df_selected)
+
+                assumptions_issues += validate_trend_assumptions(df_selected)                            
             
                 # Optional CUSUM
                 if st.checkbox("Activate CUSUM analysis"):
