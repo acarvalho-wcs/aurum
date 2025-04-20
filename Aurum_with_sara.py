@@ -818,40 +818,45 @@ if export_html and df_selected is not None:
     
 # --- LOGIN ---
 st.sidebar.markdown("---")
-st.sidebar.markdown("## 🔐 Login to Aurum - Under maintenance")
-username = st.sidebar.text_input("Username")
-password = st.sidebar.text_input("Password", type="password")
 
-# Coloca os botões lado a lado
-login_col, logout_col = st.sidebar.columns([1, 1])
+# Se usuário estiver logado, exibir status e botão de logout
+if "user" in st.session_state:
+    st.sidebar.markdown(f"✅ **{st.session_state['user']}** is connected.")
+    if st.sidebar.button("Logout"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.rerun()
 
-login_button = login_col.button("Login")
-logout_button = logout_col.button("Logout")
+# Se não estiver logado, exibir campos de login
+else:
+    st.sidebar.markdown("## 🔐 Login to Aurum")
+    username = st.sidebar.text_input("Username", key="login_username")
+    password = st.sidebar.text_input("Password", type="password", key="login_password")
 
-# Verificação da senha (ajuste de função)
-def verify_password(password, hashed):
-    return password == hashed_pw
+    login_col, _ = st.sidebar.columns([1, 1])
+    login_button = login_col.button("Login")
 
-# Ação de login
-if login_button and username and password:
-    user_row = users_df[users_df["Username"] == username]
-    if not user_row.empty and str(user_row.iloc[0]["Approved"]).strip().lower() == "true":
-        hashed_pw = user_row.iloc[0]["Password"].strip()
+    def verify_password(password, hashed):
+        return password == hashed_pw
 
-        if verify_password(password, hashed_pw):
-            st.session_state["user"] = username
-            st.session_state["is_admin"] = str(user_row.iloc[0]["Is_Admin"]).strip().lower() == "true"
-            st.success(f"Logged in as {username}")
+    if login_button and username and password:
+        user_row = users_df[users_df["Username"] == username]
+        if not user_row.empty and str(user_row.iloc[0]["Approved"]).strip().lower() == "true":
+            hashed_pw = user_row.iloc[0]["Password"].strip()
+
+            if verify_password(password, hashed_pw):
+                st.session_state["user"] = username
+                st.session_state["is_admin"] = str(user_row.iloc[0]["Is_Admin"]).strip().lower() == "true"
+
+                # Limpa campos de entrada
+                st.session_state["login_username"] = ""
+                st.session_state["login_password"] = ""
+
+                st.rerun()
+            else:
+                st.error("Incorrect password.")
         else:
-            st.error("Incorrect password.")
-    else:
-        st.error("User not approved or does not exist.")
-
-# Ação de logout (aparece mesmo sem precisar clicar antes no login)
-if logout_button and "user" in st.session_state:
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    st.rerun()
+            st.error("User not approved or does not exist.")
 
 # --- FORMULÁRIO DE ACESSO (REQUISIÇÃO) ---
 # Inicializa estado
