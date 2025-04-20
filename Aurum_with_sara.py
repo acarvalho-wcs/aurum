@@ -821,17 +821,23 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("## 🔐 Login to Aurum - Under maintenance")
 username = st.sidebar.text_input("Username")
 password = st.sidebar.text_input("Password", type="password")
-login_button = st.sidebar.button("Login")
 
-# Verify encrypted password
+# Coloca os botões lado a lado
+login_col, logout_col = st.sidebar.columns([1, 1])
+
+login_button = login_col.button("Login")
+logout_button = logout_col.button("🚪 Logout")
+
+# Verificação da senha (ajuste de função)
 def verify_password(password, hashed):
     return password == hashed_pw
 
+# Ação de login
 if login_button and username and password:
     user_row = users_df[users_df["Username"] == username]
     if not user_row.empty and str(user_row.iloc[0]["Approved"]).strip().lower() == "true":
         hashed_pw = user_row.iloc[0]["Password"].strip()
-        
+
         if verify_password(password, hashed_pw):
             st.session_state["user"] = username
             st.session_state["is_admin"] = str(user_row.iloc[0]["Is_Admin"]).strip().lower() == "true"
@@ -841,12 +847,11 @@ if login_button and username and password:
     else:
         st.error("User not approved or does not exist.")
 
-# --- LOGOUT ---
-if "user" in st.session_state:
-    if st.sidebar.button("🚪 Logout"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.rerun()
+# Ação de logout (aparece mesmo sem precisar clicar antes no login)
+if logout_button and "user" in st.session_state:
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.rerun()
 
 # --- FORMULÁRIO DE ACESSO (REQUISIÇÃO) ---
 # Inicializa estado
