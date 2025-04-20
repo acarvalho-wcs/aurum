@@ -1034,77 +1034,12 @@ if "user" in st.session_state:
         except Exception as e:
             st.error(f"❌ Failed to load or update your cases: {e}")
 
-def validate_batch(batch_df: pd.DataFrame, existing_df: pd.DataFrame, user: str):
-    required_cols = [
-        "Case #", "N seized specimens", "Year",
-        "Country of offenders", "Seizure status", "Transit feature", "Notes"
-    ]
-
-    # Corrige nomes de colunas com segurança
-    batch_df.columns = [str(col).strip() for col in batch_df.columns]
-    existing_df.columns = [str(col).strip() for col in existing_df.columns]
-
-    # Verifica colunas obrigatórias
-    missing_cols = [col for col in required_cols if col not in batch_df.columns]
-    if missing_cols:
-        return {
-            "status": "error",
-            "message": f"The following columns are missing: **{', '.join(missing_cols)}**",
-            "type": "format"
-        }
-
-    # Padroniza os Case # para string e remove espaços
-    batch_df["Case #"] = batch_df["Case #"].astype(str).str.strip()
-    existing_df["Case #"] = existing_df["Case #"].astype(str).str.strip()
-
-    # Verifica duplicação
-    existing_case_ids = set(existing_df["Case #"])
-    incoming_case_ids = set(batch_df["Case #"])
-    duplicated = incoming_case_ids.intersection(existing_case_ids)
-
-    if duplicated:
-        return {
-            "status": "error",
-            "message": f"""
-🚫 Some Case # identifiers already exist in Aurum:  
-**{', '.join(sorted(duplicated))}**  
-> Please remove or rename them before resubmitting.""",
-            "type": "duplicate"
-        }
-
-    # Prepara dados para upload
-    batch_df = batch_df.fillna("")
-    batch_df["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    batch_df["Author"] = user
-
-    ordered_cols = [
-        "Timestamp", "Case #", "N seized specimens", "Year",
-        "Country of offenders", "Seizure status", "Transit feature",
-        "Notes", "Author"
-    ]
-    batch_df = batch_df[ordered_cols]
-
-    return {
-        "status": "ok",
-        "data": batch_df
-    }
-
-# --- Upload de Casos em Lote ---
-st.subheader("Upload Multiple Cases (Batch Mode)")
-
-# Impede reenvio após sucesso
-if st.session_state.get("batch_uploaded", False):
-    st.info("✅ Batch already submitted in this session.")
-else:
-    uploaded_file = st.file_uploader(
-        "Upload an Excel or CSV file with multiple cases",
-        type=["xlsx", "csv"],
-        key="uploaded_file"
-    )
+    st.subheader("Upload Multiple Cases (Batch Mode)")
+    uploaded_file = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"], key="uploaded_file")
 
     if uploaded_file is not None:
         st.info("📄 File uploaded. Click the button below to confirm batch submission.")
-        submit_batch = st.button("🚀 Submit Batch Upload")
+        submit_batch = st.button("📥 **Submit Batch Upload**")
 
         if submit_batch:
             try:
@@ -1113,21 +1048,53 @@ else:
                 else:
                     batch_data = pd.read_excel(uploaded_file)
 
-                worksheet = get_worksheet()
-                existing_records = worksheet.get_all_records()
-                existing_df = pd.DataFrame(existing_records)
+                required_cols = [
+                    "Case #", "N seized specimens", "Year",
+                    "Country of offenders", "Seizure status", "Transit feature", "Notes"
+                ]
 
-                result = validate_batch(batch_data, existing_df, st.session_state["user"])
+                missing_cols = [col for col in required_cols if col not in batch_data.columns]
 
-                if result["status"] == "error":
-                    st.error(result["message"])
+                if missing_cols:
+                    st.error("🚫 Upload blocked: the uploaded file has incorrect formatting.")
+                    st.markdown(f"""
+                    The file must include the following required columns:
+
+                    - `Case #`
+                    - `N seized specimens`
+                    - `Year`
+                    - `Country of offenders`
+                    - `Seizure status`
+                    - `Transit feature`
+                    - `Notes`
+
+                    The following columns are missing:  
+                    **{', '.join(missing_cols)}**
+
+                    > 💡 Tip: You can download the correct template from the sidebar (“Download Template”) and fill it with your data.
+                    """)
                 else:
-                    cleaned_batch = result["data"]
-                    worksheet.append_rows(cleaned_batch.values.tolist(), value_input_option="USER_ENTERED")
+                    # Fill missing values and add metadata before reordering
+                    batch_data = batch_data.fillna("")
+                    batch_data["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    batch_data["Author"] = st.session_state["user"]
+
+                    # Reorder columns to match expected format
+                    ordered_cols = [
+                        "Timestamp", "Case #", "N seized specimens", "Year",
+                        "Country of offenders", "Seizure status", "Transit feature",
+                        "Notes", "Author"
+                    ]
+                    batch_data = batch_data[ordered_cols]
+
+                    rows_to_append = batch_data.values.tolist()
+                    worksheet = get_worksheet()
+                    worksheet.append_rows(rows_to_append, value_input_option="USER_ENTERED")
+
                     st.success("✅ Batch upload completed successfully!")
 
-                    # Previne reenvio
-                    st.session_state["batch_uploaded"] = True
+                    # 🔁 Clear uploaded file
+                    st.session_state["uploaded_file"] = None
                     st.rerun()
 
             except Exception as e:
