@@ -1109,7 +1109,9 @@ if "user" in st.session_state:
                     worksheet.append_rows(rows_to_append, value_input_option="USER_ENTERED")
 
                     st.success("✅ Batch upload completed successfully!")
-                    st.session_state["uploaded_file"] = None
+                    if "uploaded_file" in st.session_state:
+                        del st.session_state["uploaded_file"]
+                        
                     st.rerun()
 
             except Exception as e:
