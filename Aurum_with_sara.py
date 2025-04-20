@@ -53,6 +53,11 @@ if data_source == "📂 Upload file":
     if uploaded_file is not None:
         df = pd.read_excel(uploaded_file)
 
+def get_worksheet(sheet_name="Aurum_data"):
+    gc = gspread.authorize(credentials)
+    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
+    return sh.worksheet(sheet_name)
+
 elif data_source == "🗃️ Use my submitted cases" and "user" in st.session_state:
     try:
         worksheet = get_worksheet()
