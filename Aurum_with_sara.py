@@ -1005,12 +1005,12 @@ if "user" in st.session_state:
                 > 💡 Tip: You can download the correct template from the sidebar (“Download Template”) and fill it with your data.
                 """)
             else:
-                # Fill missing values and add metadata
+                # Fill missing values and add metadata before reordering
                 batch_data = batch_data.fillna("")
                 batch_data["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 batch_data["Author"] = st.session_state["user"]
 
-                # Reorder columns to match template
+                # Reorder columns to match expected format
                 ordered_cols = [
                     "Timestamp", "Case #", "N seized specimens", "Year",
                     "Country of offenders", "Seizure status", "Transit feature",
