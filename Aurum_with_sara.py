@@ -826,7 +826,7 @@ password = st.sidebar.text_input("Password", type="password")
 login_col, logout_col = st.sidebar.columns([1, 1])
 
 login_button = login_col.button("Login")
-logout_button = logout_col.button("🚪 Logout")
+logout_button = logout_col.button("Logout")
 
 # Verificação da senha (ajuste de função)
 def verify_password(password, hashed):
