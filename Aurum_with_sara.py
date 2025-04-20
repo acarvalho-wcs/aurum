@@ -963,7 +963,7 @@ if "user" in st.session_state:
     except Exception as e:
         st.error(f"❌ Failed to load or update your cases: {e}")
         
-        with st.expander("📥 Submit New Case to Aurum", expanded=False):
+    with st.expander("📥 Submit New Case to Aurum", expanded=False):
         # Chaves dos campos para controlar o form
         field_keys = {
             "case_id": "case_id_input",
