@@ -1048,6 +1048,9 @@ if "user" in st.session_state:
                 else:
                     batch_data = pd.read_excel(uploaded_file)
 
+                # 🔧 Normaliza nomes das colunas para evitar erros por espaços invisíveis ou capitalização
+                batch_data.columns = batch_data.columns.str.strip().str.replace('\xa0', '', regex=True)
+
                 required_cols = [
                     "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
                     "Country of offenders", "Seizure status", "Transit feature", "Notes"
