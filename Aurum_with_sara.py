@@ -1048,15 +1048,26 @@ if "user" in st.session_state:
                 else:
                     batch_data = pd.read_excel(uploaded_file)
 
-                # 🔧 Normaliza nomes das colunas para evitar erros por espaços invisíveis ou capitalização
-                batch_data.columns = batch_data.columns.str.strip().str.replace('\xa0', '', regex=True)
+                # Normaliza os nomes das colunas
+                batch_data.columns = (
+                    batch_data.columns
+                    .str.normalize('NFKD')
+                    .str.encode('ascii', errors='ignore')
+                    .str.decode('utf-8')
+                    .str.strip()
+                    .str.lower()
+                )
 
-                required_cols = [
+                required_cols_original = [
                     "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
                     "Country of offenders", "Seizure status", "Transit feature", "Notes"
                 ]
+                required_cols_normalized = [col.lower() for col in required_cols_original]
 
-                missing_cols = [col for col in required_cols if col not in batch_data.columns]
+                missing_cols = [
+                    orig for orig, norm in zip(required_cols_original, required_cols_normalized)
+                    if norm not in batch_data.columns
+                ]
 
                 if missing_cols:
                     st.error("🚫 Upload blocked: the uploaded file has incorrect formatting.")
@@ -1078,17 +1089,17 @@ if "user" in st.session_state:
                     > 💡 Tip: You can download the correct template from the sidebar (“Download Template”) and fill it with your data.
                     """)
                 else:
-                    # Fill missing values and add metadata before reordering
                     batch_data = batch_data.fillna("")
                     batch_data["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     batch_data["Author"] = st.session_state["user"]
 
-                    # Reorder columns to match expected format
+                    # Usa os nomes originais para manter a ordem correta
                     ordered_cols = [
                         "Timestamp", "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
                         "Country of offenders", "Seizure status", "Transit feature",
                         "Notes", "Author"
                     ]
+                    batch_data.columns = required_cols_original  # renomeia colunas de volta para padrão
                     batch_data = batch_data[ordered_cols]
 
                     rows_to_append = batch_data.values.tolist()
@@ -1096,8 +1107,6 @@ if "user" in st.session_state:
                     worksheet.append_rows(rows_to_append, value_input_option="USER_ENTERED")
 
                     st.success("✅ Batch upload completed successfully!")
-
-                    # 🔁 Clear uploaded file
                     st.session_state["uploaded_file"] = None
                     st.rerun()
 
