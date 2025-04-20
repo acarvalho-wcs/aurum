@@ -65,25 +65,6 @@ if uploaded_file is None:
 
 df = None
 df_selected = None
-
-def expand_multi_species_rows(df):
-    expanded_rows = []
-    for _, row in df.iterrows():
-        # Regex para capturar quantidade + nome científico com underscore (ex: 3 Homo_sapiens)
-        matches = re.findall(r'(\d+)\s*([A-Z][a-z]+_[a-z]+)', str(row.get('N seized specimens', '')))
-        if matches:
-            for qty, species in matches:
-                new_row = row.copy()
-                new_row['N_seized'] = float(qty)
-                new_row['Species'] = species
-                expanded_rows.append(new_row)
-        else:
-            expanded_rows.append(row)
-    return pd.DataFrame(expanded_rows)
-
-df = None
-df_selected = None
-
 if uploaded_file is not None:
     try:
         df = pd.read_excel(uploaded_file)
@@ -92,10 +73,24 @@ if uploaded_file is not None:
         if 'Year' in df.columns:
             df['Year'] = df['Year'].astype(str).str.extract(r'(\d{4})').astype(float)
 
-        # Aplicar expansão das espécies em múltiplas linhas
+        def expand_multi_species_rows(df):
+            expanded_rows = []
+            for _, row in df.iterrows():
+                matches = re.findall(r'(\d+)\s*([A-Z]{2,}\d{0,3})', str(row.get('N seized specimens', '')))
+                if matches:
+                    for qty, species in matches:
+                        new_row = row.copy()
+                        new_row['N_seized'] = float(qty)
+                        new_row['Species'] = species
+                        expanded_rows.append(new_row)
+                else:
+                    expanded_rows.append(row)
+            return pd.DataFrame(expanded_rows)
+
         df = expand_multi_species_rows(df).reset_index(drop=True)
 
-        # Aplicar valores numéricos aos países, se o arquivo estiver disponível
+        # Aplicar valores numéricos aos países se o arquivo estiver disponível
+        import os
         country_score_path = "country_offenders_values.csv"
         if os.path.exists(country_score_path):
             df_country_score = pd.read_csv(country_score_path, encoding="ISO-8859-1")
@@ -107,11 +102,8 @@ if uploaded_file is not None:
                 countries = [c.strip() for c in cell_value.split("+")]
                 return sum(country_map.get(c, 0) for c in countries)
 
-    except Exception as e:
-        st.error(f"Erro: {e}")
-
-        if "Country of offenders" in df.columns:
-            df["Offender_value"] = df["Country of offenders"].apply(lambda x: score_countries(x, country_map))                
+            if "Country of offenders" in df.columns:
+                df["Offender_value"] = df["Country of offenders"].apply(lambda x: score_countries(x, country_map))                
         else:
             st.warning("⚠️ File country_offenders_values.csv not found. Offender scoring skipped.")
 
@@ -937,7 +929,6 @@ if "user" in st.session_state:
         # Chaves dos campos para controlar o form
         field_keys = {
             "case_id": "case_id_input",
-            "country": "country_input",
             "n_seized": "n_seized_input",
             "year": "year_input",
             "country": "country_input",
@@ -949,7 +940,6 @@ if "user" in st.session_state:
         # Define valores padrão
         default_values = {
             "case_id": "",
-            "country_id": "",
             "n_seized": "",
             "year": 2024,
             "country": "",
@@ -964,7 +954,6 @@ if "user" in st.session_state:
 
         with st.form("aurum_form"):
             case_id = st.text_input("Case #", key=field_keys["case_id"])
-            country_id = st.text_input("Country of seizure or shipment", key=field_keys["country_id"])
             n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)", key=field_keys["n_seized"])
             year = st.number_input("Year", step=1, format="%d", min_value=1900, max_value=2100, key=field_keys["year"])
             country = st.text_input("Country of offenders", key=field_keys["country"])
@@ -978,7 +967,6 @@ if "user" in st.session_state:
             new_row = [
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 case_id,
-                country_id,
                 n_seized,
                 year,
                 country,
@@ -1018,7 +1006,6 @@ if "user" in st.session_state:
 
                     with st.form("edit_case_form"):
                         new_case_id = st.text_input("Case #", value=current_row["Case #"])
-                        new_country_id = st.text_input("Country of seizure or shipemnt", value=current_row["Country of seizure or shipemnt"])
                         new_n_seized = st.text_input("N seized specimens", value=current_row["N seized specimens"])
                         new_year = st.number_input("Year", step=1, format="%d", value=int(current_row["Year"]))
                         new_country = st.text_input("Country of offenders", value=current_row["Country of offenders"])
@@ -1032,7 +1019,6 @@ if "user" in st.session_state:
                         updated_row = [
                             current_row["Timestamp"],
                             new_case_id,
-                            new_country_id,
                             new_n_seized,
                             new_year,
                             new_country,
@@ -1063,7 +1049,7 @@ if "user" in st.session_state:
                     batch_data = pd.read_excel(uploaded_file)
 
                 required_cols = [
-                    "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
+                    "Case #", "N seized specimens", "Year",
                     "Country of offenders", "Seizure status", "Transit feature", "Notes"
                 ]
 
@@ -1075,7 +1061,6 @@ if "user" in st.session_state:
                     The file must include the following required columns:
 
                     - `Case #`
-                    - `Country of seizure or shipment`
                     - `N seized specimens`
                     - `Year`
                     - `Country of offenders`
@@ -1096,7 +1081,7 @@ if "user" in st.session_state:
 
                     # Reorder columns to match expected format
                     ordered_cols = [
-                        "Timestamp", "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
+                        "Timestamp", "Case #", "N seized specimens", "Year",
                         "Country of offenders", "Seizure status", "Transit feature",
                         "Notes", "Author"
                     ]
