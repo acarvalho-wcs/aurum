@@ -916,12 +916,12 @@ def get_worksheet(sheet_name="Aurum_data"):
     return sh.worksheet(sheet_name)
 
 if "user" in st.session_state:
-    with st.expander("📥 **Submit New Case to Aurum**", expanded=False):
+    with st.expander("📥 Submit New Case to Aurum", expanded=False):
         # Inicializa campos padrão
         default_fields = {
             "case_id": "",
             "n_seized": "",
-            "year": 2025,
+            "year": 2024,
             "country": "",
             "seizure_status": "",
             "transit": "",
