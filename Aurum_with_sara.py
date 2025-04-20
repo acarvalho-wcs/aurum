@@ -1034,18 +1034,17 @@ if "user" in st.session_state:
         except Exception as e:
             st.error(f"❌ Failed to load or update your cases: {e}")
 
-# --- Função de validação do Batch Upload ---
 def validate_batch(batch_df: pd.DataFrame, existing_df: pd.DataFrame, user: str):
     required_cols = [
         "Case #", "N seized specimens", "Year",
         "Country of offenders", "Seizure status", "Transit feature", "Notes"
     ]
 
-    # Limpa e normaliza colunas
-    batch_df.columns = batch_df.columns.str.strip()
-    existing_df.columns = existing_df.columns.str.strip()
+    # Corrige nomes de colunas com segurança
+    batch_df.columns = [str(col).strip() for col in batch_df.columns]
+    existing_df.columns = [str(col).strip() for col in existing_df.columns]
 
-    # Verifica se as colunas obrigatórias estão presentes
+    # Verifica colunas obrigatórias
     missing_cols = [col for col in required_cols if col not in batch_df.columns]
     if missing_cols:
         return {
@@ -1058,7 +1057,7 @@ def validate_batch(batch_df: pd.DataFrame, existing_df: pd.DataFrame, user: str)
     batch_df["Case #"] = batch_df["Case #"].astype(str).str.strip()
     existing_df["Case #"] = existing_df["Case #"].astype(str).str.strip()
 
-    # Verifica duplicados
+    # Verifica duplicação
     existing_case_ids = set(existing_df["Case #"])
     incoming_case_ids = set(batch_df["Case #"])
     duplicated = incoming_case_ids.intersection(existing_case_ids)
@@ -1073,7 +1072,7 @@ def validate_batch(batch_df: pd.DataFrame, existing_df: pd.DataFrame, user: str)
             "type": "duplicate"
         }
 
-    # Prepara os dados
+    # Prepara dados para upload
     batch_df = batch_df.fillna("")
     batch_df["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     batch_df["Author"] = user
