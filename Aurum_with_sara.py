@@ -137,7 +137,34 @@ if uploaded_file is not None:
         df["Inferred Stage"] = df.apply(infer_stage, axis=1)
 
         st.success("✅ File uploaded and cleaned successfully!")
+        assumptions_issues = []
 
+        def validate_trend_assumptions(df, year_col="Year", count_col="N_seized"):
+            issues = []
+            if df[year_col].isnull().any():
+                issues.append("Trend Analysis: há anos faltantes nos dados.")
+            if df[count_col].min() < 0:
+                issues.append("Trend Analysis: há contagens negativas.")
+            return issues
+
+        def validate_cooccurrence_assumptions(df, species_list, case_col="Case #"):
+            issues = []
+            if df[case_col].nunique() < 10:
+                issues.append("Co-occurrence: número de casos muito pequeno para teste qui².")
+            return issues
+
+        def validate_anomaly_assumptions(df, features):
+            issues = []
+            if df[features].isnull().any().any():
+                issues.append("Anomaly Detection: há valores ausentes nas variáveis numéricas.")
+            return issues
+
+        def validate_network_assumptions(df, case_col="Case #"):
+            issues = []
+            if df[case_col].duplicated().any():
+                issues.append("Network Analysis: IDs de caso repetidos.")
+            return issues
+        
         st.sidebar.markdown("## Select Species")
         species_options = sorted(df['Species'].dropna().unique())
         selected_species = st.sidebar.multiselect("Select one or more species:", species_options)
@@ -279,7 +306,9 @@ if uploaded_file is not None:
                             st.markdown(f"- p-value = `{pval_post:.4f}`")
                         else:
                             st.info("Not enough data after breakpoint.")
-
+                            
+            assumptions_issues += validate_trend_assumptions(df_selected)
+            
                 # Optional CUSUM
                 if st.checkbox("Activate CUSUM analysis"):
                     st.subheader("CUSUM - Trend Change Detection")
