@@ -979,7 +979,7 @@ if "user" in st.session_state:
             # Força a atualização para limpar o form visualmente
             st.rerun()
             
-    with st.expander("Edit My Cases", expanded=False):
+    st.markdown("## ✏️ Edit My Cases")
 
     try:
         worksheet = get_worksheet()
