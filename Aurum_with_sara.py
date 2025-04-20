@@ -917,7 +917,7 @@ def get_worksheet(sheet_name="Aurum_data"):
 
 if "user" in st.session_state:
     with st.expander("📥 Submit New Case to Aurum", expanded=False):
-        # Inicializa os campos do formulário na sessão, se ainda não estiverem lá
+        # Inicializa campos padrão
         default_fields = {
             "case_id": "",
             "n_seized": "",
@@ -934,7 +934,15 @@ if "user" in st.session_state:
         with st.form("aurum_form"):
             st.session_state.case_id = st.text_input("Case #", value=st.session_state.case_id)
             st.session_state.n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)", value=st.session_state.n_seized)
-            st.session_state.year = st.number_input("Year", step=1, format="%d", value=st.session_state.year)
+
+            # Garantir que o valor de ano seja numérico e válido
+            try:
+                initial_year = int(st.session_state.year)
+            except (ValueError, TypeError):
+                initial_year = 2024
+
+            st.session_state.year = st.number_input("Year", step=1, format="%d", value=initial_year, min_value=1900, max_value=2100)
+
             st.session_state.country = st.text_input("Country of offenders", value=st.session_state.country)
             st.session_state.seizure_status = st.text_input("Seizure status", value=st.session_state.seizure_status)
             st.session_state.transit = st.text_input("Transit feature", value=st.session_state.transit)
@@ -958,7 +966,7 @@ if "user" in st.session_state:
                 worksheet.append_row(new_row)
                 st.success("✅ Case submitted to Aurum successfully!")
 
-                # Limpa os campos do formulário
+                # Resetar os campos
                 for key in default_fields:
                     st.session_state[key] = default_fields[key]
 
