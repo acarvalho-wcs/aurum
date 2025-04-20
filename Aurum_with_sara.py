@@ -822,6 +822,11 @@ st.sidebar.markdown("## 🔐 Login to Aurum - Under maintenance")
 username = st.sidebar.text_input("Username")
 password = st.sidebar.text_input("Password", type="password")
 login_button = st.sidebar.button("Login")
+    # Botão de logout
+    if st.sidebar.button("🚪 Logout"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.experimental_rerun()
 
 # Verify encrypted password
 def verify_password(password, hashed):
@@ -931,12 +936,6 @@ if "user" in st.session_state:
             worksheet = get_worksheet()
             worksheet.append_row(new_row)
             st.success("✅ Case submitted to Aurum successfully!")
-
-    # Botão de logout
-    if st.sidebar.button("🚪 Logout"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.experimental_rerun()
 
     st.subheader("Upload Multiple Cases (Batch Mode)")
     uploaded_file = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"])
