@@ -110,8 +110,8 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"Erro: {e}")
 
-            if "Country of offenders" in df.columns:
-                df["Offender_value"] = df["Country of offenders"].apply(lambda x: score_countries(x, country_map))                
+        if "Country of offenders" in df.columns:
+            df["Offender_value"] = df["Country of offenders"].apply(lambda x: score_countries(x, country_map))                
         else:
             st.warning("⚠️ File country_offenders_values.csv not found. Offender scoring skipped.")
 
