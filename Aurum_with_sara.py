@@ -1041,6 +1041,7 @@ def validate_batch(batch_df: pd.DataFrame, existing_df: pd.DataFrame, user: str)
         "Country of offenders", "Seizure status", "Transit feature", "Notes"
     ]
 
+    # Verifica se as colunas obrigatórias estão presentes
     missing_cols = [col for col in required_cols if col not in batch_df.columns]
     if missing_cols:
         return {
@@ -1049,8 +1050,13 @@ def validate_batch(batch_df: pd.DataFrame, existing_df: pd.DataFrame, user: str)
             "type": "format"
         }
 
-    existing_case_ids = set(existing_df["Case #"]) if "Case #" in existing_df.columns else set()
-    incoming_case_ids = set(batch_df["Case #"].astype(str))
+    # Padroniza os Case # para string e remove espaços
+    batch_df["Case #"] = batch_df["Case #"].astype(str).str.strip()
+    existing_df["Case #"] = existing_df["Case #"].astype(str).str.strip()
+
+    # Verifica duplicados
+    existing_case_ids = set(existing_df["Case #"])
+    incoming_case_ids = set(batch_df["Case #"])
     duplicated = incoming_case_ids.intersection(existing_case_ids)
 
     if duplicated:
@@ -1063,6 +1069,7 @@ def validate_batch(batch_df: pd.DataFrame, existing_df: pd.DataFrame, user: str)
             "type": "duplicate"
         }
 
+    # Prepara os dados
     batch_df = batch_df.fillna("")
     batch_df["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     batch_df["Author"] = user
