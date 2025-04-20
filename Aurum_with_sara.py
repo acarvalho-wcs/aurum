@@ -76,7 +76,7 @@ if uploaded_file is not None:
         def expand_multi_species_rows(df):
             expanded_rows = []
             for _, row in df.iterrows():
-                matches = re.findall(r'(\d+)\s*([A-Z]{2,}\d{0,3})', str(row.get('N seized specimens', '')))
+                matches = re.findall(r'(\d+)\s*([A-Z][a-z]+(?:_[a-z]+)+)', str(row.get('N seized specimens', '')))
                 if matches:
                     for qty, species in matches:
                         new_row = row.copy()
