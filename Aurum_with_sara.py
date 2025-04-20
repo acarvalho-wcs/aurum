@@ -73,19 +73,20 @@ if uploaded_file is not None:
         if 'Year' in df.columns:
             df['Year'] = df['Year'].astype(str).str.extract(r'(\d{4})').astype(float)
 
-        def expand_multi_species_rows(df):
-            expanded_rows = []
-            for _, row in df.iterrows():
-                matches = re.findall(r'(\d+)\s*([A-Z]{2,}\d{0,3})', str(row.get('N seized specimens', '')))
-                if matches:
-                    for qty, species in matches:
-                        new_row = row.copy()
-                        new_row['N_seized'] = float(qty)
-                        new_row['Species'] = species
-                        expanded_rows.append(new_row)
-                else:
-                    expanded_rows.append(row)
-            return pd.DataFrame(expanded_rows)
+def expand_multi_species_rows(df):
+    expanded_rows = []
+    for _, row in df.iterrows():
+        # Novo regex para capturar quantidade + nome científico com underscore
+        matches = re.findall(r'(\d+)\s*([A-Z][a-z]+_[a-z]+)', str(row.get('N seized specimens', '')))
+        if matches:
+            for qty, species in matches:
+                new_row = row.copy()
+                new_row['N_seized'] = float(qty)
+                new_row['Species'] = species
+                expanded_rows.append(new_row)
+        else:
+            expanded_rows.append(row)
+    return pd.DataFrame(expanded_rows)
 
         df = expand_multi_species_rows(df).reset_index(drop=True)
 
