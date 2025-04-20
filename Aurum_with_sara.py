@@ -1093,38 +1093,46 @@ def validate_batch(batch_df: pd.DataFrame, existing_df: pd.DataFrame, user: str)
 # --- Upload de Casos em Lote ---
 st.subheader("Upload Multiple Cases (Batch Mode)")
 
-uploaded_file = st.file_uploader(
-    "Upload an Excel or CSV file with multiple cases",
-    type=["xlsx", "csv"]
-)
+# Impede reenvio após sucesso
+if st.session_state.get("batch_uploaded", False):
+    st.info("✅ Batch already submitted in this session.")
+else:
+    uploaded_file = st.file_uploader(
+        "Upload an Excel or CSV file with multiple cases",
+        type=["xlsx", "csv"],
+        key="uploaded_file"
+    )
 
-if uploaded_file is not None:
-    st.info("📄 File uploaded. Click the button below to confirm batch submission.")
-    submit_batch = st.button("🚀 Submit Batch Upload")
+    if uploaded_file is not None:
+        st.info("📄 File uploaded. Click the button below to confirm batch submission.")
+        submit_batch = st.button("🚀 Submit Batch Upload")
 
-    if submit_batch:
-        try:
-            if uploaded_file.name.endswith(".csv"):
-                batch_data = pd.read_csv(uploaded_file)
-            else:
-                batch_data = pd.read_excel(uploaded_file)
+        if submit_batch:
+            try:
+                if uploaded_file.name.endswith(".csv"):
+                    batch_data = pd.read_csv(uploaded_file)
+                else:
+                    batch_data = pd.read_excel(uploaded_file)
 
-            worksheet = get_worksheet()
-            existing_records = worksheet.get_all_records()
-            existing_df = pd.DataFrame(existing_records)
+                worksheet = get_worksheet()
+                existing_records = worksheet.get_all_records()
+                existing_df = pd.DataFrame(existing_records)
 
-            result = validate_batch(batch_data, existing_df, st.session_state["user"])
+                result = validate_batch(batch_data, existing_df, st.session_state["user"])
 
-            if result["status"] == "error":
-                st.error(result["message"])
-            else:
-                cleaned_batch = result["data"]
-                worksheet.append_rows(cleaned_batch.values.tolist(), value_input_option="USER_ENTERED")
-                st.success("✅ Batch upload completed successfully!")
-                st.rerun()
+                if result["status"] == "error":
+                    st.error(result["message"])
+                else:
+                    cleaned_batch = result["data"]
+                    worksheet.append_rows(cleaned_batch.values.tolist(), value_input_option="USER_ENTERED")
+                    st.success("✅ Batch upload completed successfully!")
 
-        except Exception as e:
-            st.error(f"❌ Error during upload: {e}")
+                    # Previne reenvio
+                    st.session_state["batch_uploaded"] = True
+                    st.rerun()
+
+            except Exception as e:
+                st.error(f"❌ Error during upload: {e}")
 
     st.markdown("## My Cases")
     worksheet = get_worksheet()
