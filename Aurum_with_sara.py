@@ -1034,54 +1034,63 @@ if "user" in st.session_state:
         except Exception as e:
             st.error(f"❌ Failed to load or update your cases: {e}")
 
-    # --- Função de validação do Batch Upload ---
-    def validate_batch(batch_df: pd.DataFrame, existing_df: pd.DataFrame, user: str):
-        required_cols = [
-            "Case #", "N seized specimens", "Year",
-            "Country of offenders", "Seizure status", "Transit feature", "Notes"
-        ]
+# --- Função de validação do Batch Upload ---
+def validate_batch(batch_df: pd.DataFrame, existing_df: pd.DataFrame, user: str):
+    required_cols = [
+        "Case #", "N seized specimens", "Year",
+        "Country of offenders", "Seizure status", "Transit feature", "Notes"
+    ]
 
-        missing_cols = [col for col in required_cols if col not in batch_df.columns]
-        if missing_cols:
-            return {
-                "status": "error",
-                "message": f"The following columns are missing: **{', '.join(missing_cols)}**",
-                "type": "format"
-            }
+    missing_cols = [col for col in required_cols if col not in batch_df.columns]
+    if missing_cols:
+        return {
+            "status": "error",
+            "message": f"The following columns are missing: **{', '.join(missing_cols)}**",
+            "type": "format"
+        }
 
-        existing_case_ids = set(existing_df["Case #"]) if "Case #" in existing_df.columns else set()
-        incoming_case_ids = set(batch_df["Case #"].astype(str))
-        duplicated = incoming_case_ids.intersection(existing_case_ids)
+    existing_case_ids = set(existing_df["Case #"]) if "Case #" in existing_df.columns else set()
+    incoming_case_ids = set(batch_df["Case #"].astype(str))
+    duplicated = incoming_case_ids.intersection(existing_case_ids)
 
-        if duplicated:
-            return {
-                "status": "error",
-                "message": f"""
+    if duplicated:
+        return {
+            "status": "error",
+            "message": f"""
 🚫 Some Case # identifiers already exist in Aurum:  
 **{', '.join(sorted(duplicated))}**  
 > Please remove or rename them before resubmitting.""",
-                "type": "duplicate"
-            }
-
-        batch_df = batch_df.fillna("")
-        batch_df["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        batch_df["Author"] = user
-
-        ordered_cols = [
-            "Timestamp", "Case #", "N seized specimens", "Year",
-            "Country of offenders", "Seizure status", "Transit feature",
-            "Notes", "Author"
-        ]
-        batch_df = batch_df[ordered_cols]
-
-        return {
-            "status": "ok",
-            "data": batch_df
+            "type": "duplicate"
         }
 
-    # --- Upload de Casos em Lote ---
-    st.subheader("Upload Multiple Cases (Batch Mode)")
-    uploaded_file = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"], key="uploaded_file")
+    batch_df = batch_df.fillna("")
+    batch_df["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    batch_df["Author"] = user
+
+    ordered_cols = [
+        "Timestamp", "Case #", "N seized specimens", "Year",
+        "Country of offenders", "Seizure status", "Transit feature",
+        "Notes", "Author"
+    ]
+    batch_df = batch_df[ordered_cols]
+
+    return {
+        "status": "ok",
+        "data": batch_df
+    }
+
+# --- Upload de Casos em Lote ---
+st.subheader("Upload Multiple Cases (Batch Mode)")
+
+# Se o batch já foi submetido na sessão, avisa e não deixa subir de novo
+if st.session_state.get("batch_uploaded", False):
+    st.info("✅ Batch already submitted in this session.")
+else:
+    uploaded_file = st.file_uploader(
+        "Upload an Excel or CSV file with multiple cases",
+        type=["xlsx", "csv"],
+        key="uploaded_file"
+    )
 
     if uploaded_file is not None:
         st.info("📄 File uploaded. Click the button below to confirm batch submission.")
@@ -1107,7 +1116,8 @@ if "user" in st.session_state:
                     worksheet.append_rows(cleaned_batch.values.tolist(), value_input_option="USER_ENTERED")
                     st.success("✅ Batch upload completed successfully!")
 
-                    st.session_state["uploaded_file"] = None
+                    # Marca que o batch foi submetido para evitar duplicação
+                    st.session_state["batch_uploaded"] = True
                     st.rerun()
 
             except Exception as e:
