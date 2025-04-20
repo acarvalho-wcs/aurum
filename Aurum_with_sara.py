@@ -822,11 +822,6 @@ st.sidebar.markdown("## 🔐 Login to Aurum - Under maintenance")
 username = st.sidebar.text_input("Username")
 password = st.sidebar.text_input("Password", type="password")
 login_button = st.sidebar.button("Login")
-    # Botão de logout
-    if st.sidebar.button("🚪 Logout"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.experimental_rerun()
 
 # Verify encrypted password
 def verify_password(password, hashed):
@@ -845,6 +840,12 @@ if login_button and username and password:
             st.error("Incorrect password.")
     else:
         st.error("User not approved or does not exist.")
+
+    # Botão de logout
+    if st.sidebar.button("🚪 Logout"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.experimental_rerun()
 
 # --- FORMULÁRIO DE ACESSO (REQUISIÇÃO) ---
 # Inicializa estado
