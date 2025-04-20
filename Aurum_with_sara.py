@@ -1049,7 +1049,7 @@ if "user" in st.session_state:
                     batch_data = pd.read_excel(uploaded_file)
 
                 required_cols = [
-                    "Case #", "N seized specimens", "Year",
+                    "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
                     "Country of offenders", "Seizure status", "Transit feature", "Notes"
                 ]
 
@@ -1061,6 +1061,7 @@ if "user" in st.session_state:
                     The file must include the following required columns:
 
                     - `Case #`
+                    - `Country of seizure or shipment`
                     - `N seized specimens`
                     - `Year`
                     - `Country of offenders`
@@ -1081,7 +1082,7 @@ if "user" in st.session_state:
 
                     # Reorder columns to match expected format
                     ordered_cols = [
-                        "Timestamp", "Case #", "N seized specimens", "Year",
+                        "Timestamp", "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
                         "Country of offenders", "Seizure status", "Transit feature",
                         "Notes", "Author"
                     ]
