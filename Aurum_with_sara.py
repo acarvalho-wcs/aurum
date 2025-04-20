@@ -932,6 +932,12 @@ if "user" in st.session_state:
             worksheet.append_row(new_row)
             st.success("✅ Case submitted to Aurum successfully!")
 
+    # Botão de logout
+    if st.sidebar.button("🚪 Logout"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.experimental_rerun()
+
     st.subheader("Upload Multiple Cases (Batch Mode)")
     uploaded_file = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"])
     if uploaded_file is not None:
