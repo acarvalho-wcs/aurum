@@ -99,6 +99,12 @@ if uploaded_file is None:
 
             st.markdown("## 📊 Aurum Summary Dashboard")
 
+            available_species = sorted(df_dashboard["Species"].unique())
+            selected_species_dash = st.selectbox("Select a species to view:", ["All species"] + available_species)
+
+            if selected_species_dash != "All species":
+                df_dashboard = df_dashboard[df_dashboard["Species"] == selected_species_dash]
+
             total_cases = df_dashboard["Case #"].nunique()
             total_individuals = int(df_dashboard["N_seized"].sum())
             total_countries = df_dashboard["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in df_dashboard.columns else 0
@@ -107,9 +113,6 @@ if uploaded_file is None:
             col1.metric("📁 Total Cases", total_cases)
             col2.metric("🐾 Individuals Seized", total_individuals)
             col3.metric("🌍 Countries Involved", total_countries)
-
-            available_species = sorted(df_dashboard["Species"].unique())
-            st.selectbox("Select a species to view (no filter applied):", available_species, index=0)
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
