@@ -150,6 +150,7 @@ if uploaded_file is None and not st.session_state.get("user"):
 
             import plotly.express as px
             import pycountry
+            from collections import Counter
 
             # Lista de todos os países reconhecidos
             all_countries = [country.name for country in pycountry.countries]
@@ -157,7 +158,7 @@ if uploaded_file is None and not st.session_state.get("user"):
             if "Country of seizure or shipment" in df_dashboard.columns:
                 countries_raw = df_dashboard["Country of seizure or shipment"].dropna()
 
-                # Padroniza os nomes dos países
+                # Padroniza nomes com pycountry
                 standardized = []
                 for name in countries_raw:
                     try:
@@ -166,21 +167,20 @@ if uploaded_file is None and not st.session_state.get("user"):
                     except:
                         pass
 
-                # Conta ocorrências por país
-                from collections import Counter
+                # Conta registros por país
                 country_counts = Counter(standardized)
 
-                # Cria dataframe com todos os países
+                # DataFrame com todos os países
                 df_map = pd.DataFrame({"Country": all_countries})
                 df_map["Cases"] = df_map["Country"].apply(lambda x: country_counts.get(x, 0))
 
-                # Escala com azuis mais visíveis desde 1 caso
-                custom_colors = [
-                    "#f0f4f7",  # 0
-                    "#bdd7e7",  # 1–5
-                    "#6baed6",  # 6–10
-                    "#3182bd",  # 11–15
-                    "#08519c"   # 16+
+                # Paleta com tons de azul a partir de 1
+                color_scale = [
+                    [0.0, "#d9eaf7"],   # 0 casos (cinza-azulado sutil)
+                    [0.01, "#a3cce9"],  # 1–4 casos
+                    [0.25, "#569fd6"],  # 5–10
+                    [0.5, "#2171b5"],   # 11–20
+                    [1.0, "#08306b"],   # 21+
                 ]
 
                 fig_map = px.choropleth(
@@ -188,14 +188,17 @@ if uploaded_file is None and not st.session_state.get("user"):
                     locations="Country",
                     locationmode="country names",
                     color="Cases",
-                    color_continuous_scale=custom_colors,
-                    title="Countries with Recorded Seizures",
+                    color_continuous_scale=color_scale,
+                    range_color=(0, df_map["Cases"].max()),
+                    title="Countries with Recorded Seizures"
                 )
+
                 fig_map.update_layout(
                     geo=dict(showframe=False, showcoastlines=False, projection_type="natural earth"),
                     coloraxis_colorbar=dict(title="Number of Cases"),
                     margin=dict(l=0, r=0, t=30, b=0),
                 )
+
                 st.plotly_chart(fig_map, use_container_width=True)
             else:
                 st.info("No country information available to display the map.")
