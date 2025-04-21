@@ -20,7 +20,7 @@ import bcrypt
 import os
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Aurum Dashboard", layout="centered")
+st.set_page_config(page_title="Aurum Dashboard", layout="wide")
 st.title("Aurum - Wildlife Trafficking Analytics")
 
 # Upload do arquivo
@@ -355,7 +355,7 @@ if uploaded_file is not None:
                     - These slopes are used to calculate the **Trend Coordination Score (TCS)**, which measures the relative change between the two periods:
                       - `TCS > 0` indicates an increase in trend after the breakpoint.
                       - `TCS < 0` indicates a decrease.
-                      - `TCS ~= 0` suggests stability.
+                      - `TCS ≈ 0` suggests stability.
 
                     - The score is normalized to reduce instability when the pre-breakpoint slope is close to zero. While TCS has no strict bounds, in practice it typically falls between −1 and +1. 
                     - Extreme values may indicate sharp shifts in trend intensity or imbalances in the temporal distribution of data. Although wildlife trafficking patterns are rarely linear in reality, this method adopts linear segments as a practical approximation to detect directional shifts. 
