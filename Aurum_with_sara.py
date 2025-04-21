@@ -26,6 +26,375 @@ st.title("Aurum - Wildlife Trafficking Analytics")
 # Upload do arquivo
 st.sidebar.markdown("## Welcome to Aurum")
 st.sidebar.markdown("Log in below to unlock multi-user tools.")
+
+# --- LOGIN ---
+st.sidebar.markdown("---")
+
+if "user" in st.session_state:
+    st.sidebar.markdown(f"✅ **{st.session_state['user']}** is connected.")
+    if st.sidebar.button("Logout"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.rerun()
+
+    # --- SELEÇÃO DA FONTE DE DADOS: Upload ou Meus Casos ---
+    st.sidebar.markdown("### 📑 Select Data Source")
+    data_source = st.sidebar.radio(
+        "Choose your data source:",
+        ["📤 Upload file", "🙋‍♂️ My Cases"],
+        key="data_source_choice"
+    )
+
+    df = None
+    df_selected = None
+
+    if st.session_state["data_source_choice"] == "📤 Upload file":
+        uploaded_file = st.sidebar.file_uploader("Upload your Excel file (.xlsx):", type=["xlsx"], key="uploaded_file")
+
+        if uploaded_file is not None:
+            try:
+                df = pd.read_excel(uploaded_file)
+                st.success("✅ File uploaded successfully.")
+            except Exception as e:
+                st.error(f"❌ Failed to read file: {e}")
+
+    elif st.session_state["data_source_choice"] == "🙋‍♂️ My Cases":
+        try:
+            worksheet = get_worksheet()
+            records = worksheet.get_all_records()
+            df_all = pd.DataFrame(records)
+            df_user = df_all[df_all["Author"] == st.session_state["user"]]
+            if df_user.empty:
+                st.warning("⚠️ You haven't submitted any cases yet.")
+            else:
+                df = df_user.copy()
+                st.success(f"✅ Loaded {len(df)} cases submitted by you.")
+        except Exception as e:
+            st.error(f"❌ Failed to load your cases: {e}")
+
+else:
+    st.sidebar.markdown("## 🔐 Login to Aurum")
+
+    # Usando keys explícitos para controlar valores via session_state
+    if "login_username" not in st.session_state:
+        st.session_state["login_username"] = ""
+    if "login_password" not in st.session_state:
+        st.session_state["login_password"] = ""
+
+    username = st.sidebar.text_input("Username", key="login_username")
+    password = st.sidebar.text_input("Password", type="password", key="login_password")
+
+    login_col, _ = st.sidebar.columns([1, 1])
+    login_button = login_col.button("Login")
+
+    def verify_password(password, hashed):
+        return password == hashed_pw
+
+    if login_button and username and password:
+        user_row = users_df[users_df["Username"] == username]
+        if not user_row.empty and str(user_row.iloc[0]["Approved"]).strip().lower() == "true":
+            hashed_pw = user_row.iloc[0]["Password"].strip()
+
+            if verify_password(password, hashed_pw):
+                st.session_state["user"] = username
+                st.session_state["is_admin"] = str(user_row.iloc[0]["Is_Admin"]).strip().lower() == "true"
+
+                # Limpa os campos após login bem-sucedido
+                st.session_state.pop("login_username", None)
+                st.session_state.pop("login_password", None)
+
+                st.rerun()
+            else:
+                st.error("Incorrect password.")
+        else:
+            st.error("User not approved or does not exist.")
+
+# --- FORMULÁRIO DE ACESSO (REQUISIÇÃO) ---
+# Inicializa estado
+if "show_sidebar_request" not in st.session_state:
+    st.session_state["show_sidebar_request"] = False
+
+# Botão na sidebar
+if st.sidebar.button("📩 Request Access"):
+    st.session_state["show_sidebar_request"] = True
+
+# Exibe o formulário de solicitação na sidebar se o botão foi clicado
+if st.session_state["show_sidebar_request"]:
+    with st.sidebar.form("sidebar_request_form"):
+        new_username = st.text_input("Choose a username", key="sidebar_user")
+        new_password = st.text_input("Choose a password", type="password", key="sidebar_pass")
+        institution = st.text_input("Institution", key="sidebar_inst")
+        email = st.text_input("E-mail", key="sidebar_email")
+        reason = st.text_area("Why do you want access to Aurum?", key="sidebar_reason")
+        submit_request = st.form_submit_button("Submit Request")
+
+        if submit_request:
+            if not new_username or not new_password or not reason:
+                st.sidebar.warning("All fields are required.")
+            else:
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                requests_ws.append_row([
+                    timestamp,
+                    new_username,
+                    new_password,
+                    institution,
+                    email,
+                    reason
+                ])
+                st.sidebar.success("✅ Request submitted!")
+                st.session_state["show_sidebar_request"] = False
+
+# --- PAINEL ADMINISTRATIVO ---
+if st.session_state.get("is_admin"):
+    st.markdown("## 🛡️ Admin Panel - Approve Access Requests")
+    request_df = pd.DataFrame(requests_ws.get_all_records())
+    if not request_df.empty:
+        st.dataframe(request_df)
+
+        with st.form("approve_form"):
+            new_user = st.selectbox("Select username to approve:", request_df["Username"].unique())
+            new_password = st.text_input("Set initial password", type="password")
+            is_admin = st.checkbox("Grant admin access?")
+            approve_button = st.form_submit_button("Approve User")
+
+            if approve_button:
+                if not new_user or not new_password:
+                    st.warning("Username and password are required.")
+                else:
+                    hashed_pw = new_password
+                    users_ws.append_row([new_user, hashed_pw, str(is_admin), "TRUE"])
+                    st.success(f"✅ {new_user} has been approved and added to the system.")
+
+# --- FORMULÁRIO ---
+def get_worksheet(sheet_name="Aurum_data"):
+    gc = gspread.authorize(credentials)
+    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
+    return sh.worksheet(sheet_name)
+
+if "user" in st.session_state:
+    with st.expander("📥 Submit New Case to Aurum", expanded=False):
+        # Chaves dos campos para controlar o form
+        field_keys = {
+            "case_id": "case_id_input",
+            "n_seized": "n_seized_input",
+            "year": "year_input",
+            "country": "country_input",
+            "seizure_status": "seizure_status_input",
+            "transit": "transit_input",
+            "notes": "notes_input"
+        }
+
+        # Define valores padrão
+        default_values = {
+            "case_id": "",
+            "n_seized": "",
+            "year": 2024,
+            "country": "",
+            "seizure_status": "",
+            "transit": "",
+            "notes": ""
+        }
+
+        # Cria valores no session_state se ainda não existem
+        for key, default in default_values.items():
+            st.session_state.setdefault(field_keys[key], default)
+
+        with st.form("aurum_form"):
+            case_id = st.text_input("Case #", key=field_keys["case_id"])
+            seizure_country = st.text_input("Country of seizure or shipment")
+            n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)", key=field_keys["n_seized"])
+            year = st.number_input("Year", step=1, format="%d", min_value=1900, max_value=2100, key=field_keys["year"])
+            country = st.text_input("Country of offenders", key=field_keys["country"])
+            seizure_status = st.text_input("Seizure status", key=field_keys["seizure_status"])
+            transit = st.text_input("Transit feature", key=field_keys["transit"])
+            notes = st.text_area("Additional notes", key=field_keys["notes"])
+
+            submitted = st.form_submit_button("Submit Case")
+
+        if submitted:
+            new_row = [
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                case_id,
+                seizure_country,
+                n_seized,
+                year,
+                country,
+                seizure_status,
+                transit,
+                notes,
+                st.session_state["user"]
+            ]
+
+            worksheet = get_worksheet()
+            worksheet.append_row(new_row)
+            st.success("✅ Case submitted to Aurum successfully!")
+
+            # Limpa os valores do formulário no session_state
+            for k in field_keys.values():
+                if k in st.session_state:
+                    del st.session_state[k]
+
+            # Força a atualização para limpar o form visualmente
+            st.rerun()
+            
+    with st.expander("✏️ Edit My Cases", expanded=False):
+        try:
+            worksheet = get_worksheet()
+            records = worksheet.get_all_records()
+            df_user = pd.DataFrame(records)
+            df_user = df_user[df_user["Author"] == st.session_state["user"]]
+
+            if df_user.empty:
+                st.info("You haven't submitted any cases yet.")
+            else:
+                selected_case = st.selectbox("Select a case to edit:", df_user["Case #"].unique())
+
+                if selected_case:
+                    row_index = df_user[df_user["Case #"] == selected_case].index[0] + 2  # header + 1-based index
+                    current_row = df_user.loc[df_user["Case #"] == selected_case].iloc[0]
+
+                    with st.form("edit_case_form"):
+                        new_case_id = st.text_input("Case #", value=current_row["Case #"])
+                        new_seizure_country = st.text_input("Country of seizure or shipment", value=current_row["Country of seizure or shipment"])
+                        new_n_seized = st.text_input("N seized specimens", value=current_row["N seized specimens"])
+                        new_year = st.number_input("Year", step=1, format="%d", value=int(current_row["Year"]))
+                        new_country = st.text_input("Country of offenders", value=current_row["Country of offenders"])
+                        new_status = st.text_input("Seizure status", value=current_row["Seizure status"])
+                        new_transit = st.text_input("Transit feature", value=current_row["Transit feature"])
+                        new_notes = st.text_area("Additional notes", value=current_row["Notes"])
+
+                        submitted_edit = st.form_submit_button("Save Changes")
+
+                    if submitted_edit:
+                        updated_row = [
+                            current_row["Timestamp"],
+                            new_case_id,
+                            new_seizure_country,
+                            new_n_seized,
+                            new_year,
+                            new_country,
+                            new_status,
+                            new_transit,
+                            new_notes,
+                            st.session_state["user"]
+                        ]
+                        worksheet.update(f"A{row_index}:J{row_index}", [updated_row])
+                        st.success("✅ Case updated successfully!")
+                        st.rerun()
+        except Exception as e:
+            st.error(f"❌ Failed to load or update your cases: {e}")
+
+    st.subheader("Upload Multiple Cases (Batch Mode)")
+    uploaded_file_batch = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"], key="uploaded_file_batch")
+
+    if uploaded_file is not None:
+        st.info("📄 File uploaded. Click the button below to confirm batch submission.")
+        submit_batch = st.button("📥 **Submit Batch Upload**")
+
+        if submit_batch:
+            try:
+                if uploaded_file.name.endswith(".csv"):
+                    batch_data = pd.read_csv(uploaded_file)
+                else:
+                    batch_data = pd.read_excel(uploaded_file)
+
+                # Normaliza os nomes das colunas
+                batch_data.columns = (
+                    batch_data.columns
+                    .str.normalize('NFKD')
+                    .str.encode('ascii', errors='ignore')
+                    .str.decode('utf-8')
+                    .str.strip()
+                    .str.lower()
+                )
+
+                required_cols_original = [
+                    "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
+                    "Country of offenders", "Seizure status", "Transit feature", "Notes"
+                ]
+                required_cols_normalized = [col.lower() for col in required_cols_original]
+
+                missing_cols = [
+                    orig for orig, norm in zip(required_cols_original, required_cols_normalized)
+                    if norm not in batch_data.columns
+                ]
+
+                if missing_cols:
+                    st.error("🚫 Upload blocked: the uploaded file has incorrect formatting.")
+                    st.markdown(f"""
+                    The file must include the following required columns:
+
+                    - Case #
+                    - Country of seizure or shipment
+                    - N seized specimens
+                    - Year
+                    - Country of offenders
+                    - Seizure status
+                    - Transit feature
+                    - Notes
+
+                    The following columns are missing:  
+                    **{', '.join(missing_cols)}**
+
+                    > 💡 Tip: You can download the correct template from the sidebar (“Download Template”) and fill it with your data.
+                    """)
+                else:
+                    batch_data = batch_data.fillna("")
+                    batch_data["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    batch_data["Author"] = st.session_state["user"]
+
+                    # Renomeia colunas normalizadas de volta para os nomes originais
+                    rename_map = dict(zip(required_cols_normalized, required_cols_original))
+                    batch_data.rename(columns=rename_map, inplace=True)
+
+                    ordered_cols = [
+                        "Timestamp", "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
+                        "Country of offenders", "Seizure status", "Transit feature",
+                        "Notes", "Author"
+                    ]
+                    batch_data = batch_data[ordered_cols]
+
+                    rows_to_append = batch_data.values.tolist()
+                    worksheet = get_worksheet()
+                    worksheet.append_rows(rows_to_append, value_input_option="USER_ENTERED")
+
+                    st.success("✅ Batch upload completed successfully!")
+                    if "uploaded_file" in st.session_state:
+                        del st.session_state["uploaded_file"]
+                        
+                    st.rerun()
+
+            except Exception as e:
+                st.error(f"❌ Error during upload: {e}")
+
+    st.markdown("## My Cases")
+    worksheet = get_worksheet()
+    try:
+        records = worksheet.get_all_records()
+        if not records:
+            st.info("No data available at the moment.")
+        else:
+            data = pd.DataFrame(records)
+
+            # Aplica filtro de autor se não for admin
+            if not st.session_state.get("is_admin"):
+                data = data[data["Author"] == st.session_state["user"]]
+
+            # Filtro por espécie com base em "N seized specimens"
+            if "N seized specimens" in data.columns:
+                species_matches = data["N seized specimens"].str.extractall(r'\d+\s*([A-Z][a-z]+(?:_[a-z]+)+)')
+                species_list = sorted(species_matches[0].dropna().unique())
+
+                selected_species = st.multiselect("Filter by species:", species_list)
+
+                if selected_species:
+                    data = data[data["N seized specimens"].str.contains("|".join(selected_species))]
+
+            st.dataframe(data)
+
+    except Exception as e:
+        st.error(f"❌ Failed to load data: {e}")
+
 show_about = st.sidebar.button("**About Aurum**")
 if show_about:
     st.markdown("## About Aurum")
@@ -943,374 +1312,6 @@ if export_html and df_selected is not None:
         file_name="aurum_report.html",
         mime="text/html"
     )
-    
-# --- LOGIN ---
-st.sidebar.markdown("---")
-
-if "user" in st.session_state:
-    st.sidebar.markdown(f"✅ **{st.session_state['user']}** is connected.")
-    if st.sidebar.button("Logout"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.rerun()
-
-    # --- SELEÇÃO DA FONTE DE DADOS: Upload ou Meus Casos ---
-    st.sidebar.markdown("### 📑 Select Data Source")
-    data_source = st.sidebar.radio(
-        "Choose your data source:",
-        ["📤 Upload file", "🙋‍♂️ My Cases"],
-        key="data_source_choice"
-    )
-
-    df = None
-    df_selected = None
-
-    if st.session_state["data_source_choice"] == "📤 Upload file":
-        uploaded_file = st.sidebar.file_uploader("Upload your Excel file (.xlsx):", type=["xlsx"], key="uploaded_file")
-
-        if uploaded_file is not None:
-            try:
-                df = pd.read_excel(uploaded_file)
-                st.success("✅ File uploaded successfully.")
-            except Exception as e:
-                st.error(f"❌ Failed to read file: {e}")
-
-    elif st.session_state["data_source_choice"] == "🙋‍♂️ My Cases":
-        try:
-            worksheet = get_worksheet()
-            records = worksheet.get_all_records()
-            df_all = pd.DataFrame(records)
-            df_user = df_all[df_all["Author"] == st.session_state["user"]]
-            if df_user.empty:
-                st.warning("⚠️ You haven't submitted any cases yet.")
-            else:
-                df = df_user.copy()
-                st.success(f"✅ Loaded {len(df)} cases submitted by you.")
-        except Exception as e:
-            st.error(f"❌ Failed to load your cases: {e}")
-
-else:
-    st.sidebar.markdown("## 🔐 Login to Aurum")
-
-    # Usando keys explícitos para controlar valores via session_state
-    if "login_username" not in st.session_state:
-        st.session_state["login_username"] = ""
-    if "login_password" not in st.session_state:
-        st.session_state["login_password"] = ""
-
-    username = st.sidebar.text_input("Username", key="login_username")
-    password = st.sidebar.text_input("Password", type="password", key="login_password")
-
-    login_col, _ = st.sidebar.columns([1, 1])
-    login_button = login_col.button("Login")
-
-    def verify_password(password, hashed):
-        return password == hashed_pw
-
-    if login_button and username and password:
-        user_row = users_df[users_df["Username"] == username]
-        if not user_row.empty and str(user_row.iloc[0]["Approved"]).strip().lower() == "true":
-            hashed_pw = user_row.iloc[0]["Password"].strip()
-
-            if verify_password(password, hashed_pw):
-                st.session_state["user"] = username
-                st.session_state["is_admin"] = str(user_row.iloc[0]["Is_Admin"]).strip().lower() == "true"
-
-                # Limpa os campos após login bem-sucedido
-                st.session_state.pop("login_username", None)
-                st.session_state.pop("login_password", None)
-
-                st.rerun()
-            else:
-                st.error("Incorrect password.")
-        else:
-            st.error("User not approved or does not exist.")
-
-# --- FORMULÁRIO DE ACESSO (REQUISIÇÃO) ---
-# Inicializa estado
-if "show_sidebar_request" not in st.session_state:
-    st.session_state["show_sidebar_request"] = False
-
-# Botão na sidebar
-if st.sidebar.button("📩 Request Access"):
-    st.session_state["show_sidebar_request"] = True
-
-# Exibe o formulário de solicitação na sidebar se o botão foi clicado
-if st.session_state["show_sidebar_request"]:
-    with st.sidebar.form("sidebar_request_form"):
-        new_username = st.text_input("Choose a username", key="sidebar_user")
-        new_password = st.text_input("Choose a password", type="password", key="sidebar_pass")
-        institution = st.text_input("Institution", key="sidebar_inst")
-        email = st.text_input("E-mail", key="sidebar_email")
-        reason = st.text_area("Why do you want access to Aurum?", key="sidebar_reason")
-        submit_request = st.form_submit_button("Submit Request")
-
-        if submit_request:
-            if not new_username or not new_password or not reason:
-                st.sidebar.warning("All fields are required.")
-            else:
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                requests_ws.append_row([
-                    timestamp,
-                    new_username,
-                    new_password,
-                    institution,
-                    email,
-                    reason
-                ])
-                st.sidebar.success("✅ Request submitted!")
-                st.session_state["show_sidebar_request"] = False
-
-# --- PAINEL ADMINISTRATIVO ---
-if st.session_state.get("is_admin"):
-    st.markdown("## 🛡️ Admin Panel - Approve Access Requests")
-    request_df = pd.DataFrame(requests_ws.get_all_records())
-    if not request_df.empty:
-        st.dataframe(request_df)
-
-        with st.form("approve_form"):
-            new_user = st.selectbox("Select username to approve:", request_df["Username"].unique())
-            new_password = st.text_input("Set initial password", type="password")
-            is_admin = st.checkbox("Grant admin access?")
-            approve_button = st.form_submit_button("Approve User")
-
-            if approve_button:
-                if not new_user or not new_password:
-                    st.warning("Username and password are required.")
-                else:
-                    hashed_pw = new_password
-                    users_ws.append_row([new_user, hashed_pw, str(is_admin), "TRUE"])
-                    st.success(f"✅ {new_user} has been approved and added to the system.")
-
-# --- FORMULÁRIO ---
-def get_worksheet(sheet_name="Aurum_data"):
-    gc = gspread.authorize(credentials)
-    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-    return sh.worksheet(sheet_name)
-
-if "user" in st.session_state:
-    with st.expander("📥 Submit New Case to Aurum", expanded=False):
-        # Chaves dos campos para controlar o form
-        field_keys = {
-            "case_id": "case_id_input",
-            "n_seized": "n_seized_input",
-            "year": "year_input",
-            "country": "country_input",
-            "seizure_status": "seizure_status_input",
-            "transit": "transit_input",
-            "notes": "notes_input"
-        }
-
-        # Define valores padrão
-        default_values = {
-            "case_id": "",
-            "n_seized": "",
-            "year": 2024,
-            "country": "",
-            "seizure_status": "",
-            "transit": "",
-            "notes": ""
-        }
-
-        # Cria valores no session_state se ainda não existem
-        for key, default in default_values.items():
-            st.session_state.setdefault(field_keys[key], default)
-
-        with st.form("aurum_form"):
-            case_id = st.text_input("Case #", key=field_keys["case_id"])
-            seizure_country = st.text_input("Country of seizure or shipment")
-            n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)", key=field_keys["n_seized"])
-            year = st.number_input("Year", step=1, format="%d", min_value=1900, max_value=2100, key=field_keys["year"])
-            country = st.text_input("Country of offenders", key=field_keys["country"])
-            seizure_status = st.text_input("Seizure status", key=field_keys["seizure_status"])
-            transit = st.text_input("Transit feature", key=field_keys["transit"])
-            notes = st.text_area("Additional notes", key=field_keys["notes"])
-
-            submitted = st.form_submit_button("Submit Case")
-
-        if submitted:
-            new_row = [
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                case_id,
-                seizure_country,
-                n_seized,
-                year,
-                country,
-                seizure_status,
-                transit,
-                notes,
-                st.session_state["user"]
-            ]
-
-            worksheet = get_worksheet()
-            worksheet.append_row(new_row)
-            st.success("✅ Case submitted to Aurum successfully!")
-
-            # Limpa os valores do formulário no session_state
-            for k in field_keys.values():
-                if k in st.session_state:
-                    del st.session_state[k]
-
-            # Força a atualização para limpar o form visualmente
-            st.rerun()
-            
-    with st.expander("✏️ Edit My Cases", expanded=False):
-        try:
-            worksheet = get_worksheet()
-            records = worksheet.get_all_records()
-            df_user = pd.DataFrame(records)
-            df_user = df_user[df_user["Author"] == st.session_state["user"]]
-
-            if df_user.empty:
-                st.info("You haven't submitted any cases yet.")
-            else:
-                selected_case = st.selectbox("Select a case to edit:", df_user["Case #"].unique())
-
-                if selected_case:
-                    row_index = df_user[df_user["Case #"] == selected_case].index[0] + 2  # header + 1-based index
-                    current_row = df_user.loc[df_user["Case #"] == selected_case].iloc[0]
-
-                    with st.form("edit_case_form"):
-                        new_case_id = st.text_input("Case #", value=current_row["Case #"])
-                        new_seizure_country = st.text_input("Country of seizure or shipment", value=current_row["Country of seizure or shipment"])
-                        new_n_seized = st.text_input("N seized specimens", value=current_row["N seized specimens"])
-                        new_year = st.number_input("Year", step=1, format="%d", value=int(current_row["Year"]))
-                        new_country = st.text_input("Country of offenders", value=current_row["Country of offenders"])
-                        new_status = st.text_input("Seizure status", value=current_row["Seizure status"])
-                        new_transit = st.text_input("Transit feature", value=current_row["Transit feature"])
-                        new_notes = st.text_area("Additional notes", value=current_row["Notes"])
-
-                        submitted_edit = st.form_submit_button("Save Changes")
-
-                    if submitted_edit:
-                        updated_row = [
-                            current_row["Timestamp"],
-                            new_case_id,
-                            new_seizure_country,
-                            new_n_seized,
-                            new_year,
-                            new_country,
-                            new_status,
-                            new_transit,
-                            new_notes,
-                            st.session_state["user"]
-                        ]
-                        worksheet.update(f"A{row_index}:J{row_index}", [updated_row])
-                        st.success("✅ Case updated successfully!")
-                        st.rerun()
-        except Exception as e:
-            st.error(f"❌ Failed to load or update your cases: {e}")
-
-    st.subheader("Upload Multiple Cases (Batch Mode)")
-    uploaded_file_batch = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"], key="uploaded_file_batch")
-
-    if uploaded_file is not None:
-        st.info("📄 File uploaded. Click the button below to confirm batch submission.")
-        submit_batch = st.button("📥 **Submit Batch Upload**")
-
-        if submit_batch:
-            try:
-                if uploaded_file.name.endswith(".csv"):
-                    batch_data = pd.read_csv(uploaded_file)
-                else:
-                    batch_data = pd.read_excel(uploaded_file)
-
-                # Normaliza os nomes das colunas
-                batch_data.columns = (
-                    batch_data.columns
-                    .str.normalize('NFKD')
-                    .str.encode('ascii', errors='ignore')
-                    .str.decode('utf-8')
-                    .str.strip()
-                    .str.lower()
-                )
-
-                required_cols_original = [
-                    "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
-                    "Country of offenders", "Seizure status", "Transit feature", "Notes"
-                ]
-                required_cols_normalized = [col.lower() for col in required_cols_original]
-
-                missing_cols = [
-                    orig for orig, norm in zip(required_cols_original, required_cols_normalized)
-                    if norm not in batch_data.columns
-                ]
-
-                if missing_cols:
-                    st.error("🚫 Upload blocked: the uploaded file has incorrect formatting.")
-                    st.markdown(f"""
-                    The file must include the following required columns:
-
-                    - Case #
-                    - Country of seizure or shipment
-                    - N seized specimens
-                    - Year
-                    - Country of offenders
-                    - Seizure status
-                    - Transit feature
-                    - Notes
-
-                    The following columns are missing:  
-                    **{', '.join(missing_cols)}**
-
-                    > 💡 Tip: You can download the correct template from the sidebar (“Download Template”) and fill it with your data.
-                    """)
-                else:
-                    batch_data = batch_data.fillna("")
-                    batch_data["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    batch_data["Author"] = st.session_state["user"]
-
-                    # Renomeia colunas normalizadas de volta para os nomes originais
-                    rename_map = dict(zip(required_cols_normalized, required_cols_original))
-                    batch_data.rename(columns=rename_map, inplace=True)
-
-                    ordered_cols = [
-                        "Timestamp", "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
-                        "Country of offenders", "Seizure status", "Transit feature",
-                        "Notes", "Author"
-                    ]
-                    batch_data = batch_data[ordered_cols]
-
-                    rows_to_append = batch_data.values.tolist()
-                    worksheet = get_worksheet()
-                    worksheet.append_rows(rows_to_append, value_input_option="USER_ENTERED")
-
-                    st.success("✅ Batch upload completed successfully!")
-                    if "uploaded_file" in st.session_state:
-                        del st.session_state["uploaded_file"]
-                        
-                    st.rerun()
-
-            except Exception as e:
-                st.error(f"❌ Error during upload: {e}")
-
-    st.markdown("## My Cases")
-    worksheet = get_worksheet()
-    try:
-        records = worksheet.get_all_records()
-        if not records:
-            st.info("No data available at the moment.")
-        else:
-            data = pd.DataFrame(records)
-
-            # Aplica filtro de autor se não for admin
-            if not st.session_state.get("is_admin"):
-                data = data[data["Author"] == st.session_state["user"]]
-
-            # Filtro por espécie com base em "N seized specimens"
-            if "N seized specimens" in data.columns:
-                species_matches = data["N seized specimens"].str.extractall(r'\d+\s*([A-Z][a-z]+(?:_[a-z]+)+)')
-                species_list = sorted(species_matches[0].dropna().unique())
-
-                selected_species = st.multiselect("Filter by species:", species_list)
-
-                if selected_species:
-                    data = data[data["N seized specimens"].str.contains("|".join(selected_species))]
-
-            st.dataframe(data)
-
-    except Exception as e:
-        st.error(f"❌ Failed to load data: {e}")
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. *Aurum*: An Interactive Streamlit Toolkit for Multiscale Analysis of Wildlife Trafficking. Wildlife Conservation Society, 2025.")
