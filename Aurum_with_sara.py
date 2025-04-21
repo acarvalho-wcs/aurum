@@ -82,7 +82,7 @@ if uploaded_file is None:
     """)
     
 # --- DASHBOARD RESUMO INICIAL (sem login, baseado no Google Sheets) ---
-if uploaded_file is None:
+if uploaded_file is None and "user" not in st.session_state:
     try:
         worksheet = get_worksheet()
         records = worksheet.get_all_records()
