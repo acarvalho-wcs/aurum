@@ -84,7 +84,7 @@ if uploaded_file is None:
                 for _, row in df.iterrows():
                     matches = re.findall(r'(\d+)\s*([A-Z][a-z]+(?:_[a-z]+)+)', str(row.get('N seized specimens', '')))
                     if matches:
-                        for qty, species:
+                        for qty, species in matches:
                             new_row = row.copy()
                             new_row['N_seized'] = float(qty)
                             new_row['Species'] = species
