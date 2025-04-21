@@ -520,7 +520,7 @@ if uploaded_file is not None:
                     """)
 
                 numeric_cols = [col for col in df_selected.columns if pd.api.types.is_numeric_dtype(df_selected[col])]
-                selected_features = st.multiselect("Select numeric features for anomaly detection:", numeric_cols, default=["N_seized", "Year", "Offender_value"])
+                selected_features = st.multiselect("Select numeric features for anomaly detection:", numeric_cols, default=["N_seized", "Year", "Seizure_value", "Offender_value"])
 
                 if selected_features:
                     X = StandardScaler().fit_transform(df_selected[selected_features])
