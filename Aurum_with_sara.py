@@ -121,10 +121,10 @@ if uploaded_file is None:
                     filtered_df["Year"] = pd.to_numeric(filtered_df["Year"], errors="coerce")
                     st.markdown("### 📈 Seized Individuals by Year")
                     import plotly.express as px
-                    fig = px.bar(filtered_df, x="Year", y="N_seized", title=f"{selected_species_dash} - N_seized vs Year")
+                    fig = px.scatter(filtered_df, x="Year", y="N_seized", title=f"{selected_species_dash} - N_seized vs Year")
                     st.plotly_chart(fig)
                 except Exception as e:
-                    st.warning(f"Could not render bar plot: {e}")
+                    st.warning(f"Could not render scatter plot: {e}")
 
             # Coocorrência com outras espécies nos mesmos casos
             if selected_species_dash != "All species":
