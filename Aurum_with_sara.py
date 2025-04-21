@@ -184,7 +184,7 @@ if uploaded_file is None and not st.session_state.get("user"):
                         
             # Co-occurrence with other species in the same cases
             if selected_species_dash != "All species":
-                st.markdown("### 🧬 Species co-occurring in same cases")
+                st.markdown("### Species co-occurring in same cases")
 
                 # Encontra casos que contêm a espécie selecionada
                 cases_with_selected = df_dashboard[df_dashboard["Species"] == selected_species_dash]["Case #"].unique()
