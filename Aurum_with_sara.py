@@ -140,17 +140,25 @@ if uploaded_file is None:
                 col5.metric("Estimated weight (kg)", f"{total_kg:.1f}")
                 col6.metric("Animal parts seized", int(total_parts))
                 
-            # Gráfico de dispersão
-            if selected_species_dash != "All species" and "Year" in filtered_df.columns:
-                try:
-                    filtered_df["Year"] = pd.to_numeric(filtered_df["Year"], errors="coerce")
-                    st.markdown("### 📈 Seized Individuals by Year")
-                    import plotly.express as px
-                    fig = px.scatter(filtered_df, x="Year", y="N_seized", title=f"{selected_species_dash} - N_seized vs Year")
-                    st.plotly_chart(fig)
-                except Exception as e:
-                    st.warning(f"Could not render scatter plot: {e}")
+            # Scatter plot (only when a specific species is selected)
+            if selected_species_dash != "All species":
+                df_species = df_dashboard[df_dashboard["Species"] == selected_species_dash]
 
+                if "Year" in df_species.columns and not df_species.empty:
+                    try:
+                        df_species["Year"] = pd.to_numeric(df_species["Year"], errors="coerce")
+                        st.markdown("### 📈 Seized Individuals by Year")
+                        import plotly.express as px
+                        fig = px.scatter(
+                            df_species,
+                            x="Year",
+                            y="N_seized",
+                            title=f"{selected_species_dash} – Individuals Seized per Year",
+                            labels={"N_seized": "Individuals", "Year": "Year"}
+                        )
+                        st.plotly_chart(fig)
+                    except Exception as e:
+                        st.warning(f"Could not render scatter plot: {e}")
             # Coocorrência com outras espécies nos mesmos casos
             if selected_species_dash != "All species":
                 coocurrence_cases = df_dashboard[df_dashboard["Case #"].isin(filtered_df["Case #"])]
