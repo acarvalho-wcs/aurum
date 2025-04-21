@@ -21,3 +21,4 @@ transformers
 torch
 beautifulsoup4
 requests
+pycountry
