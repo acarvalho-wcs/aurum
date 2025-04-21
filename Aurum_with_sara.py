@@ -177,11 +177,19 @@ if uploaded_file is None:
                     except Exception as e:
                         st.warning(f"Could not render plots: {e}")
                         
-            # Coocorrência com outras espécies nos mesmos casos
+            # Co-occurrence with other species in the same cases
             if selected_species_dash != "All species":
-                coocurrence_cases = df_dashboard[df_dashboard["Case #"].isin(filtered_df["Case #"])]
-                co_species = coocurrence_cases[coocurrence_cases["Species"] != selected_species_dash]["Species"].unique()
-                st.markdown("### Species co-occurring in same cases")
+                st.markdown("### 🧬 Species co-occurring in same cases")
+
+                # Encontra casos que contêm a espécie selecionada
+                cases_with_selected = df_dashboard[df_dashboard["Species"] == selected_species_dash]["Case #"].unique()
+
+                # Filtra o dataframe apenas para esses casos
+                coocurrence_df = df_dashboard[df_dashboard["Case #"].isin(cases_with_selected)]
+
+                # Remove a espécie selecionada
+                co_species = coocurrence_df[coocurrence_df["Species"] != selected_species_dash]["Species"].unique()
+
                 if len(co_species) > 0:
                     st.write(", ".join(sorted(co_species)))
                 else:
