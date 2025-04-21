@@ -33,16 +33,15 @@ show_about = st.sidebar.button("**About Aurum**")
 if show_about:
     st.markdown("## About Aurum")
     st.markdown("""
-**Aurum** is a modular and interactive toolkit designed to support the detection and analysis of **wildlife trafficking** and organized environmental crime. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly interface.
+**Aurum** is an interactive and modular platform for **criminal intelligence in wildlife trafficking**. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals to detect, investigate, and interpret patterns of environmental crime using a data-driven and user-friendly interface.
+The platform supports the upload and processing of case-level data and integrates a suite of analytical modules designed to reveal operational structures, anomalies, and trends within trafficking networks:
+- **Trend Analysis**: Detect directional changes in seizure patterns using segmented regression (TCS) and cumulative deviation monitoring (CUSUM).
+- **Species Co-occurrence**: Identify statistically significant co-trafficking relationships between species through chi-square tests and visual co-occurrence networks.
+- **Anomaly Detection**: Uncover atypical or high-impact cases using multiple outlier detection techniques (Isolation Forest, LOF, DBSCAN, Mahalanobis distance, and Z-Score).
+- **Criminal Network Analysis**: Map connections between cases based on shared features (e.g., species, offender countries) to infer logistical convergence and possible coordination.
+- **Interactive Visualization**: Create dynamic plots and dashboards based on selected variables to support real-time interpretation and reporting.
 
-The platform enables the upload and processing of case-level data and offers a suite of analytical tools, including:
-
-- **Trend Analysis**: Explore temporal patterns using segmented regression (TCS) to measure directional changes in trends before and after a chosen breakpoint year. Additionally, detect significant deviations from historical averages with CUSUM.
-- **Species Co-occurrence**: Identify statistically significant co-trafficking relationships between species using chi-square tests and network-based representations.
-- **Anomaly Detection**: Apply multiple methods (Isolation Forest, LOF, DBSCAN, Mahalanobis distance, Z-Score) to identify outlier cases based on numerical features.
-- **Criminal Network Analysis**: Visualize co-occurrence networks to reveal potential connections and logistical consolidation among species and locations.
-- **Interactive Visualization**: Generate customized plots and dashboards based on uploaded data and selected variables.
-""")
+**Aurum** bridges conservation data and investigative workflows, offering a scalable and field-ready platform for intelligence-led responses to wildlife trafficking.
 
 st.sidebar.markdown("## 📂 Upload Data")
 uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).**", type=["xlsx"])
@@ -76,8 +75,8 @@ def get_worksheet(name="Aurum_data"):
 
 if uploaded_file is None:
     st.markdown("""
-    **Aurum** is an analytical tool developed to support the monitoring and analysis of wildlife trafficking data.  
-    By employing advanced statistical methods and interactive visualizations, Aurum helps researchers, NGOs, and law enforcement agencies identify patterns and effectively combat illegal wildlife trade.
+    **Aurum** is a criminal intelligence platform developed to support the monitoring and investigation of **wildlife trafficking**.  
+    By integrating advanced statistical methods and interactive visualizations, Aurum enables researchers, enforcement agencies, and conservation organizations to identify operational patterns and support data-driven responses to illegal wildlife trade (IWT).
 
     **Upload your XLSX data file in the sidebar to begin.**  
     For the full Aurum experience, please request access or log in if you already have an account.  
