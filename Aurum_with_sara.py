@@ -152,30 +152,14 @@ if uploaded_file is None and not st.session_state.get("user"):
             import pycountry
             from collections import Counter
 
-            # Filtros interativos
-            with st.expander("🔍 Filter Options", expanded=False):
-                unique_years = sorted(df_dashboard["Year"].dropna().unique()) if "Year" in df_dashboard else []
-                unique_countries = sorted(df_dashboard["Country of seizure or shipment"].dropna().unique()) if "Country of seizure or shipment" in df_dashboard else []
-
-                year_filter = st.multiselect("Filter by year(s):", unique_years, default=unique_years)
-                country_filter = st.multiselect("Filter by country(ies):", unique_countries, default=unique_countries)
-
-            # Aplica filtros
-            filtered_df = df_dashboard.copy()
-            if "Year" in filtered_df.columns:
-                filtered_df["Year"] = pd.to_numeric(filtered_df["Year"], errors="coerce")
-                if year_filter:
-                    filtered_df = filtered_df[filtered_df["Year"].isin(year_filter)]
-            if "Country of seizure or shipment" in filtered_df.columns and country_filter:
-                filtered_df = filtered_df[filtered_df["Country of seizure or shipment"].isin(country_filter)]
-
             # Layout lado a lado
             col1, col2 = st.columns([1, 1.4])
 
             with col1:
                 st.markdown("#### Cases per Year")
-                if "Year" in filtered_df.columns:
-                    df_years = filtered_df.groupby("Year", as_index=False)["Case #"].nunique()
+                if "Year" in df_dashboard.columns:
+                    df_dashboard["Year"] = pd.to_numeric(df_dashboard["Year"], errors="coerce")
+                    df_years = df_dashboard.groupby("Year", as_index=False)["Case #"].nunique()
                     fig_years = px.bar(
                         df_years,
                         x="Year",
@@ -202,8 +186,8 @@ if uploaded_file is None and not st.session_state.get("user"):
                 custom_name = {v: k for k, v in custom_iso.items()}
                 all_iso_codes = list(country_lookup.values()) + list(custom_name.keys())
 
-                if "Country of seizure or shipment" in filtered_df.columns:
-                    countries_raw = filtered_df["Country of seizure or shipment"].dropna()
+                if "Country of seizure or shipment" in df_dashboard.columns:
+                    countries_raw = df_dashboard["Country of seizure or shipment"].dropna()
 
                     iso_codes = []
                     for name in countries_raw:
