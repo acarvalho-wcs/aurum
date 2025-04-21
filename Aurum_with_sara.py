@@ -84,7 +84,7 @@ if uploaded_file is None:
                 for _, row in df.iterrows():
                     matches = re.findall(r'(\d+)\s*([A-Z][a-z]+(?:_[a-z]+)+)', str(row.get('N seized specimens', '')))
                     if matches:
-                        for qty, species in matches:
+                        for qty, species:
                             new_row = row.copy()
                             new_row['N_seized'] = float(qty)
                             new_row['Species'] = species
@@ -97,20 +97,19 @@ if uploaded_file is None:
             df_dashboard = df_dashboard[df_dashboard["Species"].notna()]
             df_dashboard["N_seized"] = pd.to_numeric(df_dashboard["N_seized"], errors="coerce").fillna(0)
 
-            available_species = sorted(df_dashboard["Species"].unique())
-            selected_species_dash = st.selectbox("Select a species to view summary:", available_species)
-
-            df_filtered = df_dashboard[df_dashboard["Species"] == selected_species_dash]
-
-            total_cases = df_filtered["Case #"].nunique()
-            total_individuals = int(df_filtered["N_seized"].sum())
-            total_countries = df_filtered["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in df_filtered.columns else 0
-
             st.markdown("## 📊 Aurum Summary Dashboard")
+
+            total_cases = df_dashboard["Case #"].nunique()
+            total_individuals = int(df_dashboard["N_seized"].sum())
+            total_countries = df_dashboard["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in df_dashboard.columns else 0
+
             col1, col2, col3 = st.columns(3)
             col1.metric("📁 Total Cases", total_cases)
             col2.metric("🐾 Individuals Seized", total_individuals)
             col3.metric("🌍 Countries Involved", total_countries)
+
+            available_species = sorted(df_dashboard["Species"].unique())
+            st.selectbox("Select a species to view (no filter applied):", available_species, index=0)
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
