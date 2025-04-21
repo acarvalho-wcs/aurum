@@ -1281,4 +1281,4 @@ if "user" in st.session_state:
         st.error(f"❌ Failed to load data: {e}")
 
 st.sidebar.markdown("---")    
-st.sidebar.markdown("**How to cite:** Carvalho, A. F. *Aurum*: An Interactive Toolkit for Multiscale Analysis of Wildlife Trafficking. Wildlife Conservation Society, 2025.")
+st.sidebar.markdown("**How to cite:** Carvalho, A. F. Aurum: A Platform for Criminal Intelligence in Wildlife Trafficking. Wildlife Conservation Society, 2025.")
