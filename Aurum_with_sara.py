@@ -152,19 +152,20 @@ if uploaded_file is None and not st.session_state.get("user"):
             import pycountry
             from collections import Counter
 
-            # Cria dicionário com nome -> alpha_3
+            # Lista de países reconhecidos
             country_lookup = {country.name: country.alpha_3 for country in pycountry.countries}
             iso_to_name = {country.alpha_3: country.name for country in pycountry.countries}
 
-            # Lista de países ISO-3 válidos + exceções
+            # Exceções para territórios não listados oficialmente no pycountry
             custom_iso = {
                 "French Guiana": "GUF", "Hong Kong": "HKG", "Macau": "MAC", "Puerto Rico": "PRI",
                 "Palestine": "PSE", "Kosovo": "XKX", "Taiwan": "TWN", "Réunion": "REU",
                 "Guadeloupe": "GLP", "Martinique": "MTQ", "New Caledonia": "NCL"
             }
-
-            # Inverte para usar nomes
             custom_name = {v: k for k, v in custom_iso.items()}
+
+            # Unifica lista de todos os países com ISO-3
+            all_iso_codes = list(country_lookup.values()) + list(custom_name.keys())
 
             if "Country of seizure or shipment" in df_dashboard.columns:
                 countries_raw = df_dashboard["Country of seizure or shipment"].dropna()
@@ -179,17 +180,18 @@ if uploaded_file is None and not st.session_state.get("user"):
                         if name_clean in custom_iso:
                             iso_codes.append(custom_iso[name_clean])
 
+                # Conta quantos casos por país
                 country_counts = Counter(iso_codes)
 
-                all_iso_codes = list(country_lookup.values()) + list(custom_name.keys())
-
+                # Cria DataFrame completo para todos os países
                 df_map = pd.DataFrame({"ISO": all_iso_codes})
                 df_map["Cases"] = df_map["ISO"].apply(lambda x: country_counts.get(x, 0))
                 df_map["Country"] = df_map["ISO"].apply(lambda x: iso_to_name.get(x, custom_name.get(x, "Unknown")))
 
+                # Define escala manual
                 color_scale = [
-                    [0.0, "#ffffff"],   # branco para 0 (sem casos)
-                    [0.01, "#a3cce9"],  # 1–4 casos
+                    [0.0, "#ffffff"],   # 0 casos = branco
+                    [0.01, "#a0c4e8"],  # 1–4 casos
                     [0.25, "#569fd6"],  # 5–10
                     [0.5, "#2171b5"],   # 11–20
                     [1.0, "#08306b"],   # 21+
@@ -201,7 +203,7 @@ if uploaded_file is None and not st.session_state.get("user"):
                     color="Cases",
                     hover_name="Country",
                     color_continuous_scale=color_scale,
-                    range_color=(0, df_map["Cases"].max()),
+                    range_color=(0, max(df_map["Cases"].max(), 1)),
                     title="Countries with Recorded Seizures"
                 )
 
