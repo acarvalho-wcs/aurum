@@ -102,11 +102,18 @@ if uploaded_file is not None:
                 countries = [c.strip() for c in cell_value.split("+")]
                 return sum(country_map.get(c, 0) for c in countries)
 
+            # País de origem dos infratores
             if "Country of offenders" in df.columns:
-                df["Offender_value"] = df["Country of offenders"].apply(lambda x: score_countries(x, country_map))                
-        else:
-            st.warning("⚠️ File country_offenders_values.csv not found. Offender scoring skipped.")
+                df["Offender_value"] = df["Country of offenders"].apply(lambda x: score_countries(x, country_map))
 
+            # País de apreensão ou envio
+            if "Country of seizure or shipment" in df.columns:
+                df["Seizure_value"] = df["Country of seizure or shipment"].apply(lambda x: score_countries(x, country_map))
+
+        else:
+            st.warning("⚠️ File country_offenders_values.csv not found. Country scoring skipped.")
+
+        # Marcação de convergência logística
         if 'Case #' in df.columns and 'Species' in df.columns:
             species_per_case = df.groupby('Case #')['Species'].nunique()
             df['Logistic Convergence'] = df['Case #'].map(lambda x: "1" if species_per_case.get(x, 0) > 1 else "0")
