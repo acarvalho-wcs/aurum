@@ -151,39 +151,40 @@ if uploaded_file is None and not st.session_state.get("user"):
             import plotly.express as px
             import pycountry
 
-            # Cria uma lista com todos os nomes oficiais de países reconhecidos
+            # Lista de todos os países reconhecidos
             all_countries = [country.name for country in pycountry.countries]
 
-            # Agrupa dados por país com registros
             if "Country of seizure or shipment" in df_dashboard.columns:
-                countries_with_cases = df_dashboard["Country of seizure or shipment"].dropna().unique()
+                countries_raw = df_dashboard["Country of seizure or shipment"].dropna()
 
-                # Padroniza os nomes dos países para garantir correspondência
+                # Padroniza os nomes dos países usando pycountry
                 standardized = []
-                for name in countries_with_cases:
+                for name in countries_raw:
                     try:
                         match = pycountry.countries.lookup(name.strip())
                         standardized.append(match.name)
                     except:
-                        pass  # Ignora países não reconhecidos
+                        pass
 
-                # Cria dataframe completo com todos os países
+                # Conta ocorrências por país
+                from collections import Counter
+                country_counts = Counter(standardized)
+
+                # Prepara dataframe com todos os países
                 df_map = pd.DataFrame({"Country": all_countries})
-                df_map["Cases"] = df_map["Country"].apply(lambda x: 1 if x in standardized else 0)
+                df_map["Cases"] = df_map["Country"].apply(lambda x: country_counts.get(x, 0))
 
-                # Mapa com contraste mais suave
                 fig_map = px.choropleth(
                     df_map,
                     locations="Country",
                     locationmode="country names",
                     color="Cases",
-                    color_continuous_scale=[[0, "#f5f5f5"], [1, "#336699"]],  # tom cinza claro → azul médio
-                    range_color=(0, 1),
+                    color_continuous_scale=["#f5f5f5", "#cce4f6", "#99c9e7", "#669dcc", "#336699"],
                     title="Countries with Recorded Seizures",
                 )
                 fig_map.update_layout(
                     geo=dict(showframe=False, showcoastlines=False, projection_type="natural earth"),
-                    coloraxis_showscale=False,
+                    coloraxis_colorbar=dict(title="Number of Cases"),
                     margin=dict(l=0, r=0, t=30, b=0),
                 )
                 st.plotly_chart(fig_map, use_container_width=True)
