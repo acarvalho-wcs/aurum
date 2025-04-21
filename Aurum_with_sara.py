@@ -54,6 +54,11 @@ with open("Aurum_template.xlsx", "rb") as f:
     )
 
 # --- DASHBOARD RESUMO INICIAL (carregado do Google Sheets) ---
+def get_worksheet(sheet_name="Aurum_data"):
+    gc = gspread.authorize(credentials)
+    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
+    return sh.worksheet(sheet_name)
+    
 try:
     worksheet = get_worksheet()
     records = worksheet.get_all_records()
