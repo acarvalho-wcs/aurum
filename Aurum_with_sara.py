@@ -158,18 +158,9 @@ if uploaded_file is None and not st.session_state.get("user"):
             if "Country of seizure or shipment" in df_dashboard.columns:
                 countries_with_cases = df_dashboard["Country of seizure or shipment"].dropna().unique()
 
-                # Padroniza os nomes dos países para garantir correspondência
-                standardized = []
-                for name in countries_with_cases:
-                    try:
-                        match = pycountry.countries.lookup(name.strip())
-                        standardized.append(match.name)
-                    except:
-                        pass  # Ignora países não reconhecidos
-
                 # Cria dataframe completo com todos os países
                 df_map = pd.DataFrame({"Country": all_countries})
-                df_map["Cases"] = df_map["Country"].apply(lambda x: 1 if x in standardized else 0)
+                df_map["Cases"] = df_map["Country"].apply(lambda x: 1 if x in countries_with_cases else 0)
 
                 fig_map = px.choropleth(
                     df_map,
@@ -181,7 +172,12 @@ if uploaded_file is None and not st.session_state.get("user"):
                     title="Countries with Recorded Seizures",
                 )
                 fig_map.update_layout(
-                    geo=dict(showframe=False, showcoastlines=False),
+                    geo=dict(
+                        showframe=False,
+                        showcoastlines=False,
+                        projection_type="natural earth",
+                        bgcolor='rgba(0,0,0,0)'
+                    ),
                     coloraxis_showscale=False,
                     margin=dict(l=0, r=0, t=30, b=0),
                 )
