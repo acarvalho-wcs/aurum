@@ -152,40 +152,43 @@ if uploaded_file is None and not st.session_state.get("user"):
             import pycountry
             from collections import Counter
 
-            # Lista de todos os países reconhecidos
-            all_countries = [country.name for country in pycountry.countries]
-            extra_territories = [
-                "French Guiana", "Hong Kong", "Macau", "Puerto Rico", "Palestine", "Kosovo",
-                "Taiwan", "Réunion", "Guadeloupe", "Martinique", "New Caledonia"
-            ]
-            all_countries += extra_territories
+            # Cria dicionário com nome -> alpha_3
+            country_lookup = {country.name: country.alpha_3 for country in pycountry.countries}
+            iso_to_name = {country.alpha_3: country.name for country in pycountry.countries}
+
+            # Lista de países ISO-3 válidos + exceções
+            custom_iso = {
+                "French Guiana": "GUF", "Hong Kong": "HKG", "Macau": "MAC", "Puerto Rico": "PRI",
+                "Palestine": "PSE", "Kosovo": "XKX", "Taiwan": "TWN", "Réunion": "REU",
+                "Guadeloupe": "GLP", "Martinique": "MTQ", "New Caledonia": "NCL"
+            }
+
+            # Inverte para usar nomes
+            custom_name = {v: k for k, v in custom_iso.items()}
 
             if "Country of seizure or shipment" in df_dashboard.columns:
                 countries_raw = df_dashboard["Country of seizure or shipment"].dropna()
 
-                # Padroniza nomes com pycountry ou mantém exceções
-                standardized = []
+                iso_codes = []
                 for name in countries_raw:
                     name_clean = name.strip()
                     try:
                         match = pycountry.countries.lookup(name_clean)
-                        standardized.append(match.name)
+                        iso_codes.append(match.alpha_3)
                     except:
-                        if name_clean in extra_territories:
-                            standardized.append(name_clean)
+                        if name_clean in custom_iso:
+                            iso_codes.append(custom_iso[name_clean])
 
-                # Conta registros por país
-                country_counts = Counter(standardized)
+                country_counts = Counter(iso_codes)
 
-                # DataFrame com todos os países (incluindo os extras)
-                df_map = pd.DataFrame({"Country": all_countries})
-                df_map["Cases"] = df_map["Country"].apply(lambda x: country_counts.get(x, 0))
+                all_iso_codes = list(country_lookup.values()) + list(custom_name.keys())
 
-                # Aplica máscara de visibilidade: só destaca se tiver 1 ou mais casos
-                df_map["Display"] = df_map["Cases"].apply(lambda x: x if x > 0 else None)
+                df_map = pd.DataFrame({"ISO": all_iso_codes})
+                df_map["Cases"] = df_map["ISO"].apply(lambda x: country_counts.get(x, 0))
+                df_map["Country"] = df_map["ISO"].apply(lambda x: iso_to_name.get(x, custom_name.get(x, "Unknown")))
 
                 color_scale = [
-                    [0.0, "#ffffff"],   # branco para 0 (invisível na escala)
+                    [0.0, "#ffffff"],   # branco para 0 (sem casos)
                     [0.01, "#a3cce9"],  # 1–4 casos
                     [0.25, "#569fd6"],  # 5–10
                     [0.5, "#2171b5"],   # 11–20
@@ -194,9 +197,9 @@ if uploaded_file is None and not st.session_state.get("user"):
 
                 fig_map = px.choropleth(
                     df_map,
-                    locations="Country",
-                    locationmode="country names",
-                    color="Display",  # <- apenas países com casos terão valor visível
+                    locations="ISO",
+                    color="Cases",
+                    hover_name="Country",
                     color_continuous_scale=color_scale,
                     range_color=(0, df_map["Cases"].max()),
                     title="Countries with Recorded Seizures"
