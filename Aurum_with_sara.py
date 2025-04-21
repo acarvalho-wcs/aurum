@@ -53,6 +53,20 @@ with open("Aurum_template.xlsx", "rb") as f:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+# --- AUTENTICAÇÃO E CONEXÃO COM GOOGLE SHEETS ---
+SHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
+USERS_SHEET = "Users"
+REQUESTS_SHEET = "Access Requests"
+
+scope = ["https://www.googleapis.com/auth/spreadsheets"]
+credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+client = gspread.authorize(credentials)
+sheets = client.open_by_key(SHEET_ID)
+
+users_ws = sheets.worksheet(USERS_SHEET)
+requests_ws = sheets.worksheet(REQUESTS_SHEET)
+users_df = pd.DataFrame(users_ws.get_all_records())
+
 if uploaded_file is None:
     st.markdown("""
     **Aurum** is an analytical tool developed to support the monitoring and analysis of wildlife trafficking data.  
@@ -734,20 +748,6 @@ def place_logo_bottom_right(image_path, width=100):
 
 # Chamada da função para exibir a logo
 place_logo_bottom_right("wcs.jpg")
-
-# --- AUTENTICAÇÃO E CONEXÃO COM GOOGLE SHEETS ---
-SHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
-USERS_SHEET = "Users"
-REQUESTS_SHEET = "Access Requests"
-
-scope = ["https://www.googleapis.com/auth/spreadsheets"]
-credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-client = gspread.authorize(credentials)
-sheets = client.open_by_key(SHEET_ID)
-
-users_ws = sheets.worksheet(USERS_SHEET)
-requests_ws = sheets.worksheet(REQUESTS_SHEET)
-users_df = pd.DataFrame(users_ws.get_all_records())
 
 st.sidebar.markdown("## Export Options")
 export_xlsx = st.sidebar.button("Export Cleaned data.xlsx")
