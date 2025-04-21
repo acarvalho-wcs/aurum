@@ -71,6 +71,16 @@ users_df = pd.DataFrame(users_ws.get_all_records())
 def get_worksheet(name="Aurum_data"):
     return sheets.worksheet(name)
 
+if uploaded_file is None:
+    st.markdown("""
+    **Aurum** is an analytical tool developed to support the monitoring and analysis of wildlife trafficking data.  
+    By employing advanced statistical methods and interactive visualizations, Aurum helps researchers, NGOs, and law enforcement agencies identify patterns and effectively combat illegal wildlife trade.
+
+    **Upload your XLSX data file in the sidebar to begin.**  
+    For the full Aurum experience, please request access or log in if you already have an account.  
+    Click **About Aurum** to learn more about each analysis module.
+    """)
+    
 # --- DASHBOARD RESUMO INICIAL (sem login, baseado no Google Sheets) ---
 if uploaded_file is None:
     try:
@@ -138,16 +148,6 @@ if uploaded_file is None:
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
-
-if uploaded_file is None:
-    st.markdown("""
-    **Aurum** is an analytical tool developed to support the monitoring and analysis of wildlife trafficking data.  
-    By employing advanced statistical methods and interactive visualizations, Aurum helps researchers, NGOs, and law enforcement agencies identify patterns and effectively combat illegal wildlife trade.
-
-    **Upload your XLSX data file in the sidebar to begin.**  
-    For the full Aurum experience, please request access or log in if you already have an account.  
-    Click **About Aurum** to learn more about each analysis module.
-    """)
 
 df = None
 df_selected = None
