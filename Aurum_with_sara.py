@@ -869,50 +869,6 @@ else:
         else:
             st.error("User not approved or does not exist.")
 
-st.sidebar.markdown("---")
-
-if "user" in st.session_state:
-    st.sidebar.markdown(f"✅ **{st.session_state['user']}** is connected.")
-    if st.sidebar.button("Logout"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.rerun()
-
-    # ✅ DASHBOARD PARA USUÁRIOS CONECTADOS
-    st.markdown("## 📊 Dashboard")
-
-    try:
-        worksheet = get_worksheet()
-        records = worksheet.get_all_records()
-        df_dashboard = pd.DataFrame(records)
-
-        if df_dashboard.empty:
-            st.info("No cases available for dashboard.")
-        else:
-            # Expande as linhas para separar múltiplas espécies
-            df_dashboard = expand_multi_species_rows(df_dashboard)
-            df_dashboard["N_seized"] = pd.to_numeric(df_dashboard["N_seized"], errors="coerce").fillna(0)
-
-            # Lista de espécies disponíveis
-            available_species = sorted(df_dashboard["Species"].dropna().unique())
-            selected_species = st.selectbox("Select a species:", available_species)
-
-            # Filtra pela espécie selecionada
-            df_filtered = df_dashboard[df_dashboard["Species"] == selected_species]
-
-            # Resumo
-            total_cases = df_filtered["Case #"].nunique()
-            total_individuals = int(df_filtered["N_seized"].sum())
-            total_countries = df_filtered["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in df_filtered.columns else 0
-
-            col1, col2, col3 = st.columns(3)
-            col1.metric("📁 Total Cases", total_cases)
-            col2.metric("🐾 Individuals Seized", total_individuals)
-            col3.metric("🌍 Countries Involved", total_countries)
-
-    except Exception as e:
-        st.error(f"❌ Failed to load dashboard: {e}")
-
 else:
     st.sidebar.markdown("## 🔐 Login to Aurum")
 
