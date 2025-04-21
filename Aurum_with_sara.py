@@ -153,6 +153,22 @@ if uploaded_file is None and not st.session_state.get("user"):
                     try:
                         df_species["Year"] = pd.to_numeric(df_species["Year"], errors="coerce")
 
+                        n_cases = df_species["Case #"].nunique()
+                        n_countries = df_species["Country of seizure or shipment"].nunique()
+                        if not df_species.empty and df_species["N_seized"].max() > 0:
+                            idx_max = df_species["N_seized"].idxmax()
+                            max_row = df_species.loc[idx_max]
+                            max_apreensao = f"{max_row['Country of seizure or shipment']} in {int(max_row['Year'])}"
+                        else:
+                            max_apreensao = "No data"
+
+                        st.markdown("### Key Indicators for Selected Species")
+                        col_a, col_b, col_c = st.columns(3)
+                        col_a.metric("Cases recorded", n_cases)
+                        col_b.metric("Countries with seizures", n_countries)
+                        col_c.metric("Largest seizure", max_apreensao)
+
+                        # Gráficos
                         col1, col2 = st.columns(2)
 
                         with col1:
