@@ -154,23 +154,30 @@ if uploaded_file is None and not st.session_state.get("user"):
 
             # Lista de todos os países reconhecidos
             all_countries = [country.name for country in pycountry.countries]
+            extra_territories = [
+                "French Guiana", "Hong Kong", "Macau", "Puerto Rico", "Palestine", "Kosovo",
+                "Taiwan", "Réunion", "Guadeloupe", "Martinique", "New Caledonia"
+            ]
+            all_countries += extra_territories
 
             if "Country of seizure or shipment" in df_dashboard.columns:
                 countries_raw = df_dashboard["Country of seizure or shipment"].dropna()
 
-                # Padroniza nomes com pycountry
+                # Padroniza nomes com pycountry ou mantém exceções
                 standardized = []
                 for name in countries_raw:
+                    name_clean = name.strip()
                     try:
-                        match = pycountry.countries.lookup(name.strip())
+                        match = pycountry.countries.lookup(name_clean)
                         standardized.append(match.name)
                     except:
-                        pass
+                        if name_clean in extra_territories:
+                            standardized.append(name_clean)
 
                 # Conta registros por país
                 country_counts = Counter(standardized)
 
-                # DataFrame com todos os países
+                # DataFrame com todos os países (incluindo os extras)
                 df_map = pd.DataFrame({"Country": all_countries})
                 df_map["Cases"] = df_map["Country"].apply(lambda x: country_counts.get(x, 0))
 
