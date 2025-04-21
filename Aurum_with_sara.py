@@ -156,7 +156,6 @@ if uploaded_file is None and not st.session_state.get("user"):
                         col1, col2 = st.columns(2)
 
                         with col1:
-                            st.markdown("#### Scatter Plot")
                             import plotly.express as px
                             fig_scatter = px.scatter(
                                 df_species,
@@ -168,7 +167,6 @@ if uploaded_file is None and not st.session_state.get("user"):
                             st.plotly_chart(fig_scatter, use_container_width=True)
 
                         with col2:
-                            st.markdown("#### Bar Chart")
                             df_bar = df_species.groupby("Year", as_index=False)["N_seized"].sum()
                             fig_bar = px.bar(
                                 df_bar,
