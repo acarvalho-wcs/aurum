@@ -176,7 +176,7 @@ if uploaded_file is None and not st.session_state.get("user"):
 
                 # Paleta com tons de azul a partir de 1
                 color_scale = [
-                    [0.0, "#d9eaf7"],   # 0 casos (cinza-azulado sutil)
+                    [0.0, "#ffffff"],   # 0 casos (branco)
                     [0.01, "#a3cce9"],  # 1–4 casos
                     [0.25, "#569fd6"],  # 5–10
                     [0.5, "#2171b5"],   # 11–20
