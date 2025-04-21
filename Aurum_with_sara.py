@@ -140,7 +140,7 @@ if uploaded_file is None:
             if selected_species_dash != "All species":
                 coocurrence_cases = df_dashboard[df_dashboard["Case #"].isin(filtered_df["Case #"])]
                 co_species = coocurrence_cases[coocurrence_cases["Species"] != selected_species_dash]["Species"].unique()
-                st.markdown("### 🧬 Species co-occurring in same cases")
+                st.markdown("### Species co-occurring in same cases")
                 if len(co_species) > 0:
                     st.write(", ".join(sorted(co_species)))
                 else:
