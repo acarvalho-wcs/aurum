@@ -107,7 +107,7 @@ if uploaded_file is None:
             df_dashboard = df_dashboard[df_dashboard["Species"].notna()]
             df_dashboard["N_seized"] = pd.to_numeric(df_dashboard["N_seized"], errors="coerce").fillna(0)
 
-            st.markdown("## 📊 Aurum Summary Dashboard")
+            st.markdown("## Aurum Summary Dashboard")
 
             available_species = sorted(df_dashboard["Species"].unique())
             selected_species_dash = st.selectbox("Select a species to view:", ["All species"] + available_species)
