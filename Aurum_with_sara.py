@@ -953,6 +953,42 @@ if "user" in st.session_state:
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
+
+    # --- SELEÇÃO DA FONTE DE DADOS: Upload ou Meus Casos ---
+    st.sidebar.markdown("### 📑 Select Data Source")
+    data_source = st.sidebar.radio(
+        "Choose your data source:",
+        ["📤 Upload file", "🙋‍♂️ My Cases"],
+        key="data_source_choice"
+    )
+
+    df = None
+    df_selected = None
+
+    if st.session_state["data_source_choice"] == "📤 Upload file":
+        uploaded_file = st.sidebar.file_uploader("Upload your Excel file (.xlsx):", type=["xlsx"], key="uploaded_file")
+
+        if uploaded_file is not None:
+            try:
+                df = pd.read_excel(uploaded_file)
+                st.success("✅ File uploaded successfully.")
+            except Exception as e:
+                st.error(f"❌ Failed to read file: {e}")
+
+    elif st.session_state["data_source_choice"] == "🙋‍♂️ My Cases":
+        try:
+            worksheet = get_worksheet()
+            records = worksheet.get_all_records()
+            df_all = pd.DataFrame(records)
+            df_user = df_all[df_all["Author"] == st.session_state["user"]]
+            if df_user.empty:
+                st.warning("⚠️ You haven't submitted any cases yet.")
+            else:
+                df = df_user.copy()
+                st.success(f"✅ Loaded {len(df)} cases submitted by you.")
+        except Exception as e:
+            st.error(f"❌ Failed to load your cases: {e}")
+
 else:
     st.sidebar.markdown("## 🔐 Login to Aurum")
 
