@@ -72,47 +72,48 @@ def get_worksheet(name="Aurum_data"):
     return sheets.worksheet(name)
 
 # --- DASHBOARD RESUMO INICIAL (sem login, baseado no Google Sheets) ---
-try:
-    worksheet = get_worksheet()
-    records = worksheet.get_all_records()
-    df_dashboard = pd.DataFrame(records)
+if uploaded_file is None:
+    try:
+        worksheet = get_worksheet()
+        records = worksheet.get_all_records()
+        df_dashboard = pd.DataFrame(records)
 
-    if not df_dashboard.empty and "N seized specimens" in df_dashboard.columns:
-        def expand_multi_species_rows(df):
-            expanded_rows = []
-            for _, row in df.iterrows():
-                matches = re.findall(r'(\d+)\s*([A-Z][a-z]+(?:_[a-z]+)+)', str(row.get('N seized specimens', '')))
-                if matches:
-                    for qty, species in matches:
-                        new_row = row.copy()
-                        new_row['N_seized'] = float(qty)
-                        new_row['Species'] = species
-                        expanded_rows.append(new_row)
-                else:
-                    expanded_rows.append(row)
-            return pd.DataFrame(expanded_rows)
+        if not df_dashboard.empty and "N seized specimens" in df_dashboard.columns:
+            def expand_multi_species_rows(df):
+                expanded_rows = []
+                for _, row in df.iterrows():
+                    matches = re.findall(r'(\d+)\s*([A-Z][a-z]+(?:_[a-z]+)+)', str(row.get('N seized specimens', '')))
+                    if matches:
+                        for qty, species in matches:
+                            new_row = row.copy()
+                            new_row['N_seized'] = float(qty)
+                            new_row['Species'] = species
+                            expanded_rows.append(new_row)
+                    else:
+                        expanded_rows.append(row)
+                return pd.DataFrame(expanded_rows)
 
-        df_dashboard = expand_multi_species_rows(df_dashboard)
-        df_dashboard = df_dashboard[df_dashboard["Species"].notna()]
-        df_dashboard["N_seized"] = pd.to_numeric(df_dashboard["N_seized"], errors="coerce").fillna(0)
+            df_dashboard = expand_multi_species_rows(df_dashboard)
+            df_dashboard = df_dashboard[df_dashboard["Species"].notna()]
+            df_dashboard["N_seized"] = pd.to_numeric(df_dashboard["N_seized"], errors="coerce").fillna(0)
 
-        available_species = sorted(df_dashboard["Species"].unique())
-        selected_species_dash = st.selectbox("Select a species to view summary:", available_species)
+            available_species = sorted(df_dashboard["Species"].unique())
+            selected_species_dash = st.selectbox("Select a species to view summary:", available_species)
 
-        df_filtered = df_dashboard[df_dashboard["Species"] == selected_species_dash]
+            df_filtered = df_dashboard[df_dashboard["Species"] == selected_species_dash]
 
-        total_cases = df_filtered["Case #"].nunique()
-        total_individuals = int(df_filtered["N_seized"].sum())
-        total_countries = df_filtered["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in df_filtered.columns else 0
+            total_cases = df_filtered["Case #"].nunique()
+            total_individuals = int(df_filtered["N_seized"].sum())
+            total_countries = df_filtered["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in df_filtered.columns else 0
 
-        st.markdown("## 📊 Aurum Summary Dashboard")
-        col1, col2, col3 = st.columns(3)
-        col1.metric("📁 Total Cases", total_cases)
-        col2.metric("🐾 Individuals Seized", total_individuals)
-        col3.metric("🌍 Countries Involved", total_countries)
+            st.markdown("## 📊 Aurum Summary Dashboard")
+            col1, col2, col3 = st.columns(3)
+            col1.metric("📁 Total Cases", total_cases)
+            col2.metric("🐾 Individuals Seized", total_individuals)
+            col3.metric("🌍 Countries Involved", total_countries)
 
-except Exception as e:
-    st.error(f"❌ Failed to load dashboard summary: {e}")
+    except Exception as e:
+        st.error(f"❌ Failed to load dashboard summary: {e}")
 
 if uploaded_file is None:
     st.markdown("""
