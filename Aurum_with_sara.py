@@ -171,17 +171,18 @@ if uploaded_file is None and not st.session_state.get("user"):
                 df_map = pd.DataFrame({"Country": all_countries})
                 df_map["Cases"] = df_map["Country"].apply(lambda x: 1 if x in standardized else 0)
 
+                # Mapa com contraste mais suave
                 fig_map = px.choropleth(
                     df_map,
                     locations="Country",
                     locationmode="country names",
                     color="Cases",
-                    color_continuous_scale=[[0, "#eeeeee"], [1, "#003366"]],
+                    color_continuous_scale=[[0, "#f5f5f5"], [1, "#336699"]],  # tom cinza claro → azul médio
                     range_color=(0, 1),
                     title="Countries with Recorded Seizures",
                 )
                 fig_map.update_layout(
-                    geo=dict(showframe=False, showcoastlines=False),
+                    geo=dict(showframe=False, showcoastlines=False, projection_type="natural earth"),
                     coloraxis_showscale=False,
                     margin=dict(l=0, r=0, t=30, b=0),
                 )
