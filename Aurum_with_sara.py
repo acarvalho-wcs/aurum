@@ -516,7 +516,7 @@ if uploaded_file is not None:
                             - The method is based on **Cumulative Sum (CUSUM)** analysis, which tracks the cumulative deviation of observed values from their overall mean.
                             - Two cumulative paths are calculated:
                               - **CUSUM+** accumulates positive deviations (above the mean).
-                              - **CUSUM−** accumulates negative deviations (below the mean).
+                              - **CUSUM-** accumulates negative deviations (below the mean).
                             - This dual-track approach highlights the **direction and magnitude of long-term deviations**, making it easier to identify sustained changes.
 
                             - Unlike methods that directly model trends (e.g., segmented regression), CUSUM reacts **only when there is consistent deviation**, amplifying the signal of real change over time.
