@@ -33,8 +33,7 @@ show_about = st.sidebar.button("**About Aurum**")
 if show_about:
     st.markdown("## About Aurum")
     st.markdown("""
-**Aurum** is an interactive and modular platform for **criminal intelligence in wildlife trafficking**. Developed by the Wildlife Conservation Society (WCS) – 
-Brazil, it empowers analysts, researchers, and enforcement professionals to detect, investigate, and interpret patterns of environmental crime using a data-driven and user-friendly interface.
+**Aurum** is an interactive and modular platform for **criminal intelligence in wildlife trafficking**. Developed by the Wildlife Conservation Society (WCS) - Brazil, it empowers analysts, researchers, and enforcement professionals to detect, investigate, and interpret patterns of environmental crime using a data-driven and user-friendly interface.
 The platform supports the upload and processing of case-level data and integrates a suite of analytical modules designed to reveal operational structures, anomalies, and trends within trafficking networks:
 - **Trend Analysis**: Detect directional changes in seizure patterns using segmented regression (TCS) and cumulative deviation monitoring (CUSUM).
 - **Species Co-occurrence**: Identify statistically significant co-trafficking relationships between species through chi-square tests and visual co-occurrence networks.
