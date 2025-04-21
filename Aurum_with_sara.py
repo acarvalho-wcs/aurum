@@ -157,7 +157,7 @@ if uploaded_file is None and not st.session_state.get("user"):
             if "Country of seizure or shipment" in df_dashboard.columns:
                 countries_raw = df_dashboard["Country of seizure or shipment"].dropna()
 
-                # Padroniza os nomes dos países usando pycountry
+                # Padroniza os nomes dos países
                 standardized = []
                 for name in countries_raw:
                     try:
@@ -170,16 +170,25 @@ if uploaded_file is None and not st.session_state.get("user"):
                 from collections import Counter
                 country_counts = Counter(standardized)
 
-                # Prepara dataframe com todos os países
+                # Cria dataframe com todos os países
                 df_map = pd.DataFrame({"Country": all_countries})
                 df_map["Cases"] = df_map["Country"].apply(lambda x: country_counts.get(x, 0))
+
+                # Escala com azuis mais visíveis desde 1 caso
+                custom_colors = [
+                    "#f0f4f7",  # 0
+                    "#bdd7e7",  # 1–5
+                    "#6baed6",  # 6–10
+                    "#3182bd",  # 11–15
+                    "#08519c"   # 16+
+                ]
 
                 fig_map = px.choropleth(
                     df_map,
                     locations="Country",
                     locationmode="country names",
                     color="Cases",
-                    color_continuous_scale=["#f5f5f5", "#cce4f6", "#99c9e7", "#669dcc", "#336699"],
+                    color_continuous_scale=custom_colors,
                     title="Countries with Recorded Seizures",
                 )
                 fig_map.update_layout(
