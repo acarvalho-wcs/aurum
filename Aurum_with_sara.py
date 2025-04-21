@@ -1202,7 +1202,7 @@ if "user" in st.session_state:
             st.error(f"❌ Failed to load or update your cases: {e}")
 
     st.subheader("Upload Multiple Cases (Batch Mode)")
-    uploaded_file = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"], key="uploaded_file")
+    uploaded_file_batch = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"], key="uploaded_file_batch")
 
     if uploaded_file is not None:
         st.info("📄 File uploaded. Click the button below to confirm batch submission.")
