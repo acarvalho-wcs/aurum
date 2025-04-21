@@ -181,9 +181,11 @@ if uploaded_file is None and not st.session_state.get("user"):
                 df_map = pd.DataFrame({"Country": all_countries})
                 df_map["Cases"] = df_map["Country"].apply(lambda x: country_counts.get(x, 0))
 
-                # Paleta com tons de azul a partir de 1
+                # Aplica máscara de visibilidade: só destaca se tiver 1 ou mais casos
+                df_map["Display"] = df_map["Cases"].apply(lambda x: x if x > 0 else None)
+
                 color_scale = [
-                    [0.0, "#ffffff"],   # 0 casos (branco)
+                    [0.0, "#ffffff"],   # branco para 0 (invisível na escala)
                     [0.01, "#a3cce9"],  # 1–4 casos
                     [0.25, "#569fd6"],  # 5–10
                     [0.5, "#2171b5"],   # 11–20
@@ -194,7 +196,7 @@ if uploaded_file is None and not st.session_state.get("user"):
                     df_map,
                     locations="Country",
                     locationmode="country names",
-                    color="Cases",
+                    color="Display",  # <- apenas países com casos terão valor visível
                     color_continuous_scale=color_scale,
                     range_color=(0, df_map["Cases"].max()),
                     title="Countries with Recorded Seizures"
