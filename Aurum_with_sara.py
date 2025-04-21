@@ -129,16 +129,16 @@ if uploaded_file is None:
                 df_dashboard["parts_seized"] = df_dashboard["N seized specimens"].str.extract(r'(\d+(?:\.\d+)?)\s*(part|parts)', expand=False)[0]
                 total_parts = pd.to_numeric(df_dashboard["parts_seized"], errors="coerce").fillna(0).sum()
 
-                st.markdown("---\n### 🧮 Global Summary")
+                st.markdown("---\n### Global Summary")
                 col1, col2, col3 = st.columns(3)
-                col1.metric("🧬 Species seized", total_species)
-                col2.metric("📁 Total cases", total_cases_all)
-                col3.metric("🌍 Countries involved", total_countries_all)
+                col1.metric("Species seized", total_species)
+                col2.metric("Total cases", total_cases_all)
+                col3.metric("Countries involved", total_countries_all)
 
                 col4, col5, col6 = st.columns(3)
-                col4.metric("🐾 Individuals seized", total_individuals_all)
-                col5.metric("⚖️ Estimated weight (kg)", f"{total_kg:.1f}")
-                col6.metric("🦴 Animal parts seized", int(total_parts))
+                col4.metric("Individuals seized", total_individuals_all)
+                col5.metric("Estimated weight (kg)", f"{total_kg:.1f}")
+                col6.metric("Animal parts seized", int(total_parts))
                 
             # Gráfico de dispersão
             if selected_species_dash != "All species" and "Year" in filtered_df.columns:
