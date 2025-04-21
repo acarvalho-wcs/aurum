@@ -54,10 +54,12 @@ with open("Aurum_template.xlsx", "rb") as f:
     )
 
 # --- DASHBOARD RESUMO INICIAL (carregado do Google Sheets) ---
-def get_worksheet(sheet_name="Aurum_data"):
-    gc = gspread.authorize(credentials)
-    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-    return sh.worksheet(sheet_name)
+def get_worksheet():
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = service_account.Credentials.from_service_account_file("credentials.json", scopes=scope)
+    client = gspread.authorize(creds)
+    spreadsheet = client.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
+    return spreadsheet.worksheet("Aurum_data")
     
 try:
     worksheet = get_worksheet()
