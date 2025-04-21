@@ -33,15 +33,17 @@ show_about = st.sidebar.button("**About Aurum**")
 if show_about:
     st.markdown("## About Aurum")
     st.markdown("""
-**Aurum** is a modular and interactive toolkit designed to support the detection and analysis of **wildlife trafficking** and organized environmental crime. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly interface.
+**Aurum** is a modular and interactive platform for **criminal intelligence in wildlife trafficking** and organized environmental crime. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly interface.
 
-The platform enables the upload and processing of case-level data and offers a suite of analytical tools, including:
+The platform enables the upload and processing of case-level data and provides a suite of analytical tools, including:
 
-- **Trend Analysis**: Explore temporal patterns using segmented regression (TCS) to measure directional changes in trends before and after a chosen breakpoint year. Additionally, detect significant deviations from historical averages with CUSUM.
-- **Species Co-occurrence**: Identify statistically significant co-trafficking relationships between species using chi-square tests and network-based representations.
-- **Anomaly Detection**: Apply multiple methods (Isolation Forest, LOF, DBSCAN, Mahalanobis distance, Z-Score) to identify outlier cases based on numerical features.
-- **Criminal Network Analysis**: Visualize co-occurrence networks to reveal potential connections and logistical consolidation among species and locations.
-- **Interactive Visualization**: Generate customized plots and dashboards based on uploaded data and selected variables.
+- **Trend Analysis**: Explore directional changes in seizure patterns using segmented regression (TCS) and detect significant deviations from historical averages with cumulative sum control charts (CUSUM).
+- **Species Co-occurrence**: Identify statistically significant co-trafficking relationships between species using chi-square tests and network-based visualizations.
+- **Anomaly Detection**: Detect atypical or high-impact cases using multiple outlier detection methods (Isolation Forest, LOF, DBSCAN, Mahalanobis distance, and Z-Score).
+- **Criminal Network Analysis**: Reveal connections between cases based on shared attributes such as species or offender countries to infer coordination and logistical convergence.
+- **Interactive Visualization**: Build customized plots and dashboards based on selected variables to support real-time analysis and reporting.
+
+**Aurum** bridges conservation data and investigative workflows, offering a scalable and field-ready platform for intelligence-led responses to wildlife crime.
 """)
 
 st.sidebar.markdown("## 📂 Upload Data")
