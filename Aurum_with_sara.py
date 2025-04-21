@@ -131,14 +131,14 @@ if uploaded_file is None:
 
                 st.markdown("---\n### 🧮 Global Summary")
                 col1, col2, col3 = st.columns(3)
-                col1.metric("🧬 Species", total_species)
-                col2.metric("📁 Cases", total_cases_all)
-                col3.metric("🌍 Countries", total_countries_all)
+                col1.metric("🧬 Species seized", total_species)
+                col2.metric("📁 Total cases", total_cases_all)
+                col3.metric("🌍 Countries involved", total_countries_all)
 
                 col4, col5, col6 = st.columns(3)
-                col4.metric("🐾 Individuals", total_individuals_all)
-                col5.metric("⚖️ Weight (kg)", f"{total_kg:.1f}")
-                col6.metric("🦴 Parts", int(total_parts))
+                col4.metric("🐾 Individuals seized", total_individuals_all)
+                col5.metric("⚖️ Estimated weight (kg)", f"{total_kg:.1f}")
+                col6.metric("🦴 Animal parts seized", int(total_parts))
                 
             # Gráfico de dispersão
             if selected_species_dash != "All species" and "Year" in filtered_df.columns:
