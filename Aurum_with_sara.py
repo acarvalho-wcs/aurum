@@ -113,17 +113,29 @@ if uploaded_file is None:
             selected_species_dash = st.selectbox("Select a species to view:", ["All species"] + available_species)
 
             filtered_df = df_dashboard.copy()
-            if selected_species_dash != "All species":
-                filtered_df = filtered_df[filtered_df["Species"] == selected_species_dash]
+            
+            # Extended metrics in two rows: 3 columns per row (only for All species)
+            if selected_species_dash == "All species":
+                total_species = df_dashboard["Species"].nunique()
 
-            total_cases = filtered_df["Case #"].nunique()
-            total_individuals = int(filtered_df["N_seized"].sum())
-            total_countries = filtered_df["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in filtered_df.columns else 0
+                # Extract estimated weight in kg
+                df_dashboard["kg_seized"] = df_dashboard["N seized specimens"].str.extract(r'(\d+(?:\.\d+)?)\s*kg', expand=False)[0]
+                total_kg = pd.to_numeric(df_dashboard["kg_seized"], errors="coerce").fillna(0).sum()
 
-            col1, col2, col3 = st.columns(3)
-            col1.metric("📁 Total Cases", total_cases)
-            col2.metric("🐾 Individuals Seized", total_individuals)
-            col3.metric("🌍 Countries Involved", total_countries)
+                # Extract number of parts
+                df_dashboard["parts_seized"] = df_dashboard["N seized specimens"].str.extract(r'(\d+(?:\.\d+)?)\s*(part|parts)', expand=False)[0]
+                total_parts = pd.to_numeric(df_dashboard["parts_seized"], errors="coerce").fillna(0).sum()
+
+                st.markdown("---\n### 🧮 Global Summary")
+                col1, col2, col3 = st.columns(3)
+                col1.metric("🧬 Species", total_species)
+                col2.metric("📁 Cases", total_cases)
+                col3.metric("🌍 Countries", total_countries)
+
+                col4, col5, col6 = st.columns(3)
+                col4.metric("🐾 Individuals", total_individuals)
+                col5.metric("⚖️ Weight (kg)", f"{total_kg:.1f}")
+                col6.metric("🦴 Parts", int(total_parts))
 
             # Gráfico de dispersão
             if selected_species_dash != "All species" and "Year" in filtered_df.columns:
