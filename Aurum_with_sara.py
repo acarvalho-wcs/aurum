@@ -145,77 +145,109 @@ if uploaded_file is None and not st.session_state.get("user"):
                 col5.metric("Estimated weight (kg)", f"{total_kg:.1f}")
                 col6.metric("Animal parts seized", int(total_parts))
                 
-            # --- MAPA GLOBAL DE CASOS POR PAÍS ---
-            st.markdown("### Global Map of Recorded Seizures")
+            # --- DISTRIBUIÇÃO TEMPORAL E GEOGRÁFICA ---
+            st.markdown("## Temporal and Geographic Distribution of Recorded Seizures")
 
             import plotly.express as px
             import pycountry
             from collections import Counter
 
-            # Lista de países reconhecidos
-            country_lookup = {country.name: country.alpha_3 for country in pycountry.countries}
-            iso_to_name = {country.alpha_3: country.name for country in pycountry.countries}
+            # Filtros interativos
+            with st.expander("🔍 Filter Options", expanded=False):
+                unique_years = sorted(df_dashboard["Year"].dropna().unique()) if "Year" in df_dashboard else []
+                unique_countries = sorted(df_dashboard["Country of seizure or shipment"].dropna().unique()) if "Country of seizure or shipment" in df_dashboard else []
 
-            # Exceções para territórios não listados oficialmente no pycountry
-            custom_iso = {
-                "French Guiana": "GUF", "Hong Kong": "HKG", "Macau": "MAC", "Puerto Rico": "PRI",
-                "Palestine": "PSE", "Kosovo": "XKX", "Taiwan": "TWN", "Réunion": "REU",
-                "Guadeloupe": "GLP", "Martinique": "MTQ", "New Caledonia": "NCL"
-            }
-            custom_name = {v: k for k, v in custom_iso.items()}
+                year_filter = st.multiselect("Filter by year(s):", unique_years, default=unique_years)
+                country_filter = st.multiselect("Filter by country(ies):", unique_countries, default=unique_countries)
 
-            # Unifica lista de todos os países com ISO-3
-            all_iso_codes = list(country_lookup.values()) + list(custom_name.keys())
+            # Aplica filtros
+            filtered_df = df_dashboard.copy()
+            if "Year" in filtered_df.columns:
+                filtered_df["Year"] = pd.to_numeric(filtered_df["Year"], errors="coerce")
+                if year_filter:
+                    filtered_df = filtered_df[filtered_df["Year"].isin(year_filter)]
+            if "Country of seizure or shipment" in filtered_df.columns and country_filter:
+                filtered_df = filtered_df[filtered_df["Country of seizure or shipment"].isin(country_filter)]
 
-            if "Country of seizure or shipment" in df_dashboard.columns:
-                countries_raw = df_dashboard["Country of seizure or shipment"].dropna()
+            # Layout lado a lado
+            col1, col2 = st.columns([1, 1.4])
 
-                iso_codes = []
-                for name in countries_raw:
-                    name_clean = name.strip()
-                    try:
-                        match = pycountry.countries.lookup(name_clean)
-                        iso_codes.append(match.alpha_3)
-                    except:
-                        if name_clean in custom_iso:
-                            iso_codes.append(custom_iso[name_clean])
+            with col1:
+                st.markdown("#### Cases per Year")
+                if "Year" in filtered_df.columns:
+                    df_years = filtered_df.groupby("Year", as_index=False)["Case #"].nunique()
+                    fig_years = px.bar(
+                        df_years,
+                        x="Year",
+                        y="Case #",
+                        labels={"Case #": "Number of Cases", "Year": "Year"},
+                        height=450
+                    )
+                    fig_years.update_layout(margin=dict(t=30, b=30, l=10, r=10))
+                    st.plotly_chart(fig_years, use_container_width=True)
+                else:
+                    st.info("Year column not available in data.")
 
-                # Conta quantos casos por país
-                country_counts = Counter(iso_codes)
+            with col2:
+                st.markdown("#### Countries with Recorded Seizures")
 
-                # Cria DataFrame completo para todos os países
-                df_map = pd.DataFrame({"ISO": all_iso_codes})
-                df_map["Cases"] = df_map["ISO"].apply(lambda x: country_counts.get(x, 0))
-                df_map["Country"] = df_map["ISO"].apply(lambda x: iso_to_name.get(x, custom_name.get(x, "Unknown")))
+                country_lookup = {country.name: country.alpha_3 for country in pycountry.countries}
+                iso_to_name = {country.alpha_3: country.name for country in pycountry.countries}
 
-                # Define escala manual
-                color_scale = [
-                    [0.0, "#ffffff"],   # 0 casos = branco
-                    [0.01, "#a0c4e8"],  # 1–4 casos
-                    [0.25, "#569fd6"],  # 5–10
-                    [0.5, "#2171b5"],   # 11–20
-                    [1.0, "#08306b"],   # 21+
-                ]
+                custom_iso = {
+                    "French Guiana": "GUF", "Hong Kong": "HKG", "Macau": "MAC", "Puerto Rico": "PRI",
+                    "Palestine": "PSE", "Kosovo": "XKX", "Taiwan": "TWN", "Réunion": "REU",
+                    "Guadeloupe": "GLP", "Martinique": "MTQ", "New Caledonia": "NCL"
+                }
+                custom_name = {v: k for k, v in custom_iso.items()}
+                all_iso_codes = list(country_lookup.values()) + list(custom_name.keys())
 
-                fig_map = px.choropleth(
-                    df_map,
-                    locations="ISO",
-                    color="Cases",
-                    hover_name="Country",
-                    color_continuous_scale=color_scale,
-                    range_color=(0, max(df_map["Cases"].max(), 1)),
-                    title="Countries with Recorded Seizures"
-                )
+                if "Country of seizure or shipment" in filtered_df.columns:
+                    countries_raw = filtered_df["Country of seizure or shipment"].dropna()
 
-                fig_map.update_layout(
-                    geo=dict(showframe=False, showcoastlines=False, projection_type="natural earth"),
-                    coloraxis_colorbar=dict(title="Number of Cases"),
-                    margin=dict(l=0, r=0, t=30, b=0),
-                )
+                    iso_codes = []
+                    for name in countries_raw:
+                        name_clean = name.strip()
+                        try:
+                            match = pycountry.countries.lookup(name_clean)
+                            iso_codes.append(match.alpha_3)
+                        except:
+                            if name_clean in custom_iso:
+                                iso_codes.append(custom_iso[name_clean])
 
-                st.plotly_chart(fig_map, use_container_width=True)
-            else:
-                st.info("No country information available to display the map.")
+                    country_counts = Counter(iso_codes)
+
+                    df_map = pd.DataFrame({"ISO": all_iso_codes})
+                    df_map["Cases"] = df_map["ISO"].apply(lambda x: country_counts.get(x, 0))
+                    df_map["Country"] = df_map["ISO"].apply(lambda x: iso_to_name.get(x, custom_name.get(x, "Unknown")))
+
+                    color_scale = [
+                        [0.0, "#ffffff"],
+                        [0.01, "#a0c4e8"],
+                        [0.25, "#569fd6"],
+                        [0.5, "#2171b5"],
+                        [1.0, "#08306b"],
+                    ]
+
+                    fig_map = px.choropleth(
+                        df_map,
+                        locations="ISO",
+                        color="Cases",
+                        hover_name="Country",
+                        color_continuous_scale=color_scale,
+                        range_color=(0, max(df_map["Cases"].max(), 1)),
+                        height=450
+                    )
+
+                    fig_map.update_layout(
+                        geo=dict(showframe=False, showcoastlines=False, projection_type="natural earth"),
+                        coloraxis_colorbar=dict(title="Number of Cases"),
+                        margin=dict(l=10, r=10, t=30, b=0),
+                    )
+
+                    st.plotly_chart(fig_map, use_container_width=True)
+                else:
+                    st.info("No country information available to display the map.")
             
             # Gráficos lado a lado: scatter + barras (somente para uma espécie selecionada)
             if selected_species_dash != "All species":
