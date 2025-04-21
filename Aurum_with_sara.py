@@ -1038,7 +1038,7 @@ if "user" in st.session_state:
                             new_notes,
                             st.session_state["user"]
                         ]
-                        worksheet.update(f"A{row_index}:I{row_index}", [updated_row])
+                        worksheet.update(f"A{row_index}:J{row_index}", [updated_row])
                         st.success("✅ Case updated successfully!")
                         st.rerun()
         except Exception as e:
