@@ -33,7 +33,8 @@ show_about = st.sidebar.button("**About Aurum**")
 if show_about:
     st.markdown("## About Aurum")
     st.markdown("""
-**Aurum** is an interactive and modular platform for **criminal intelligence in wildlife trafficking**. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals to detect, investigate, and interpret patterns of environmental crime using a data-driven and user-friendly interface.
+**Aurum** is an interactive and modular platform for **criminal intelligence in wildlife trafficking**. Developed by the Wildlife Conservation Society (WCS) – 
+Brazil, it empowers analysts, researchers, and enforcement professionals to detect, investigate, and interpret patterns of environmental crime using a data-driven and user-friendly interface.
 The platform supports the upload and processing of case-level data and integrates a suite of analytical modules designed to reveal operational structures, anomalies, and trends within trafficking networks:
 - **Trend Analysis**: Detect directional changes in seizure patterns using segmented regression (TCS) and cumulative deviation monitoring (CUSUM).
 - **Species Co-occurrence**: Identify statistically significant co-trafficking relationships between species through chi-square tests and visual co-occurrence networks.
@@ -76,7 +77,8 @@ def get_worksheet(name="Aurum_data"):
 if uploaded_file is None:
     st.markdown("""
     **Aurum** is a criminal intelligence platform developed to support the monitoring and investigation of **wildlife trafficking**.  
-    By integrating advanced statistical methods and interactive visualizations, Aurum enables researchers, enforcement agencies, and conservation organizations to identify operational patterns and support data-driven responses to illegal wildlife trade (IWT).
+    By integrating advanced statistical methods and interactive visualizations, Aurum enables researchers, enforcement agencies, and conservation 
+    organizations to identify operational patterns and support data-driven responses to illegal wildlife trade (IWT).
 
     **Upload your XLSX data file in the sidebar to begin.**  
     For the full Aurum experience, please request access or log in if you already have an account.  
