@@ -57,6 +57,77 @@ users_ws = sheets.worksheet(USERS_SHEET)
 requests_ws = sheets.worksheet(REQUESTS_SHEET)
 users_df = pd.DataFrame(users_ws.get_all_records())
 
+# --- FORMULÁRIO ---
+def get_worksheet(sheet_name="Aurum_data"):
+    gc = gspread.authorize(credentials)
+    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
+    return sh.worksheet(sheet_name)
+
+if "user" in st.session_state:
+    with st.expander("📥 Submit New Case to Aurum", expanded=False):
+        # Chaves dos campos para controlar o form
+        field_keys = {
+            "case_id": "case_id_input",
+            "n_seized": "n_seized_input",
+            "year": "year_input",
+            "country": "country_input",
+            "seizure_status": "seizure_status_input",
+            "transit": "transit_input",
+            "notes": "notes_input"
+        }
+
+        # Define valores padrão
+        default_values = {
+            "case_id": "",
+            "n_seized": "",
+            "year": 2024,
+            "country": "",
+            "seizure_status": "",
+            "transit": "",
+            "notes": ""
+        }
+
+        # Cria valores no session_state se ainda não existem
+        for key, default in default_values.items():
+            st.session_state.setdefault(field_keys[key], default)
+
+        with st.form("aurum_form"):
+            case_id = st.text_input("Case #", key=field_keys["case_id"])
+            seizure_country = st.text_input("Country of seizure or shipment")
+            n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)", key=field_keys["n_seized"])
+            year = st.number_input("Year", step=1, format="%d", min_value=1900, max_value=2100, key=field_keys["year"])
+            country = st.text_input("Country of offenders", key=field_keys["country"])
+            seizure_status = st.text_input("Seizure status", key=field_keys["seizure_status"])
+            transit = st.text_input("Transit feature", key=field_keys["transit"])
+            notes = st.text_area("Additional notes", key=field_keys["notes"])
+
+            submitted = st.form_submit_button("Submit Case")
+
+        if submitted:
+            new_row = [
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                case_id,
+                seizure_country,
+                n_seized,
+                year,
+                country,
+                seizure_status,
+                transit,
+                notes,
+                st.session_state["user"]
+            ]
+
+            worksheet = get_worksheet()
+            worksheet.append_row(new_row)
+            st.success("✅ Case submitted to Aurum successfully!")
+
+            # Limpa os valores do formulário no session_state
+            for k in field_keys.values():
+                if k in st.session_state:
+                    del st.session_state[k]
+
+            # Força a atualização para limpar o form visualmente
+            st.rerun()
 # --- LOGIN ---
 st.sidebar.markdown("---")
 if "user" in st.session_state:
@@ -194,78 +265,6 @@ if st.session_state.get("is_admin"):
                     users_ws.append_row([new_user, hashed_pw, str(is_admin), "TRUE"])
                     st.success(f"✅ {new_user} has been approved and added to the system.")
 
-# --- FORMULÁRIO ---
-def get_worksheet(sheet_name="Aurum_data"):
-    gc = gspread.authorize(credentials)
-    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-    return sh.worksheet(sheet_name)
-
-if "user" in st.session_state:
-    with st.expander("📥 Submit New Case to Aurum", expanded=False):
-        # Chaves dos campos para controlar o form
-        field_keys = {
-            "case_id": "case_id_input",
-            "n_seized": "n_seized_input",
-            "year": "year_input",
-            "country": "country_input",
-            "seizure_status": "seizure_status_input",
-            "transit": "transit_input",
-            "notes": "notes_input"
-        }
-
-        # Define valores padrão
-        default_values = {
-            "case_id": "",
-            "n_seized": "",
-            "year": 2024,
-            "country": "",
-            "seizure_status": "",
-            "transit": "",
-            "notes": ""
-        }
-
-        # Cria valores no session_state se ainda não existem
-        for key, default in default_values.items():
-            st.session_state.setdefault(field_keys[key], default)
-
-        with st.form("aurum_form"):
-            case_id = st.text_input("Case #", key=field_keys["case_id"])
-            seizure_country = st.text_input("Country of seizure or shipment")
-            n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)", key=field_keys["n_seized"])
-            year = st.number_input("Year", step=1, format="%d", min_value=1900, max_value=2100, key=field_keys["year"])
-            country = st.text_input("Country of offenders", key=field_keys["country"])
-            seizure_status = st.text_input("Seizure status", key=field_keys["seizure_status"])
-            transit = st.text_input("Transit feature", key=field_keys["transit"])
-            notes = st.text_area("Additional notes", key=field_keys["notes"])
-
-            submitted = st.form_submit_button("Submit Case")
-
-        if submitted:
-            new_row = [
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                case_id,
-                seizure_country,
-                n_seized,
-                year,
-                country,
-                seizure_status,
-                transit,
-                notes,
-                st.session_state["user"]
-            ]
-
-            worksheet = get_worksheet()
-            worksheet.append_row(new_row)
-            st.success("✅ Case submitted to Aurum successfully!")
-
-            # Limpa os valores do formulário no session_state
-            for k in field_keys.values():
-                if k in st.session_state:
-                    del st.session_state[k]
-
-            # Força a atualização para limpar o form visualmente
-            st.rerun()
-            
     with st.expander("✏️ Edit My Cases", expanded=False):
         try:
             worksheet = get_worksheet()
