@@ -33,7 +33,7 @@ show_about = st.sidebar.button("**About Aurum**")
 if show_about:
     st.markdown("## About Aurum")
     st.markdown("""
-**Aurum** is a modular and interactive platform for **criminal intelligence in wildlife trafficking** and organized environmental crime. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly interface.
+**Aurum** is a modular and interactive platform for **criminal intelligence in wildlife trafficking**. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly interface.
 
 The platform enables the upload and processing of case-level data and provides a suite of analytical tools, including:
 
@@ -836,7 +836,7 @@ if uploaded_file is not None:
                                 - If two cases both involve *Panthera onca* and occurred with offenders from Brazil, a connection is drawn.
                                 - If a third case shares only the species but not the country, it will also connect, but with a lower weight.
 
-                            - For more information on network methods in environmental crime analysis, refer to the ReadMe file and Carvalho (2025).
+                            - For more information on network methods in wildlife trafficking analysis, refer to the ReadMe file and Carvalho (2025).
                             """)
                 else:
                     st.info("Please select at least one feature to define connections between cases.")
