@@ -140,25 +140,43 @@ if uploaded_file is None:
                 col5.metric("Estimated weight (kg)", f"{total_kg:.1f}")
                 col6.metric("Animal parts seized", int(total_parts))
                 
-            # Scatter plot (only when a specific species is selected)
+            # Gráficos lado a lado: scatter + barras (somente para uma espécie selecionada)
             if selected_species_dash != "All species":
                 df_species = df_dashboard[df_dashboard["Species"] == selected_species_dash]
 
                 if "Year" in df_species.columns and not df_species.empty:
                     try:
                         df_species["Year"] = pd.to_numeric(df_species["Year"], errors="coerce")
-                        st.markdown("### 📈 Seized Individuals by Year")
-                        import plotly.express as px
-                        fig = px.scatter(
-                            df_species,
-                            x="Year",
-                            y="N_seized",
-                            title=f"{selected_species_dash} – Individuals Seized per Year",
-                            labels={"N_seized": "Individuals", "Year": "Year"}
-                        )
-                        st.plotly_chart(fig)
+
+                        col1, col2 = st.columns(2)
+
+                        with col1:
+                            st.markdown("#### 📈 Scatter Plot")
+                            import plotly.express as px
+                            fig_scatter = px.scatter(
+                                df_species,
+                                x="Year",
+                                y="N_seized",
+                                title="Individuals Seized per Case",
+                                labels={"N_seized": "Individuals", "Year": "Year"}
+                            )
+                            st.plotly_chart(fig_scatter, use_container_width=True)
+
+                        with col2:
+                            st.markdown("#### 📊 Bar Chart")
+                            df_bar = df_species.groupby("Year", as_index=False)["N_seized"].sum()
+                            fig_bar = px.bar(
+                                df_bar,
+                                x="Year",
+                                y="N_seized",
+                                title="Total Individuals per Year",
+                                labels={"N_seized": "Total Individuals", "Year": "Year"}
+                            )
+                            st.plotly_chart(fig_bar, use_container_width=True)
+
                     except Exception as e:
-                        st.warning(f"Could not render scatter plot: {e}")
+                        st.warning(f"Could not render plots: {e}")
+                        
             # Coocorrência com outras espécies nos mesmos casos
             if selected_species_dash != "All species":
                 coocurrence_cases = df_dashboard[df_dashboard["Case #"].isin(filtered_df["Case #"])]
