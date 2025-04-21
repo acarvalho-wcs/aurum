@@ -24,7 +24,6 @@ st.set_page_config(page_title="Aurum Dashboard", layout="centered")
 st.title("Aurum - Wildlife Trafficking Analytics")
 
 # Upload do arquivo
-st.sidebar.image("Logo.jpg", use_column_width=False)
 st.sidebar.markdown("## Welcome to Aurum")
 st.sidebar.markdown("Log in below to unlock multi-user tools.")
 show_about = st.sidebar.button("**About Aurum**")
