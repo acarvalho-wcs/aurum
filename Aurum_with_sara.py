@@ -1013,6 +1013,7 @@ if "user" in st.session_state:
 
                     with st.form("edit_case_form"):
                         new_case_id = st.text_input("Case #", value=current_row["Case #"])
+                        new_country_id = st.text_input("Country of seizure or shipment", , value=current_row["Country of seizure or shipment"])
                         new_n_seized = st.text_input("N seized specimens", value=current_row["N seized specimens"])
                         new_year = st.number_input("Year", step=1, format="%d", value=int(current_row["Year"]))
                         new_country = st.text_input("Country of offenders", value=current_row["Country of offenders"])
