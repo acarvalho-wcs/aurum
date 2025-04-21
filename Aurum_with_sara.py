@@ -27,9 +27,23 @@ st.title("Aurum - Wildlife Trafficking Analytics")
 st.sidebar.markdown("## Welcome to Aurum")
 st.sidebar.markdown("Log in below to unlock multi-user tools.")
 
+show_about = st.sidebar.button("**About Aurum**")
+if show_about:
+    st.markdown("## About Aurum")
+    st.markdown("""
+**Aurum** is a modular and interactive toolkit designed to support the detection and analysis of **wildlife trafficking** and organized environmental crime. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly interface.
+
+The platform enables the upload and processing of case-level data and offers a suite of analytical tools, including:
+
+- **Trend Analysis**: Explore temporal patterns using segmented regression (TCS) to measure directional changes in trends before and after a chosen breakpoint year. Additionally, detect significant deviations from historical averages with CUSUM.
+- **Species Co-occurrence**: Identify statistically significant co-trafficking relationships between species using chi-square tests and network-based representations.
+- **Anomaly Detection**: Apply multiple methods (Isolation Forest, LOF, DBSCAN, Mahalanobis distance, Z-Score) to identify outlier cases based on numerical features.
+- **Criminal Network Analysis**: Visualize co-occurrence networks to reveal potential connections and logistical consolidation among species and locations.
+- **Interactive Visualization**: Generate customized plots and dashboards based on uploaded data and selected variables.
+""")
+
 # --- LOGIN ---
 st.sidebar.markdown("---")
-
 if "user" in st.session_state:
     st.sidebar.markdown(f"✅ **{st.session_state['user']}** is connected.")
     if st.sidebar.button("Logout"):
@@ -394,21 +408,6 @@ if "user" in st.session_state:
 
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
-
-show_about = st.sidebar.button("**About Aurum**")
-if show_about:
-    st.markdown("## About Aurum")
-    st.markdown("""
-**Aurum** is a modular and interactive toolkit designed to support the detection and analysis of **wildlife trafficking** and organized environmental crime. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly interface.
-
-The platform enables the upload and processing of case-level data and offers a suite of analytical tools, including:
-
-- **Trend Analysis**: Explore temporal patterns using segmented regression (TCS) to measure directional changes in trends before and after a chosen breakpoint year. Additionally, detect significant deviations from historical averages with CUSUM.
-- **Species Co-occurrence**: Identify statistically significant co-trafficking relationships between species using chi-square tests and network-based representations.
-- **Anomaly Detection**: Apply multiple methods (Isolation Forest, LOF, DBSCAN, Mahalanobis distance, Z-Score) to identify outlier cases based on numerical features.
-- **Criminal Network Analysis**: Visualize co-occurrence networks to reveal potential connections and logistical consolidation among species and locations.
-- **Interactive Visualization**: Generate customized plots and dashboards based on uploaded data and selected variables.
-""")
 
 st.sidebar.markdown("## 📂 Upload Data")
 uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).**", type=["xlsx"])
