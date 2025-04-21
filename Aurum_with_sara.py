@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import gspread
-from google.oauth2 import service_account  # ✅ correto
+from google.oauth2.service_account import Credentials
 from datetime import datetime
 import re
 import unicodedata
@@ -53,47 +53,6 @@ with open("Aurum_template.xlsx", "rb") as f:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-# --- DASHBOARD RESUMO INICIAL (carregado do Google Sheets) ---
-def get_worksheet():
-    scope = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
-    creds = service_account.Credentials.from_service_account_file(
-        "credentials.json", scopes=scope
-    )
-    client = gspread.authorize(creds)
-    spreadsheet = client.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-    return spreadsheet.worksheet("Aurum_data")
-    
-try:
-    worksheet = get_worksheet()
-    records = worksheet.get_all_records()
-    df_dashboard = pd.DataFrame(records)
-
-    if not df_dashboard.empty and "N seized specimens" in df_dashboard.columns:
-        df_dashboard = expand_multi_species_rows(df_dashboard)
-        df_dashboard = df_dashboard[df_dashboard["Species"].notna()]
-        df_dashboard["N_seized"] = pd.to_numeric(df_dashboard["N_seized"], errors="coerce").fillna(0)
-
-        available_species = sorted(df_dashboard["Species"].unique())
-        selected_species_dash = st.selectbox("Select a species to view summary:", available_species)
-
-        df_filtered = df_dashboard[df_dashboard["Species"] == selected_species_dash]
-
-        total_cases = df_filtered["Case #"].nunique()
-        total_individuals = int(df_filtered["N_seized"].sum())
-        total_countries = df_filtered["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in df_filtered.columns else 0
-
-        st.markdown("## 📊 Aurum Summary Dashboard")
-        col1, col2, col3 = st.columns(3)
-        col1.metric("📁 Total Cases", total_cases)
-        col2.metric("🐾 Individuals Seized", total_individuals)
-        col3.metric("🌍 Countries Involved", total_countries)
-
-except Exception as e:
-    st.error(f"❌ Failed to load dashboard summary: {e}")
-
 if uploaded_file is None:
     st.markdown("""
     **Aurum** is an analytical tool developed to support the monitoring and analysis of wildlife trafficking data.  
@@ -106,7 +65,6 @@ if uploaded_file is None:
 
 df = None
 df_selected = None
-
 if uploaded_file is not None:
     try:
         df = pd.read_excel(uploaded_file)
