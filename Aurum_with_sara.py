@@ -1132,12 +1132,24 @@ if "user" in st.session_state:
             st.info("No data available at the moment.")
         else:
             data = pd.DataFrame(records)
-            if st.session_state.get("is_admin"):
-                st.dataframe(data)
-            else:
-                st.dataframe(data[data["Author"] == st.session_state["user"]])
+
+            # Aplica filtro de autor se não for admin
+            if not st.session_state.get("is_admin"):
+                data = data[data["Author"] == st.session_state["user"]]
+
+            # Filtro por espécie com base em "N seized specimens"
+            if "N seized specimens" in data.columns:
+                species_matches = data["N seized specimens"].str.extractall(r'\d+\s*([A-Z][a-z]+(?:_[a-z]+)+)')
+                species_list = sorted(species_matches[0].dropna().unique())
+
+                selected_species = st.multiselect("Filter by species:", species_list)
+
+                if selected_species:
+                    data = data[data["N seized specimens"].str.contains("|".join(selected_species))]
+
+            st.dataframe(data)
+
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
-
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. *Aurum*: An Interactive Streamlit Toolkit for Multiscale Analysis of Wildlife Trafficking. Wildlife Conservation Society, 2025.")
