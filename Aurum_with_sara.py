@@ -145,6 +145,33 @@ if uploaded_file is None and not st.session_state.get("user"):
                 col5.metric("Estimated weight (kg)", f"{total_kg:.1f}")
                 col6.metric("Animal parts seized", int(total_parts))
                 
+            # --- MAPA GLOBAL DE CASOS POR PAÍS ---
+            st.markdown("### Global Map of Recorded Seizures")
+
+            if "Country of seizure or shipment" in df_dashboard.columns:
+                import plotly.express as px
+
+                # Conta o número de casos por país
+                df_map = df_dashboard.groupby("Country of seizure or shipment").size().reset_index(name="Cases")
+                df_map.rename(columns={"Country of seizure or shipment": "Country"}, inplace=True)
+
+                fig_map = px.choropleth(
+                    df_map,
+                    locations="Country",
+                    locationmode="country names",
+                    color="Cases",
+                    color_continuous_scale="Blues",
+                    title="Countries with Recorded Seizures",
+                )
+                fig_map.update_layout(
+                    geo=dict(showframe=False, showcoastlines=False),
+                    coloraxis_showscale=False,
+                    margin=dict(l=0, r=0, t=30, b=0),
+                )
+                st.plotly_chart(fig_map, use_container_width=True)
+            else:
+                st.info("No country information available to display the map.")
+            
             # Gráficos lado a lado: scatter + barras (somente para uma espécie selecionada)
             if selected_species_dash != "All species":
                 df_species = df_dashboard[df_dashboard["Species"] == selected_species_dash]
