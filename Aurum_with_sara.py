@@ -21,7 +21,7 @@ import os
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Aurum Dashboard", layout="wide")
-st.title("Aurum")
+st.title("## Aurum")
 st.title("Wildlife Trafficking Analytics")
 
 # Upload do arquivo
