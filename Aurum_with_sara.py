@@ -148,19 +148,27 @@ if uploaded_file is None and not st.session_state.get("user"):
             # --- MAPA GLOBAL DE CASOS POR PAÍS ---
             st.markdown("### Global Map of Recorded Seizures")
 
-            if "Country of seizure or shipment" in df_dashboard.columns:
-                import plotly.express as px
+            import plotly.express as px
+            import pycountry
 
-                # Conta o número de casos por país
-                df_map = df_dashboard.groupby("Country of seizure or shipment").size().reset_index(name="Cases")
-                df_map.rename(columns={"Country of seizure or shipment": "Country"}, inplace=True)
+            # Cria uma lista com todos os nomes oficiais de países reconhecidos
+            all_countries = [country.name for country in pycountry.countries]
+
+            # Agrupa dados por país com registros
+            if "Country of seizure or shipment" in df_dashboard.columns:
+                countries_with_cases = df_dashboard["Country of seizure or shipment"].dropna().unique()
+
+                # Cria dataframe completo com todos os países
+                df_map = pd.DataFrame({"Country": all_countries})
+                df_map["Cases"] = df_map["Country"].apply(lambda x: 1 if x in countries_with_cases else 0)
 
                 fig_map = px.choropleth(
                     df_map,
                     locations="Country",
                     locationmode="country names",
                     color="Cases",
-                    color_continuous_scale="Blues",
+                    color_continuous_scale=[[0, "#eeeeee"], [1, "#003366"]],
+                    range_color=(0, 1),
                     title="Countries with Recorded Seizures",
                 )
                 fig_map.update_layout(
