@@ -20,7 +20,7 @@ import bcrypt
 import os
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Aurum Dashboard", layout="wide")
+st.set_page_config(page_title="Aurum Dashboard", layout="centered")
 st.title("Aurum - Wildlife Trafficking Analytics")
 
 # Upload do arquivo
@@ -33,15 +33,16 @@ show_about = st.sidebar.button("**About Aurum**")
 if show_about:
     st.markdown("## About Aurum")
     st.markdown("""
-**Aurum** is an interactive and modular platform for **criminal intelligence in wildlife trafficking**. Developed by the Wildlife Conservation Society (WCS) - Brazil, it empowers analysts, researchers, and enforcement professionals to detect, investigate, and interpret patterns of environmental crime using a data-driven and user-friendly interface.
-The platform supports the upload and processing of case-level data and integrates a suite of analytical modules designed to reveal operational structures, anomalies, and trends within trafficking networks:
-- **Trend Analysis**: Detect directional changes in seizure patterns using segmented regression (TCS) and cumulative deviation monitoring (CUSUM).
-- **Species Co-occurrence**: Identify statistically significant co-trafficking relationships between species through chi-square tests and visual co-occurrence networks.
-- **Anomaly Detection**: Uncover atypical or high-impact cases using multiple outlier detection techniques (Isolation Forest, LOF, DBSCAN, Mahalanobis distance, and Z-Score).
-- **Criminal Network Analysis**: Map connections between cases based on shared features (e.g., species, offender countries) to infer logistical convergence and possible coordination.
-- **Interactive Visualization**: Create dynamic plots and dashboards based on selected variables to support real-time interpretation and reporting.
+**Aurum** is a modular and interactive toolkit designed to support the detection and analysis of **wildlife trafficking** and organized environmental crime. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly interface.
 
-**Aurum** bridges conservation data and investigative workflows, offering a scalable and field-ready platform for intelligence-led responses to wildlife trafficking.
+The platform enables the upload and processing of case-level data and offers a suite of analytical tools, including:
+
+- **Trend Analysis**: Explore temporal patterns using segmented regression (TCS) to measure directional changes in trends before and after a chosen breakpoint year. Additionally, detect significant deviations from historical averages with CUSUM.
+- **Species Co-occurrence**: Identify statistically significant co-trafficking relationships between species using chi-square tests and network-based representations.
+- **Anomaly Detection**: Apply multiple methods (Isolation Forest, LOF, DBSCAN, Mahalanobis distance, Z-Score) to identify outlier cases based on numerical features.
+- **Criminal Network Analysis**: Visualize co-occurrence networks to reveal potential connections and logistical consolidation among species and locations.
+- **Interactive Visualization**: Generate customized plots and dashboards based on uploaded data and selected variables.
+""")
 
 st.sidebar.markdown("## 📂 Upload Data")
 uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).**", type=["xlsx"])
@@ -75,9 +76,8 @@ def get_worksheet(name="Aurum_data"):
 
 if uploaded_file is None:
     st.markdown("""
-    **Aurum** is a criminal intelligence platform developed to support the monitoring and investigation of **wildlife trafficking**.  
-    By integrating advanced statistical methods and interactive visualizations, Aurum enables researchers, enforcement agencies, and conservation 
-    organizations to identify operational patterns and support data-driven responses to illegal wildlife trade (IWT).
+    **Aurum** is an analytical tool developed to support the monitoring and analysis of wildlife trafficking data.  
+    By employing advanced statistical methods and interactive visualizations, Aurum helps researchers, NGOs, and law enforcement agencies identify patterns and effectively combat illegal wildlife trade.
 
     **Upload your XLSX data file in the sidebar to begin.**  
     For the full Aurum experience, please request access or log in if you already have an account.  
@@ -182,7 +182,7 @@ if uploaded_file is None and not st.session_state.get("user"):
                         
             # Co-occurrence with other species in the same cases
             if selected_species_dash != "All species":
-                st.markdown("### Species co-occurring in same cases")
+                st.markdown("### 🧬 Species co-occurring in same cases")
 
                 # Encontra casos que contêm a espécie selecionada
                 cases_with_selected = df_dashboard[df_dashboard["Species"] == selected_species_dash]["Case #"].unique()
@@ -356,9 +356,9 @@ if uploaded_file is not None:
                     - These slopes are used to calculate the **Trend Coordination Score (TCS)**, which measures the relative change between the two periods:
                       - `TCS > 0` indicates an increase in trend after the breakpoint.
                       - `TCS < 0` indicates a decrease.
-                      - `TCS ~= 0` suggests stability.
+                      - `TCS ≈ 0` suggests stability.
 
-                    - The score is normalized to reduce instability when the pre-breakpoint slope is close to zero. While TCS has no strict bounds, in practice it typically falls between -1 and +1. 
+                    - The score is normalized to reduce instability when the pre-breakpoint slope is close to zero. While TCS has no strict bounds, in practice it typically falls between −1 and +1. 
                     - Extreme values may indicate sharp shifts in trend intensity or imbalances in the temporal distribution of data. Although wildlife trafficking patterns are rarely linear in reality, this method adopts linear segments as a practical approximation to detect directional shifts. 
                     - It does not assume true linear behavior, but rather uses regression slopes as a comparative metric across time intervals. The analysis requires at least two observations on each side of the breakpoint to produce meaningful estimates. 
                     - The score can be sensitive to outliers or sparsely populated time ranges, and should be interpreted in light of the broader case context.
@@ -515,7 +515,7 @@ if uploaded_file is not None:
                             - The method is based on **Cumulative Sum (CUSUM)** analysis, which tracks the cumulative deviation of observed values from their overall mean.
                             - Two cumulative paths are calculated:
                               - **CUSUM+** accumulates positive deviations (above the mean).
-                              - **CUSUM-** accumulates negative deviations (below the mean).
+                              - **CUSUM−** accumulates negative deviations (below the mean).
                             - This dual-track approach highlights the **direction and magnitude of long-term deviations**, making it easier to identify sustained changes.
 
                             - Unlike methods that directly model trends (e.g., segmented regression), CUSUM reacts **only when there is consistent deviation**, amplifying the signal of real change over time.
@@ -957,6 +957,41 @@ if "user" in st.session_state:
             del st.session_state[key]
         st.rerun()
 
+    # --- SELEÇÃO DA FONTE DE DADOS: Upload ou Meus Casos ---
+    st.sidebar.markdown("### 📑 Select Data Source")
+    data_source = st.sidebar.radio(
+        "Choose your data source:",
+        ["📤 Upload file", "🙋‍♂️ My Cases"],
+        key="data_source_choice"
+    )
+
+    df = None
+    df_selected = None
+
+    if st.session_state["data_source_choice"] == "📤 Upload file":
+        uploaded_file = st.sidebar.file_uploader("Upload your Excel file (.xlsx):", type=["xlsx"], key="uploaded_file")
+
+        if uploaded_file is not None:
+            try:
+                df = pd.read_excel(uploaded_file)
+                st.success("✅ File uploaded successfully.")
+            except Exception as e:
+                st.error(f"❌ Failed to read file: {e}")
+
+    elif st.session_state["data_source_choice"] == "🙋‍♂️ My Cases":
+        try:
+            worksheet = get_worksheet()
+            records = worksheet.get_all_records()
+            df_all = pd.DataFrame(records)
+            df_user = df_all[df_all["Author"] == st.session_state["user"]]
+            if df_user.empty:
+                st.warning("⚠️ You haven't submitted any cases yet.")
+            else:
+                df = df_user.copy()
+                st.success(f"✅ Loaded {len(df)} cases submitted by you.")
+        except Exception as e:
+            st.error(f"❌ Failed to load your cases: {e}")
+
 else:
     st.sidebar.markdown("## 🔐 Login to Aurum")
 
@@ -1281,4 +1316,4 @@ if "user" in st.session_state:
         st.error(f"❌ Failed to load data: {e}")
 
 st.sidebar.markdown("---")    
-st.sidebar.markdown("**How to cite:** Carvalho, A. F. Aurum: A Platform for Criminal Intelligence in Wildlife Trafficking. Wildlife Conservation Society, 2025.")
+st.sidebar.markdown("**How to cite:** Carvalho, A. F. *Aurum*: An Interactive Streamlit Toolkit for Multiscale Analysis of Wildlife Trafficking. Wildlife Conservation Society, 2025.")
