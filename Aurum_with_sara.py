@@ -20,8 +20,9 @@ import bcrypt
 import os
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Aurum Dashboard", layout="centered")
-st.title("Aurum - Wildlife Trafficking Analytics")
+st.set_page_config(page_title="Aurum Dashboard", layout="wide")
+st.title("Aurum")
+st.markdown("Wildlife Trafficking Analytics")
 
 # Upload do arquivo
 from PIL import Image
