@@ -53,24 +53,14 @@ with open("Aurum_template.xlsx", "rb") as f:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-if uploaded_file is None:
-    st.markdown("""
-    **Aurum** is an analytical tool developed to support the monitoring and analysis of wildlife trafficking data.  
-    By employing advanced statistical methods and interactive visualizations, Aurum helps researchers, NGOs, and law enforcement agencies identify patterns and effectively combat illegal wildlife trade.
+# --- DASHBOARD RESUMO INICIAL (carregado do Google Sheets) ---
+try:
+    worksheet = get_worksheet()
+    records = worksheet.get_all_records()
+    df_dashboard = pd.DataFrame(records)
 
-    **Upload your XLSX data file in the sidebar to begin.**  
-    For the full Aurum experience, please request access or log in if you already have an account.  
-    Click **About Aurum** to learn more about each analysis module.
-    """)
-
-df = None
-df_selected = None
-
-if df is not None and df_selected is None:
-    st.markdown("## Aurum Summary Dashboard")
-
-    try:
-        df_dashboard = df.copy()
+    if not df_dashboard.empty and "N seized specimens" in df_dashboard.columns:
+        df_dashboard = expand_multi_species_rows(df_dashboard)
         df_dashboard = df_dashboard[df_dashboard["Species"].notna()]
         df_dashboard["N_seized"] = pd.to_numeric(df_dashboard["N_seized"], errors="coerce").fillna(0)
 
@@ -83,13 +73,27 @@ if df is not None and df_selected is None:
         total_individuals = int(df_filtered["N_seized"].sum())
         total_countries = df_filtered["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in df_filtered.columns else 0
 
+        st.markdown("## 📊 Aurum Summary Dashboard")
         col1, col2, col3 = st.columns(3)
         col1.metric("📁 Total Cases", total_cases)
         col2.metric("🐾 Individuals Seized", total_individuals)
         col3.metric("🌍 Countries Involved", total_countries)
 
-    except Exception as e:
-        st.error(f"❌ Failed to load dashboard summary: {e}")
+except Exception as e:
+    st.error(f"❌ Failed to load dashboard summary: {e}")
+
+if uploaded_file is None:
+    st.markdown("""
+    **Aurum** is an analytical tool developed to support the monitoring and analysis of wildlife trafficking data.  
+    By employing advanced statistical methods and interactive visualizations, Aurum helps researchers, NGOs, and law enforcement agencies identify patterns and effectively combat illegal wildlife trade.
+
+    **Upload your XLSX data file in the sidebar to begin.**  
+    For the full Aurum experience, please request access or log in if you already have an account.  
+    Click **About Aurum** to learn more about each analysis module.
+    """)
+
+df = None
+df_selected = None
 
 if uploaded_file is not None:
     try:
