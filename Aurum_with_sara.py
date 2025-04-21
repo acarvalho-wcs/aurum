@@ -102,17 +102,39 @@ if uploaded_file is None:
             available_species = sorted(df_dashboard["Species"].unique())
             selected_species_dash = st.selectbox("Select a species to view:", ["All species"] + available_species)
 
+            filtered_df = df_dashboard.copy()
             if selected_species_dash != "All species":
-                df_dashboard = df_dashboard[df_dashboard["Species"] == selected_species_dash]
+                filtered_df = filtered_df[filtered_df["Species"] == selected_species_dash]
 
-            total_cases = df_dashboard["Case #"].nunique()
-            total_individuals = int(df_dashboard["N_seized"].sum())
-            total_countries = df_dashboard["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in df_dashboard.columns else 0
+            total_cases = filtered_df["Case #"].nunique()
+            total_individuals = int(filtered_df["N_seized"].sum())
+            total_countries = filtered_df["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in filtered_df.columns else 0
 
             col1, col2, col3 = st.columns(3)
             col1.metric("📁 Total Cases", total_cases)
             col2.metric("🐾 Individuals Seized", total_individuals)
             col3.metric("🌍 Countries Involved", total_countries)
+
+            # Gráfico de dispersão
+            if selected_species_dash != "All species" and "Year" in filtered_df.columns:
+                try:
+                    filtered_df["Year"] = pd.to_numeric(filtered_df["Year"], errors="coerce")
+                    st.markdown("### 📈 Seized Individuals by Year")
+                    import plotly.express as px
+                    fig = px.scatter(filtered_df, x="Year", y="N_seized", title=f"{selected_species_dash} - N_seized vs Year")
+                    st.plotly_chart(fig)
+                except Exception as e:
+                    st.warning(f"Could not render scatter plot: {e}")
+
+            # Coocorrência com outras espécies nos mesmos casos
+            if selected_species_dash != "All species":
+                coocurrence_cases = df_dashboard[df_dashboard["Case #"].isin(filtered_df["Case #"])]
+                co_species = coocurrence_cases[coocurrence_cases["Species"] != selected_species_dash]["Species"].unique()
+                st.markdown("### 🧬 Species co-occurring in same cases")
+                if len(co_species) > 0:
+                    st.write(", ".join(sorted(co_species)))
+                else:
+                    st.info("No other species recorded with the selected species.")
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
