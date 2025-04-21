@@ -869,42 +869,6 @@ else:
         else:
             st.error("User not approved or does not exist.")
 
-else:
-    st.sidebar.markdown("## 🔐 Login to Aurum")
-
-    if "login_username" not in st.session_state:
-        st.session_state["login_username"] = ""
-    if "login_password" not in st.session_state:
-        st.session_state["login_password"] = ""
-
-    username = st.sidebar.text_input("Username", key="login_username")
-    password = st.sidebar.text_input("Password", type="password", key="login_password")
-
-    login_col, _ = st.sidebar.columns([1, 1])
-    login_button = login_col.button("Login")
-
-    def verify_password(password, hashed):
-        return password == hashed_pw
-
-    if login_button and username and password:
-        user_row = users_df[users_df["Username"] == username]
-        if not user_row.empty and str(user_row.iloc[0]["Approved"]).strip().lower() == "true":
-            hashed_pw = user_row.iloc[0]["Password"].strip()
-
-            if verify_password(password, hashed_pw):
-                st.session_state["user"] = username
-                st.session_state["is_admin"] = str(user_row.iloc[0]["Is_Admin"]).strip().lower() == "true"
-
-                st.session_state.pop("login_username", None)
-                st.session_state.pop("login_password", None)
-
-                st.rerun()
-            else:
-                st.error("Incorrect password.")
-        else:
-            st.error("User not approved or does not exist.")
-
-
 # --- FORMULÁRIO DE ACESSO (REQUISIÇÃO) ---
 # Inicializa estado
 if "show_sidebar_request" not in st.session_state:
