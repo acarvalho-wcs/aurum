@@ -78,8 +78,8 @@ def get_worksheet(name="Aurum_data"):
 
 if uploaded_file is None:
     st.markdown("""
-    **Aurum** is an analytical tool developed to support the monitoring and analysis of wildlife trafficking data.  
-    By employing advanced statistical methods and interactive visualizations, Aurum helps researchers, NGOs, and law enforcement agencies identify patterns and effectively combat illegal wildlife trade.
+    **Aurum** is a criminal intelligence platform developed to support the monitoring and investigation of **wildlife trafficking**.
+    By integrating advanced statistical methods and interactive visualizations, Aurum enables researchers, enforcement agencies, and conservation organizations to identify operational patterns and support data-driven responses to illegal wildlife trade.
 
     **Upload your XLSX data file in the sidebar to begin.**  
     For the full Aurum experience, please request access or log in if you already have an account.  
