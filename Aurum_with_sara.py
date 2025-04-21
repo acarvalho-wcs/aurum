@@ -26,7 +26,7 @@ st.title("Aurum - Wildlife Trafficking Analytics")
 # Upload do arquivo
 from PIL import Image
 logo = Image.open("logo.jpg")
-st.sidebar.image(logo, use_column_width=True)
+st.sidebar.image("logo.jpg", use_container_width=True)
 st.sidebar.markdown("## Welcome to Aurum")
 st.sidebar.markdown("Log in below to unlock multi-user tools.")
 show_about = st.sidebar.button("**About Aurum**")
