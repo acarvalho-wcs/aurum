@@ -150,7 +150,7 @@ def display_alert_submission_form():
         with st.expander("📢 Submit New Alert", expanded=False):
             st.markdown("Use this form to create a new wildlife trafficking alert. Your alert will be publicly visible once submitted.")
 
-            # Define field keys
+            # Field keys for state cleanup
             field_keys = {
                 "title": "alert_title_input",
                 "description": "alert_description_input",
@@ -177,13 +177,14 @@ def display_alert_submission_form():
                 if not title or not description:
                     st.warning("Title and Description are required.")
                 else:
-                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    alert_id = timestamp
+                    from uuid import uuid4
+                    alert_id = str(uuid4())
+                    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
                     alert_row = [
-                        alert_id,
-                        timestamp,
-                        st.session_state["user"],
+                        alert_id,                # Alert ID
+                        created_at,              # Created At
+                        st.session_state["user"],# Created By
                         title,
                         description,
                         category,
@@ -192,8 +193,8 @@ def display_alert_submission_form():
                         risk_level,
                         source_link,
                         str(public),
-                        "",
-                        ""
+                        "",                      # Edited By
+                        ""                       # Last Modified
                     ]
 
                     try:
@@ -202,11 +203,11 @@ def display_alert_submission_form():
                         st.success("✅ Alert submitted successfully!")
                         st.balloons()
 
-                        # Clear form fields
+                        # Clean form fields
                         for k in field_keys.values():
                             st.session_state.pop(k, None)
 
-                        st.rerun()  # Optional: reloads the UI cleanly
+                        st.rerun()
 
                     except Exception as e:
                         st.error(f"❌ Failed to submit alert: {e}")
