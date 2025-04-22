@@ -146,6 +146,12 @@ def display_public_alerts_section(sheet_id):
 
     # Display
     for _, row in df_alerts.iterrows():
+        try:
+            df_updates = load_sheet_data("Alert Updates")
+            updates = df_updates[df_updates["Alert ID"] == row["ID"]] if "ID" in row else pd.DataFrame()
+        except:
+            updates = pd.DataFrame()
+
         with st.expander(f"🚨 {row['Title']} ({row['Risk Level']})"):
             st.markdown(f"**Category:** {row['Category']}")
             st.markdown(f"**Date:** {row['Created At']}")
@@ -156,6 +162,33 @@ def display_public_alerts_section(sheet_id):
             st.markdown(f"**Description:** {row['Description']}")
             if pd.notna(row.get("Source Link")):
                 st.markdown(f"[🔗 Source]({row['Source Link']})", unsafe_allow_html=True)
+
+            # Exibe atualizações anteriores
+            if not updates.empty:
+                st.markdown("### 📌 Case Updates")
+                for _, u in updates.sort_values("Timestamp").iterrows():
+                    st.markdown(f"**{u['Timestamp']}** – *{u['User']}*: {u['Update Text']}")
+            else:
+                st.info("No updates recorded for this alert yet.")
+
+            # Formulário de nova atualização (somente usuários logados)
+            if "user" in st.session_state:
+                with st.form(f"update_form_{row['ID']}"):
+                    st.markdown("**Add an update to this alert:**")
+                    new_update = st.text_area("Update description", key=f"update_input_{row['ID']}")
+                    submitted_update = st.form_submit_button("➕ Add Update")
+
+                    if submitted_update and new_update.strip():
+                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        update_row = [row["ID"], timestamp, st.session_state["user"], new_update.strip()]
+                        try:
+                            update_ws = sheets.worksheet("Alert Updates")
+                        except gspread.exceptions.WorksheetNotFound:
+                            update_ws = sheets.add_worksheet(title="Alert Updates", rows="1000", cols="4")
+                            update_ws.append_row(["Alert ID", "Timestamp", "User", "Update Text"])
+                        update_ws.append_row(update_row)
+                        st.success("✅ Update added!")
+                        st.rerun()
 
 def display_alert_submission_form():
     if "user" in st.session_state:
