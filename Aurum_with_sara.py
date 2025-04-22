@@ -88,32 +88,6 @@ if uploaded_file is None:
     Click **About Aurum** to learn more about each analysis module.
     """)
 
-# --- DASHBOARD RESUMO INICIAL (sem login, baseado no Google Sheets) ---
-if uploaded_file is None and not st.session_state.get("user"):
-    try:
-        worksheet = get_worksheet()
-        records = worksheet.get_all_records()
-        df_dashboard = pd.DataFrame(records)
-
-        if not df_dashboard.empty and "N seized specimens" in df_dashboard.columns:
-            def expand_multi_species_rows(df):
-                expanded_rows = []
-                for _, row in df.iterrows():
-                    matches = re.findall(r'(\d+)\s*([A-Z][a-z]+(?:_[a-z]+)+)', str(row.get('N seized specimens', '')))
-                    if matches:
-                        for qty, species in matches:
-                            new_row = row.copy()
-                            new_row['N_seized'] = float(qty)
-                            new_row['Species'] = species
-                            expanded_rows.append(new_row)
-                    else:
-                        expanded_rows.append(row)
-                return pd.DataFrame(expanded_rows)
-
-            df_dashboard = expand_multi_species_rows(df_dashboard)
-            df_dashboard = df_dashboard[df_dashboard["Species"].notna()]
-            df_dashboard["N_seized"] = pd.to_numeric(df_dashboard["N_seized"], errors="coerce").fillna(0)
-
 # --- ALERTAS PÚBLICOS (visível para todos, inclusive sem login) ---
 def display_public_alerts_section(sheet_id):
     with st.container():
@@ -156,7 +130,33 @@ def display_public_alerts_section(sheet_id):
 
 # Executa antes do login
 display_public_alerts_section(SHEET_ID)
-            
+
+# --- DASHBOARD RESUMO INICIAL (sem login, baseado no Google Sheets) ---
+if uploaded_file is None and not st.session_state.get("user"):
+    try:
+        worksheet = get_worksheet()
+        records = worksheet.get_all_records()
+        df_dashboard = pd.DataFrame(records)
+
+        if not df_dashboard.empty and "N seized specimens" in df_dashboard.columns:
+            def expand_multi_species_rows(df):
+                expanded_rows = []
+                for _, row in df.iterrows():
+                    matches = re.findall(r'(\d+)\s*([A-Z][a-z]+(?:_[a-z]+)+)', str(row.get('N seized specimens', '')))
+                    if matches:
+                        for qty, species in matches:
+                            new_row = row.copy()
+                            new_row['N_seized'] = float(qty)
+                            new_row['Species'] = species
+                            expanded_rows.append(new_row)
+                    else:
+                        expanded_rows.append(row)
+                return pd.DataFrame(expanded_rows)
+
+            df_dashboard = expand_multi_species_rows(df_dashboard)
+            df_dashboard = df_dashboard[df_dashboard["Species"].notna()]
+            df_dashboard["N_seized"] = pd.to_numeric(df_dashboard["N_seized"], errors="coerce").fillna(0)
+
             st.markdown("## Summary Dashboard")
 
             available_species = sorted(df_dashboard["Species"].unique())
