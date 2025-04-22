@@ -1163,6 +1163,16 @@ def get_worksheet(sheet_name="Aurum_data"):
     sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
     return sh.worksheet(sheet_name)
 
+# --- Função para carregar dados de qualquer aba ---
+def load_sheet_data(sheet_name, sheets):
+    try:
+        worksheet = sheets.worksheet(sheet_name)
+        records = worksheet.get_all_records()
+        return pd.DataFrame(records)
+    except Exception as e:
+        st.error(f"❌ Failed to load data from sheet '{sheet_name}': {e}")
+        return pd.DataFrame()
+
 # --- Função para submissão de alertas ---
 def display_alert_submission_form(sheet_id):
     with st.expander("📢 Submit New Alert", expanded=False):
