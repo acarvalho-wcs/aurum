@@ -1211,7 +1211,7 @@ def display_alert_submission_form(sheet_id):
             source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
             public = True
 
-            submitted = st.form_submit_button("📄 Submit Alert")
+            submitted = st.form_submit_button("**Submit Alert**")
 
         if submitted:
             if not title or not description:
@@ -1238,7 +1238,7 @@ def display_alert_submission_form(sheet_id):
 
 # --- Interface para edição de alertas ---
 def display_alert_update_tab(sheet_id):
-    with st.expander("🛠️ Update My Alerts", expanded=False):
+    with st.expander("**Update My Alerts**", expanded=False):
         scope = ["https://www.googleapis.com/auth/spreadsheets"]
         credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
         client = gspread.authorize(credentials)
