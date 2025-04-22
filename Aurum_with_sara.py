@@ -154,7 +154,7 @@ def display_alert_submission_form():
             species = st.text_input("Species involved (optional)")
             country = st.text_input("Country or Region (optional)")
             source_link = st.text_input("Source Link (optional)")
-            public = True  # all alerts are public by design
+            public = True  # all alerts are public by default
 
             submit = st.form_submit_button("📤 Submit Alert")
 
@@ -163,17 +163,22 @@ def display_alert_submission_form():
                 st.warning("Title and Description are required.")
             else:
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                alert_id = timestamp  # or use a UUID if needed
+
                 alert_row = [
-                    timestamp,  # Created At
-                    st.session_state["user"],  # Created By
-                    title,
-                    description,
-                    category,
-                    species,
-                    country,
-                    risk_level,
-                    source_link,
-                    str(public)
+                    alert_id,                 # Alert ID (A)
+                    timestamp,                # Created At (B)
+                    st.session_state["user"], # Created By (C)
+                    title,                    # Title (D)
+                    description,              # Description (E)
+                    category,                 # Category (F)
+                    species,                  # Species (G)
+                    country,                  # Country (H)
+                    risk_level,               # Risk Level (I)
+                    source_link,              # Source Link (J)
+                    str(public),              # Public (K)
+                    "",                       # Edited By (L)
+                    ""                        # Last Modified (M)
                 ]
 
                 try:
