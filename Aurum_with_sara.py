@@ -103,7 +103,19 @@ def display_public_alerts_section(sheet_id):
     st.info("These alerts were submitted by logged-in users and highlight patterns, risks, and urgent issues. Everyone can see them.")
 
     df_alerts = load_sheet_data("Alerts")
+
+    # Safeguard: avoid KeyError if empty or missing column
+    if df_alerts.empty or "Public" not in df_alerts.columns:
+        st.warning("No public alerts available.")
+        return
+
+    # Filter only public alerts
     df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
+
+    if df_alerts.empty:
+        st.warning("No public alerts available.")
+        return
+
     df_alerts = df_alerts.sort_values("Created At", ascending=False)
 
     if df_alerts.empty:
