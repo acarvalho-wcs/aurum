@@ -117,18 +117,20 @@ def display_public_alerts_section(sheet_id):
     with col2:
         risk = st.selectbox("Filter by Risk", ["All", "Low", "Medium", "High"])
     with col3:
-        species = st.text_input("Search by Species")
+        species_options = sorted(df_alerts["Species"].dropna().unique().tolist())
+        species = st.selectbox("Filter by Species", ["All"] + species_options)
     with col4:
-        country = st.text_input("Search by Country")
+        country_options = sorted(df_alerts["Country"].dropna().unique().tolist())
+        country = st.selectbox("Filter by Country", ["All"] + country_options)
 
     if category != "All":
         df_alerts = df_alerts[df_alerts["Category"] == category]
     if risk != "All":
         df_alerts = df_alerts[df_alerts["Risk Level"] == risk]
-    if species:
-        df_alerts = df_alerts[df_alerts["Species"].str.contains(species, case=False, na=False)]
-    if country:
-        df_alerts = df_alerts[df_alerts["Country"].str.contains(country, case=False, na=False)]
+    if species != "All":
+        df_alerts = df_alerts[df_alerts["Species"] == species]
+    if country != "All":
+        df_alerts = df_alerts[df_alerts["Country"] == country]
 
     # Display
     for _, row in df_alerts.iterrows():
