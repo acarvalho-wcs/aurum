@@ -162,6 +162,7 @@ def display_alert_submission_form():
         with st.expander("📢 Submit New Alert", expanded=False):
             st.markdown("Use this form to create a new wildlife trafficking alert. Your alert will be publicly visible once submitted.")
 
+            # Campos controlados via session_state
             field_keys = {
                 "title": "alert_title_input",
                 "description": "alert_description_input",
@@ -172,13 +173,9 @@ def display_alert_submission_form():
                 "source_link": "alert_source_input"
             }
 
-            # --- Clean Form button OUTSIDE the form ---
-            if st.session_state.get("alert_submitted", False):
-                if st.button("🧹 Clean Form", type="secondary"):
-                    for key in field_keys.values():
-                        st.session_state[key] = ""
-                    st.session_state["alert_submitted"] = False
-                    st.experimental_rerun()
+            # Inicializa os campos se não existirem
+            for key, session_key in field_keys.items():
+                st.session_state.setdefault(session_key, "")
 
             with st.form("alert_form"):
                 title = st.text_input("Alert Title", key=field_keys["title"])
@@ -221,7 +218,15 @@ def display_alert_submission_form():
                         worksheet_alerts.append_row(alert_row, value_input_option="USER_ENTERED")
                         st.success("✅ Alert submitted successfully!")
                         st.balloons()
-                        st.session_state["alert_submitted"] = True
+
+                        # Limpa os valores do formulário no session_state
+                        for k in field_keys.values():
+                            if k in st.session_state:
+                                del st.session_state[k]
+
+                        # Atualiza a interface (reseta o formulário visual)
+                        st.rerun()
+
                     except Exception as e:
                         st.error(f"❌ Failed to submit alert: {e}")
 
