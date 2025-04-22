@@ -20,41 +20,39 @@ from sklearn.preprocessing import StandardScaler
 import bcrypt
 import os
 
+# MUST BE FIRST Streamlit call
+st.set_page_config(page_title="Aurum Dashboard", layout="wide")
+
 def log_app_open():
     try:
-        # Timestamp of the app opening
         now = datetime.datetime.now().isoformat()
 
-        # Get approximate location without exposing IP
+        # Get approximate location
         location = requests.get('https://ipapi.co/json/').json()
         city = location.get("city", "Unknown")
         country = location.get("country_name", "Unknown")
 
-        # Connect to Google Sheets
         scopes = ["https://www.googleapis.com/auth/spreadsheets"]
         creds = Credentials.from_service_account_file(
             "path/to/your/credentials.json", scopes=scopes
         )
         client = gspread.authorize(creds)
 
-        # Open the spreadsheet by ID
         sheet = client.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
 
-        # Try to access the 'App Open Logs' sheet; create it if it doesn't exist
         try:
             worksheet = sheet.worksheet("App Open Logs")
         except gspread.exceptions.WorksheetNotFound:
             worksheet = sheet.add_worksheet(title="App Open Logs", rows="1000", cols="3")
             worksheet.append_row(["Timestamp", "City", "Country"])
 
-        # Append a new row with the data
         worksheet.append_row([now, city, country])
 
     except Exception as e:
         st.warning("⚠️ Failed to log app opening.")
         print("Error logging app opening:", e)
 
-# Call this at the beginning of your Streamlit app:
+# Call logging function after page config is set
 log_app_open()
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
