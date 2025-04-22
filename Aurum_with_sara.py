@@ -116,42 +116,43 @@ if uploaded_file is None and not st.session_state.get("user"):
 
 # --- ALERTAS PÚBLICOS (visível para todos, inclusive sem login) ---
 def display_public_alerts_section(sheet_id):
-    st.markdown("## 🌍 Wildlife Alert Board")
-    st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
-    st.subheader("📢 Public Wildlife Trafficking Alerts")
+    with st.container():
+        st.markdown("## 🌍 Wildlife Alert Board")
+        st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
+        st.markdown("### 📢 Public Wildlife Trafficking Alerts")
 
-    # Acesso ao Google Sheets
-    scope = ["https://www.googleapis.com/auth/spreadsheets"]
-    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-    client = gspread.authorize(credentials)
-    sheets = client.open_by_key(sheet_id)
+        # Acesso ao Google Sheets
+        scope = ["https://www.googleapis.com/auth/spreadsheets"]
+        credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+        client = gspread.authorize(credentials)
+        sheets = client.open_by_key(sheet_id)
 
-    try:
-        df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
+        try:
+            df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
 
-        # Filtro: apenas alertas marcados como públicos
-        df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
+            # Filtro: apenas alertas marcados como públicos
+            df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
 
-        if df_alerts.empty:
-            st.info("No public alerts available.")
-            return
+            if df_alerts.empty:
+                st.info("No public alerts available.")
+                return
 
-        # Ordena por data de criação
-        df_alerts = df_alerts.sort_values("Created At", ascending=False)
+            # Ordena por data de criação
+            df_alerts = df_alerts.sort_values("Created At", ascending=False)
 
-        # Exibe os alertas em formato de colapsável
-        for _, row in df_alerts.iterrows():
-            with st.expander(f"🚨 {row['Title']} ({row['Risk Level']})", expanded=False):
-                st.markdown(f"**Description:** {row['Description']}")
-                st.markdown(f"**Category:** {row['Category']}")
-                if row.get("Species"): st.markdown(f"**Species:** {row['Species']}")
-                if row.get("Country"): st.markdown(f"**Country:** {row['Country']}")
-                if row.get("Source Link"): 
-                    st.markdown(f"[🔗 Source]({row['Source Link']})", unsafe_allow_html=True)
-                st.caption(f"📅 Submitted on {row['Created At']} by *{row['Created By']}*")
+            # Exibe os alertas em formato de colapsável
+            for _, row in df_alerts.iterrows():
+                with st.expander(f"🚨 {row['Title']} ({row['Risk Level']})", expanded=False):
+                    st.markdown(f"**Description:** {row['Description']}")
+                    st.markdown(f"**Category:** {row['Category']}")
+                    if row.get("Species"): st.markdown(f"**Species:** {row['Species']}")
+                    if row.get("Country"): st.markdown(f"**Country:** {row['Country']}")
+                    if row.get("Source Link"): 
+                        st.markdown(f"[🔗 Source]({row['Source Link']})", unsafe_allow_html=True)
+                    st.caption(f"📅 Submitted on {row['Created At']} by *{row['Created By']}*")
 
-    except Exception as e:
-        st.error(f"❌ Failed to load public alerts: {e}")
+        except Exception as e:
+            st.error(f"❌ Failed to load public alerts: {e}")
 
 # Executa antes do login
 display_public_alerts_section(SHEET_ID)
