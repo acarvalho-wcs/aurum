@@ -1175,7 +1175,7 @@ def load_sheet_data(sheet_name, sheets):
 
 # --- Interface para submissão de alertas ---
 def display_alert_submission_form(sheet_id):
-    with st.expander("📢 Submit New Alert", expanded=False):
+    with st.expander("**Submit New Alert**", expanded=False):
         scope = ["https://www.googleapis.com/auth/spreadsheets"]
         credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
         client = gspread.authorize(credentials)
