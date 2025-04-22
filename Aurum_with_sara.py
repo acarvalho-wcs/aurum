@@ -150,15 +150,26 @@ def display_alert_submission_form():
         with st.expander("📢 Submit New Alert", expanded=False):
             st.markdown("Use this form to create a new wildlife trafficking alert. Your alert will be publicly visible once submitted.")
 
+            # Define field keys
+            field_keys = {
+                "title": "alert_title_input",
+                "description": "alert_description_input",
+                "category": "alert_category_select",
+                "risk_level": "alert_risk_select",
+                "species": "alert_species_input",
+                "country": "alert_country_input",
+                "source_link": "alert_source_input"
+            }
+
             with st.form("alert_form"):
-                title = st.text_input("Alert Title")
-                description = st.text_area("Description of the Alert")
-                category = st.selectbox("Category", ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"])
-                risk_level = st.selectbox("Risk Level", ["Low", "Medium", "High"])
-                species = st.text_input("Species involved (optional)")
-                country = st.text_input("Country or Region (optional)")
-                source_link = st.text_input("Source Link (optional)")
-                public = True  # always public for now
+                title = st.text_input("Alert Title", key=field_keys["title"])
+                description = st.text_area("Description of the Alert", key=field_keys["description"])
+                category = st.selectbox("Category", ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"], key=field_keys["category"])
+                risk_level = st.selectbox("Risk Level", ["Low", "Medium", "High"], key=field_keys["risk_level"])
+                species = st.text_input("Species involved (optional)", key=field_keys["species"])
+                country = st.text_input("Country or Region (optional)", key=field_keys["country"])
+                source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
+                public = True
 
                 submit = st.form_submit_button("📤 Submit Alert")
 
@@ -167,12 +178,12 @@ def display_alert_submission_form():
                     st.warning("Title and Description are required.")
                 else:
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    alert_id = timestamp  # or generate UUID
+                    alert_id = timestamp
 
                     alert_row = [
-                        alert_id,                 # Alert ID
-                        timestamp,                # Created At
-                        st.session_state["user"], # Created By
+                        alert_id,
+                        timestamp,
+                        st.session_state["user"],
                         title,
                         description,
                         category,
@@ -181,8 +192,8 @@ def display_alert_submission_form():
                         risk_level,
                         source_link,
                         str(public),
-                        "",  # Edited By
-                        ""   # Last Modified
+                        "",
+                        ""
                     ]
 
                     try:
@@ -190,6 +201,13 @@ def display_alert_submission_form():
                         worksheet_alerts.append_row(alert_row, value_input_option="USER_ENTERED")
                         st.success("✅ Alert submitted successfully!")
                         st.balloons()
+
+                        # Clear form fields
+                        for k in field_keys.values():
+                            st.session_state.pop(k, None)
+
+                        st.rerun()  # Optional: reloads the UI cleanly
+
                     except Exception as e:
                         st.error(f"❌ Failed to submit alert: {e}")
 
