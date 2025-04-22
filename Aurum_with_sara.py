@@ -77,17 +77,6 @@ users_df = pd.DataFrame(users_ws.get_all_records())
 def get_worksheet(name="Aurum_data"):
     return sheets.worksheet(name)
 
-# --- Função para carregar dados de qualquer aba ---
-def load_sheet_data(sheet_name="Alerts"):
-    try:
-        worksheet = sheets.worksheet(sheet_name)
-        records = worksheet.get_all_records()
-        df = pd.DataFrame(records)
-        return df
-    except Exception as e:
-        st.error(f"❌ Failed to load data from sheet '{sheet_name}': {e}")
-        return pd.DataFrame()
-
 # --- Mensagem inicial caso nenhum arquivo tenha sido enviado e usuário não esteja logado ---
 if uploaded_file is None:
     st.markdown("""
@@ -98,223 +87,6 @@ if uploaded_file is None:
     For the full Aurum experience, please request access or log in if you already have an account.  
     Click **About Aurum** to learn more about each analysis module.
     """)
-
-def display_public_alerts_section(sheet_id):
-    st.markdown("## Wildlife Trafficking Alerts")
-    st.info("These alerts were submitted by logged-in users and highlight patterns, risks, and urgent issues. Everyone can see them.")
-
-    # 🔐 Garante acesso ao Google Sheets
-    scope = ["https://www.googleapis.com/auth/spreadsheets"]
-    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-    client = gspread.authorize(credentials)
-    sheets = client.open_by_key(sheet_id)
-
-    df_alerts = load_sheet_data("Alerts")
-
-    # Safeguard: avoid KeyError if empty or missing column
-    if df_alerts.empty or "Public" not in df_alerts.columns:
-        st.warning("No public alerts available.")
-        return
-
-    # Filter only public alerts
-    if "user" in st.session_state:
-        df_alerts = df_alerts[
-            (df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE") |
-            (df_alerts["Author"] == st.session_state["user"])
-        ]
-    else:
-        df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
-    
-    if df_alerts.empty:
-        st.warning("No public alerts available.")
-        return
-
-    df_alerts = df_alerts.sort_values("Created At", ascending=False)
-
-    if df_alerts.empty:
-        st.warning("No public alerts available.")
-        return
-
-    # Filters
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        category = st.selectbox("Filter by Category", ["All"] + sorted(df_alerts["Category"].dropna().unique().tolist()))
-    with col2:
-        risk = st.selectbox("Filter by Risk", ["All", "Low", "Medium", "High"])
-    with col3:
-        species_options = sorted(df_alerts["Species"].dropna().unique().tolist())
-        species = st.selectbox("Filter by Species", ["All"] + species_options)
-    with col4:
-        country_options = sorted(df_alerts["Country"].dropna().unique().tolist())
-        country = st.selectbox("Filter by Country", ["All"] + country_options)
-
-    if category != "All":
-        df_alerts = df_alerts[df_alerts["Category"] == category]
-    if risk != "All":
-        df_alerts = df_alerts[df_alerts["Risk Level"] == risk]
-    if species != "All":
-        df_alerts = df_alerts[df_alerts["Species"] == species]
-    if country != "All":
-        df_alerts = df_alerts[df_alerts["Country"] == country]
-
-    # Display
-    categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
-    risk_levels = ["Low", "Medium", "High"]
-
-    for _, row in df_alerts.iterrows():
-        # Garante que cada alerta tem um ID válido
-        alert_id = row.get("ID") or str(uuid4())
-
-        # Carrega atualizações vinculadas a esse alerta
-        try:
-            df_updates = load_sheet_data("Alert Updates")
-            updates = df_updates[df_updates["Alert ID"] == alert_id] if "Alert ID" in df_updates.columns else pd.DataFrame()
-        except:
-            updates = pd.DataFrame()
-
-        with st.expander(f"🚨 {row['Title']} ({row['Risk Level']})"):
-            st.markdown(f"**Category:** {row['Category']}")
-            st.markdown(f"**Date:** {row['Created At']}")
-            if pd.notna(row.get("Species")):
-                st.markdown(f"**Species:** {row['Species']}")
-            if pd.notna(row.get("Country")):
-                st.markdown(f"**Country:** {row['Country']}")
-            st.markdown(f"**Description:** {row['Description']}")
-            if pd.notna(row.get("Source Link")):
-                st.markdown(f"[🔗 Source]({row['Source Link']})", unsafe_allow_html=True)
-
-            # Exibe atualizações anteriores
-            if not updates.empty:
-                st.markdown("### 📌 Case Updates")
-                for _, u in updates.sort_values("Timestamp").iterrows():
-                    st.markdown(f"**{u['Timestamp']}** – *{u['User']}*: {u['Update Text']}")
-            else:
-                st.info("No updates recorded for this alert yet.")
-
-            # Formulário de nova atualização (somente usuários logados)
-            if "user" in st.session_state:
-                with st.form(f"update_form_{alert_id}"):
-                    st.markdown("**Add an update to this alert:**")
-                    new_update = st.text_area("Update description", key=f"update_input_{alert_id}")
-                    submitted_update = st.form_submit_button("➕ Add Update")
-
-                    if submitted_update and new_update.strip():
-                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        update_row = [alert_id, timestamp, st.session_state["user"], new_update.strip()]
-                        try:
-                            update_ws = sheets.worksheet("Alert Updates")
-                        except gspread.exceptions.WorksheetNotFound:
-                            update_ws = sheets.add_worksheet(title="Alert Updates", rows="1000", cols="4")
-                            update_ws.append_row(["Alert ID", "Timestamp", "User", "Update Text"])
-                        update_ws.append_row(update_row)
-                        st.success("✅ Update added!")
-                        st.rerun()
-
-            # Formulário de edição do alerta (somente autor)
-            if "user" in st.session_state and row["Author"] == st.session_state["user"]:
-                with st.expander("✏️ Edit your alert"):
-                    with st.form(f"edit_alert_form_{alert_id}"):
-                        new_title = st.text_input("Title", value=row["Title"])
-                        new_description = st.text_area("Description", value=row["Description"])
-                        new_category = st.selectbox("Category", categories, index=categories.index(row["Category"]) if row["Category"] in categories else 0)
-                        new_risk = st.selectbox("Risk Level", risk_levels, index=risk_levels.index(row["Risk Level"]) if row["Risk Level"] in risk_levels else 0)
-                        new_species = st.text_input("Species", value=row["Species"])
-                        new_country = st.text_input("Country", value=row["Country"])
-                        new_source = st.text_input("Source Link", value=row["Source Link"])
-                        submitted_edit = st.form_submit_button("💾 Save Changes")
-
-                    if submitted_edit:
-                        try:
-                            worksheet_alerts = sheets.worksheet("Alerts")
-                            row_number = df_alerts[df_alerts["ID"] == alert_id].index[0] + 2  # header + 1-indexed
-                            worksheet_alerts.update(f"D{row_number}:K{row_number}", [[
-                                new_title, new_description, new_category, new_species,
-                                new_country, new_risk, new_source
-                            ]])
-                            st.success("✅ Alert updated successfully!")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"❌ Failed to update alert: {e}")
-
-def display_alert_submission_form():
-    if "user" in st.session_state:
-        with st.expander("**Submit New Alert**", expanded=False):
-            st.markdown("Use this form to create a new wildlife trafficking alert. Your alert will be publicly visible once submitted.")
-
-            # Campos controlados via session_state
-            field_keys = {
-                "title": "alert_title_input",
-                "description": "alert_description_input",
-                "category": "alert_category_select",
-                "risk_level": "alert_risk_select",
-                "species": "alert_species_input",
-                "country": "alert_country_input",
-                "source_link": "alert_source_input"
-            }
-
-            # Inicializa os campos se não existirem
-            for key, session_key in field_keys.items():
-                st.session_state.setdefault(session_key, "")
-
-            categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
-            if st.session_state[field_keys["category"]] not in categories:
-                st.session_state[field_keys["category"]] = categories[0]
-
-            risk_levels = ["Low", "Medium", "High"]
-            if st.session_state[field_keys["risk_level"]] not in risk_levels:
-                st.session_state[field_keys["risk_level"]] = risk_levels[0]
-
-            with st.form("alert_form"):
-                title = st.text_input("Alert Title", key=field_keys["title"])
-                description = st.text_area("Description of the Alert", key=field_keys["description"])
-                category = st.selectbox("Category", categories, key=field_keys["category"])
-                risk_level = st.selectbox("Risk Level", risk_levels, key=field_keys["risk_level"])
-                species = st.text_input("Species involved (optional)", key=field_keys["species"])
-                country = st.text_input("Country or Region (optional)", key=field_keys["country"])
-                source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
-                public = True
-
-                submit = st.form_submit_button("📤 Submit Alert")
-
-            if submit:
-                if not title or not description:
-                    st.warning("Title and Description are required.")
-                else:
-                    alert_id = str(uuid4())
-                    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-                    alert_row = [
-                        alert_id,
-                        created_at,
-                        st.session_state["user"],
-                        title,
-                        description,
-                        category,
-                        species,
-                        country,
-                        risk_level,
-                        source_link,
-                        str(public),
-                        "",
-                        ""
-                    ]
-
-                    try:
-                        worksheet_alerts = sheets.worksheet("Alerts")
-                        worksheet_alerts.append_row(alert_row, value_input_option="USER_ENTERED")
-                        st.success("✅ Alert submitted successfully!")
-                        st.balloons()
-
-                        # Limpa os valores do formulário no session_state
-                        for k in field_keys.values():
-                            if k in st.session_state:
-                                del st.session_state[k]
-
-                        # Atualiza a interface (reseta o formulário visual)
-                        st.rerun()
-
-                    except Exception as e:
-                        st.error(f"❌ Failed to submit alert: {e}")
 
 # --- DASHBOARD RESUMO INICIAL (sem login, baseado no Google Sheets) ---
 if uploaded_file is None and not st.session_state.get("user"):
@@ -1391,12 +1163,134 @@ def get_worksheet(sheet_name="Aurum_data"):
     sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
     return sh.worksheet(sheet_name)
 
-if uploaded_file is None and not st.session_state.get("user"):
-    display_public_alerts_section(SHEET_ID)
+# --- Função para carregar dados de qualquer aba ---
+def load_sheet_data(sheet_name):
+    try:
+        worksheet = sheets.worksheet(sheet_name)
+        records = worksheet.get_all_records()
+        df = pd.DataFrame(records)
+        return df
+    except Exception as e:
+        st.error(f"❌ Failed to load data from sheet '{sheet_name}': {e}")
+        return pd.DataFrame()
+
+# --- Interface para submissão de alertas ---
+def display_alert_submission_form(sheet_id):
+    st.subheader("📢 Submit New Alert")
+    
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+    client = gspread.authorize(credentials)
+    sheets = client.open_by_key(sheet_id)
+
+    field_keys = {
+        "title": "alert_title_input",
+        "description": "alert_description_input",
+        "category": "alert_category_select",
+        "risk_level": "alert_risk_select",
+        "species": "alert_species_input",
+        "country": "alert_country_input",
+        "source_link": "alert_source_input"
+    }
+
+    for key in field_keys.values():
+        st.session_state.setdefault(key, "")
+
+    categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
+    risk_levels = ["Low", "Medium", "High"]
+
+    with st.form("alert_form"):
+        title = st.text_input("Alert Title", key=field_keys["title"])
+        description = st.text_area("Alert Description", key=field_keys["description"])
+        category = st.selectbox("Category", categories, key=field_keys["category"])
+        risk_level = st.selectbox("Risk Level", risk_levels, key=field_keys["risk_level"])
+        species = st.text_input("Species involved (optional)", key=field_keys["species"])
+        country = st.text_input("Country or Region (optional)", key=field_keys["country"])
+        source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
+        public = True
+
+        submitted = st.form_submit_button("📤 Submit Alert")
+
+    if submitted:
+        if not title or not description:
+            st.warning("Title and Description are required.")
+        else:
+            alert_id = str(uuid4())
+            created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            alert_row = [
+                alert_id, created_at, st.session_state["user"], title, description,
+                category, species, country, risk_level, source_link, str(public), "", ""
+            ]
+
+            try:
+                worksheet = sheets.worksheet("Alerts")
+                worksheet.append_row(alert_row, value_input_option="USER_ENTERED")
+                st.success("✅ Alert submitted successfully!")
+                st.balloons()
+                for k in field_keys.values():
+                    if k in st.session_state:
+                        del st.session_state[k]
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ Failed to submit alert: {e}")
+
+# --- Interface para edição de alertas ---
+def display_alert_update_tab(sheet_id):
+    st.subheader("🔄 Update Your Alert")
+
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+    client = gspread.authorize(credentials)
+    sheets = client.open_by_key(sheet_id)
+
+    try:
+        worksheet = sheets.worksheet("Alerts")
+        records = worksheet.get_all_records()
+        df_alerts = pd.DataFrame(records)
+        df_user = df_alerts[df_alerts["Author"] == st.session_state["user"]]
+
+        if df_user.empty:
+            st.info("You haven't submitted any alerts yet.")
+            return
+
+        selected_alert = st.selectbox("Select an alert to edit:", df_user["Title"].tolist())
+
+        if selected_alert:
+            current_row = df_user[df_user["Title"] == selected_alert].iloc[0]
+            row_index = df_alerts[df_alerts["ID"] == current_row["ID"]].index[0] + 2
+
+            categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
+            risk_levels = ["Low", "Medium", "High"]
+
+            with st.form("edit_alert_form"):
+                new_title = st.text_input("Title", value=current_row["Title"])
+                new_description = st.text_area("Description", value=current_row["Description"])
+                new_category = st.selectbox("Category", categories, index=categories.index(current_row["Category"]))
+                new_risk = st.selectbox("Risk Level", risk_levels, index=risk_levels.index(current_row["Risk Level"]))
+                new_species = st.text_input("Species", value=current_row["Species"])
+                new_country = st.text_input("Country", value=current_row["Country"])
+                new_source = st.text_input("Source Link", value=current_row["Source Link"])
+                submitted_edit = st.form_submit_button("💾 Save Changes")
+
+            if submitted_edit:
+                try:
+                    worksheet.update(f"D{row_index}:K{row_index}", [[
+                        new_title, new_description, new_category, new_species,
+                        new_country, new_risk, new_source
+                    ]])
+                    st.success("✅ Alert updated successfully!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Failed to update alert: {e}")
+
+    except Exception as e:
+        st.error(f"❌ Could not load alerts: {e}")
 
 if "user" in st.session_state:
-    display_alert_submission_form()
-
+    display_alert_submission_form(SHEET_ID)
+    with st.expander("🛠️ Update My Alerts", expanded=False):
+        display_alert_update_tab(SHEET_ID)
+    
 if "user" in st.session_state:
     with st.expander("**Submit New Case**", expanded=False):
         # Chaves dos campos para controlar o form
