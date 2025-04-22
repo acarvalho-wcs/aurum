@@ -162,7 +162,6 @@ def display_alert_submission_form():
         with st.expander("📢 Submit New Alert", expanded=False):
             st.markdown("Use this form to create a new wildlife trafficking alert. Your alert will be publicly visible once submitted.")
 
-            # Field keys for state cleanup
             field_keys = {
                 "title": "alert_title_input",
                 "description": "alert_description_input",
@@ -173,6 +172,10 @@ def display_alert_submission_form():
                 "source_link": "alert_source_input"
             }
 
+            # Show clean button if flagged
+            show_clean_button = st.session_state.get("alert_submitted", False)
+
+            # Form start
             with st.form("alert_form"):
                 title = st.text_input("Alert Title", key=field_keys["title"])
                 description = st.text_area("Description of the Alert", key=field_keys["description"])
@@ -183,8 +186,14 @@ def display_alert_submission_form():
                 source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
                 public = True
 
-                submit = st.form_submit_button("📤 Submit Alert")
+                # Two buttons in a row
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    submit = st.form_submit_button("📤 Submit Alert")
+                with col2:
+                    clean_form = st.form_submit_button("🧹 Clean Form", disabled=not show_clean_button)
 
+            # On submit
             if submit:
                 if not title or not description:
                     st.warning("Title and Description are required.")
@@ -194,9 +203,9 @@ def display_alert_submission_form():
                     created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
                     alert_row = [
-                        alert_id,                # Alert ID
-                        created_at,              # Created At
-                        st.session_state["user"],# Created By
+                        alert_id,
+                        created_at,
+                        st.session_state["user"],
                         title,
                         description,
                         category,
@@ -205,8 +214,8 @@ def display_alert_submission_form():
                         risk_level,
                         source_link,
                         str(public),
-                        "",                      # Edited By
-                        ""                       # Last Modified
+                        "",
+                        ""
                     ]
 
                     try:
@@ -215,14 +224,17 @@ def display_alert_submission_form():
                         st.success("✅ Alert submitted successfully!")
                         st.balloons()
 
-                        # Clean form fields
-                        for k in field_keys.values():
-                            st.session_state.pop(k, None)
-
-                        st.rerun()
+                        st.session_state["alert_submitted"] = True
 
                     except Exception as e:
                         st.error(f"❌ Failed to submit alert: {e}")
+
+            # On Clean Form click
+            if clean_form:
+                for key in field_keys.values():
+                    st.session_state[key] = ""
+                st.session_state["alert_submitted"] = False
+                st.experimental_rerun()
 
 # --- DASHBOARD RESUMO INICIAL (sem login, baseado no Google Sheets) ---
 if uploaded_file is None and not st.session_state.get("user"):
