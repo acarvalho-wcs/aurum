@@ -1578,7 +1578,7 @@ if "user" in st.session_state:
 
 def run_chatbot():
     st.title("🔎 Aurum Investigative Assistant")
-    openai.api_key = st.secrets["OPENAI_API_KEY"]
+    openai.api_key = st.secrets["openai"]["OPENAI_API_KEY"]
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
