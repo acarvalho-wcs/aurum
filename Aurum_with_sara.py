@@ -76,6 +76,18 @@ users_df = pd.DataFrame(users_ws.get_all_records())
 def get_worksheet(name="Aurum_data"):
     return sheets.worksheet(name)
 
+# --- Função para carregar dados de qualquer aba ---
+def load_sheet_data(sheet_name="Alerts"):
+    try:
+        worksheet = sheets.worksheet(sheet_name)
+        records = worksheet.get_all_records()
+        df = pd.DataFrame(records)
+        return df
+    except Exception as e:
+        st.error(f"❌ Failed to load data from sheet '{sheet_name}': {e}")
+        return pd.DataFrame()
+
+# --- Mensagem inicial caso nenhum arquivo tenha sido enviado e usuário não esteja logado ---
 if uploaded_file is None:
     st.markdown("""
     **Aurum** is a criminal intelligence platform developed to support the monitoring and investigation of **wildlife trafficking**.
@@ -85,7 +97,93 @@ if uploaded_file is None:
     For the full Aurum experience, please request access or log in if you already have an account.  
     Click **About Aurum** to learn more about each analysis module.
     """)
-    
+
+def display_public_alerts_section(sheet_id):
+    st.markdown("## 📢 Wildlife Trafficking Alerts")
+    st.info("These alerts were submitted by logged-in users and highlight patterns, risks, and urgent issues. Everyone can see them.")
+
+    df_alerts = load_sheet_data("Alerts")
+    df_alerts = df_alerts[df_alerts["Public"] == True]
+    df_alerts = df_alerts.sort_values("Created At", ascending=False)
+
+    if df_alerts.empty:
+        st.warning("No public alerts available.")
+        return
+
+    # Filters
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        category = st.selectbox("Filter by Category", ["All"] + sorted(df_alerts["Category"].dropna().unique().tolist()))
+    with col2:
+        risk = st.selectbox("Filter by Risk", ["All", "Low", "Medium", "High"])
+    with col3:
+        species = st.text_input("Search by Species")
+    with col4:
+        country = st.text_input("Search by Country")
+
+    if category != "All":
+        df_alerts = df_alerts[df_alerts["Category"] == category]
+    if risk != "All":
+        df_alerts = df_alerts[df_alerts["Risk Level"] == risk]
+    if species:
+        df_alerts = df_alerts[df_alerts["Species"].str.contains(species, case=False, na=False)]
+    if country:
+        df_alerts = df_alerts[df_alerts["Country"].str.contains(country, case=False, na=False)]
+
+    # Display
+    for _, row in df_alerts.iterrows():
+        with st.expander(f"🚨 {row['Title']} ({row['Risk Level']})"):
+            st.markdown(f"**Category:** {row['Category']}")
+            st.markdown(f"**Date:** {row['Created At']}")
+            if pd.notna(row.get("Species")):
+                st.markdown(f"**Species:** {row['Species']}")
+            if pd.notna(row.get("Country")):
+                st.markdown(f"**Country:** {row['Country']}")
+            st.markdown(f"**Description:** {row['Description']}")
+            if pd.notna(row.get("Source Link")):
+                st.markdown(f"[🔗 Source]({row['Source Link']})", unsafe_allow_html=True)
+
+def display_alert_submission_form():
+    if "user" in st.session_state:
+        st.markdown("## 📝 Submit a New Alert")
+        with st.form("alert_form"):
+            title = st.text_input("Alert Title")
+            description = st.text_area("Description of the Alert")
+            category = st.selectbox("Category", ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"])
+            risk_level = st.selectbox("Risk Level", ["Low", "Medium", "High"])
+            species = st.text_input("Species involved (optional)")
+            country = st.text_input("Country or Region (optional)")
+            source_link = st.text_input("Source Link (optional)")
+            public = True  # all alerts are public by design
+
+            submit = st.form_submit_button("📤 Submit Alert")
+
+        if submit:
+            if not title or not description:
+                st.warning("Title and Description are required.")
+            else:
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                alert_row = [
+                    timestamp,  # Created At
+                    st.session_state["user"],  # Created By
+                    title,
+                    description,
+                    category,
+                    species,
+                    country,
+                    risk_level,
+                    source_link,
+                    str(public)
+                ]
+
+                try:
+                    worksheet_alerts = sheets.worksheet("Alerts")
+                    worksheet_alerts.append_row(alert_row, value_input_option="USER_ENTERED")
+                    st.success("✅ Alert submitted successfully!")
+                    st.balloons()
+                except Exception as e:
+                    st.error(f"❌ Failed to submit alert: {e}")
+
 # --- DASHBOARD RESUMO INICIAL (sem login, baseado no Google Sheets) ---
 if uploaded_file is None and not st.session_state.get("user"):
     try:
@@ -1419,6 +1517,9 @@ if "user" in st.session_state:
 
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
+
+if "user" in st.session_state:
+    display_alert_submission_form()
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Aurum: A Platform for Criminal Intelligence in Wildlife Trafficking. Wildlife Conservation Society, 2025.")
