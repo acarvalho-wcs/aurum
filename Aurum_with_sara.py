@@ -1248,7 +1248,7 @@ def display_alert_update_tab(sheet_id):
             worksheet = sheets.worksheet("Alerts")
             records = worksheet.get_all_records()
             df_alerts = pd.DataFrame(records)
-            df_user = df_alerts[df_alerts["Author"] == st.session_state["user"]]
+            df_user = df_alerts[df_alerts["Created By"] == st.session_state["user"]]
 
             if df_user.empty:
                 st.info("You haven't submitted any alerts yet.")
