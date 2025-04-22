@@ -150,7 +150,7 @@ def display_alert_submission_form():
         with st.expander("📢 Submit New Alert", expanded=False):
             st.markdown("Use this form to create a new wildlife trafficking alert. Your alert will be publicly visible once submitted.")
 
-            # Field keys for state cleanup
+            # Field keys for controlled state
             field_keys = {
                 "title": "alert_title_input",
                 "description": "alert_description_input",
@@ -161,6 +161,12 @@ def display_alert_submission_form():
                 "source_link": "alert_source_input"
             }
 
+            # --- Reset fields if flagged ---
+            if st.session_state.get("reset_alert_form"):
+                for k in field_keys.values():
+                    st.session_state.pop(k, None)
+                st.session_state.pop("reset_alert_form", None)
+
             with st.form("alert_form"):
                 title = st.text_input("Alert Title", key=field_keys["title"])
                 description = st.text_area("Description of the Alert", key=field_keys["description"])
@@ -169,7 +175,7 @@ def display_alert_submission_form():
                 species = st.text_input("Species involved (optional)", key=field_keys["species"])
                 country = st.text_input("Country or Region (optional)", key=field_keys["country"])
                 source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
-                public = True
+                public = True  # Default: always public for now
 
                 submit = st.form_submit_button("📤 Submit Alert")
 
@@ -182,19 +188,19 @@ def display_alert_submission_form():
                     created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
                     alert_row = [
-                        alert_id,                # Alert ID
-                        created_at,              # Created At
-                        st.session_state["user"],# Created By
-                        title,
-                        description,
-                        category,
-                        species,
-                        country,
-                        risk_level,
-                        source_link,
-                        str(public),
-                        "",                      # Edited By
-                        ""                       # Last Modified
+                        alert_id,                   # A: Alert ID
+                        created_at,                 # B: Created At
+                        st.session_state["user"],   # C: Created By
+                        title,                      # D
+                        description,                # E
+                        category,                   # F
+                        species,                    # G
+                        country,                    # H
+                        risk_level,                 # I
+                        source_link,                # J
+                        str(public),                # K: Public
+                        "",                         # L: Edited By
+                        ""                          # M: Last Modified
                     ]
 
                     try:
@@ -203,10 +209,8 @@ def display_alert_submission_form():
                         st.success("✅ Alert submitted successfully!")
                         st.balloons()
 
-                        # Clean form fields
-                        for k in field_keys.values():
-                            st.session_state.pop(k, None)
-
+                        # Trigger reset for next run
+                        st.session_state["reset_alert_form"] = True
                         st.rerun()
 
                     except Exception as e:
