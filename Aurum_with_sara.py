@@ -1,4 +1,5 @@
 import streamlit as st
+import openai
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
@@ -1575,10 +1576,6 @@ if "user" in st.session_state:
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
 
-# 1. Import
-import openai
-
-# 2. Define the chatbot function first
 def run_chatbot():
     st.title("🔎 Aurum Investigative Assistant")
     openai.api_key = st.secrets["OPENAI_API_KEY"]
@@ -1628,7 +1625,6 @@ def run_chatbot():
 
         st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
-# 3. Sidebar menu
 menu = st.sidebar.selectbox("Choose a functionality", ["Analysis", "Cases", "Alerts", "Chatbot"])
 if menu == "Chatbot":
     run_chatbot()
