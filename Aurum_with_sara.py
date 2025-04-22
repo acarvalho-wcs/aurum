@@ -103,6 +103,12 @@ def display_public_alerts_section(sheet_id):
     st.markdown("## Wildlife Trafficking Alerts")
     st.info("These alerts were submitted by logged-in users and highlight patterns, risks, and urgent issues. Everyone can see them.")
 
+    # 🔐 Garante acesso ao Google Sheets
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+    client = gspread.authorize(credentials)
+    sheets = client.open_by_key(sheet_id)
+
     df_alerts = load_sheet_data("Alerts")
 
     # Safeguard: avoid KeyError if empty or missing column
