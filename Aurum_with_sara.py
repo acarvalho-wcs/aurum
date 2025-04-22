@@ -1054,6 +1054,7 @@ if export_html and df_selected is not None:
         mime="text/html"
     )
 
+# --- ALERTAS PÚBLICOS (visível para todos, inclusive sem login) ---
 def display_public_alerts_section(sheet_id):
     st.markdown("## 🌍 Wildlife Alert Board")
     st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
@@ -1075,20 +1076,24 @@ def display_public_alerts_section(sheet_id):
             st.info("No public alerts available.")
             return
 
+        # Ordena por data de criação
         df_alerts = df_alerts.sort_values("Created At", ascending=False)
 
+        # Exibe os alertas em formato de colapsável
         for _, row in df_alerts.iterrows():
             with st.expander(f"🚨 {row['Title']} ({row['Risk Level']})", expanded=False):
                 st.markdown(f"**Description:** {row['Description']}")
                 st.markdown(f"**Category:** {row['Category']}")
                 if row.get("Species"): st.markdown(f"**Species:** {row['Species']}")
                 if row.get("Country"): st.markdown(f"**Country:** {row['Country']}")
-                if row.get("Source Link"): st.markdown(f"[🔗 Source]({row['Source Link']})", unsafe_allow_html=True)
-                st.caption(f"Submitted on {row['Created At']} by *{row['Created By']}*")
+                if row.get("Source Link"): 
+                    st.markdown(f"[🔗 Source]({row['Source Link']})", unsafe_allow_html=True)
+                st.caption(f"📅 Submitted on {row['Created At']} by *{row['Created By']}*")
 
     except Exception as e:
         st.error(f"❌ Failed to load public alerts: {e}")
 
+# Executa antes do login
 display_public_alerts_section(SHEET_ID)
 
 # --- LOGIN ---
