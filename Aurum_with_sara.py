@@ -1177,7 +1177,7 @@ def load_sheet_data(sheet_name):
 # --- Interface para submissão de alertas ---
 def display_alert_submission_form(sheet_id):
     st.subheader("📢 Submit New Alert")
-    
+
     scope = ["https://www.googleapis.com/auth/spreadsheets"]
     credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
     client = gspread.authorize(credentials)
@@ -1193,11 +1193,16 @@ def display_alert_submission_form(sheet_id):
         "source_link": "alert_source_input"
     }
 
-    for key in field_keys.values():
-        st.session_state.setdefault(key, "")
-
     categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
     risk_levels = ["Low", "Medium", "High"]
+
+    # Corrigir valores default para campos do tipo selectbox
+    st.session_state.setdefault(field_keys["category"], categories[0])
+    st.session_state.setdefault(field_keys["risk_level"], risk_levels[0])
+
+    for key in field_keys:
+        if key not in ["category", "risk_level"]:
+            st.session_state.setdefault(field_keys[key], "")
 
     with st.form("alert_form"):
         title = st.text_input("Alert Title", key=field_keys["title"])
