@@ -1467,16 +1467,16 @@ if "user" in st.session_state:
     st.subheader("Upload Multiple Cases (Batch Mode)")
     uploaded_file_batch = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"], key="uploaded_file_batch")
 
-    if uploaded_file is not None:
+    if uploaded_file_batch is not None:
         st.info("📄 File uploaded. Click the button below to confirm batch submission.")
         submit_batch = st.button("📥 **Submit Batch Upload**")
 
         if submit_batch:
             try:
-                if uploaded_file.name.endswith(".csv"):
-                    batch_data = pd.read_csv(uploaded_file)
+                if uploaded_file_batch.name.endswith(".csv"):
+                    batch_data = pd.read_csv(uploaded_file_batch)
                 else:
-                    batch_data = pd.read_excel(uploaded_file)
+                    batch_data = pd.read_excel(uploaded_file_batch)
 
                 # Normaliza os nomes das colunas
                 batch_data.columns = (
@@ -1539,8 +1539,8 @@ if "user" in st.session_state:
                     worksheet.append_rows(rows_to_append, value_input_option="USER_ENTERED")
 
                     st.success("✅ Batch upload completed successfully!")
-                    if "uploaded_file" in st.session_state:
-                        del st.session_state["uploaded_file"]
+                    if "uploaded_file_batch" in st.session_state:
+                        del st.session_state["uploaded_file_batch"]
                         
                     st.rerun()
 
