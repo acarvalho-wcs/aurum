@@ -177,11 +177,19 @@ def display_alert_submission_form():
             for key, session_key in field_keys.items():
                 st.session_state.setdefault(session_key, "")
 
+            categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
+            if st.session_state[field_keys["category"]] not in categories:
+                st.session_state[field_keys["category"]] = categories[0]
+
+            risk_levels = ["Low", "Medium", "High"]
+            if st.session_state[field_keys["risk_level"]] not in risk_levels:
+                st.session_state[field_keys["risk_level"]] = risk_levels[0]
+
             with st.form("alert_form"):
                 title = st.text_input("Alert Title", key=field_keys["title"])
                 description = st.text_area("Description of the Alert", key=field_keys["description"])
-                category = st.selectbox("Category", ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"], key=field_keys["category"])
-                risk_level = st.selectbox("Risk Level", ["Low", "Medium", "High"], key=field_keys["risk_level"])
+                category = st.selectbox("Category", categories, key=field_keys["category"])
+                risk_level = st.selectbox("Risk Level", risk_levels, key=field_keys["risk_level"])
                 species = st.text_input("Species involved (optional)", key=field_keys["species"])
                 country = st.text_input("Country or Region (optional)", key=field_keys["country"])
                 source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
