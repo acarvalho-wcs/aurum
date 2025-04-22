@@ -56,7 +56,6 @@ def log_app_open():
 log_app_open()
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Aurum Dashboard", layout="wide")
 st.title("Aurum - Criminal Intelligence in Wildlife Trafficking")
 
 # Upload do arquivo
