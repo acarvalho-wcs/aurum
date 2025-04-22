@@ -8,7 +8,7 @@ plotly
 networkx
 openpyxl
 streamlit
-openai
+openai>=1.0.0
 streamlit-chat
 gspread
 google-auth
