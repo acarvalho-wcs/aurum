@@ -29,10 +29,10 @@ def log_app_open():
     try:
         now = datetime.now().isoformat()
 
-        # Get approximate location without exposing IP
-        location = requests.get('https://ipapi.co/json/').json()
+        # Novo endpoint com fallback mais confiável
+        location = requests.get('https://ipinfo.io/json').json()
         city = location.get("city", "Unknown")
-        country = location.get("country_name", "Unknown")
+        country = location.get("country", "Unknown")
 
         scopes = ["https://www.googleapis.com/auth/spreadsheets"]
         creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scopes)
