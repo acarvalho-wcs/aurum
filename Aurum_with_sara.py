@@ -159,7 +159,7 @@ def display_public_alerts_section(sheet_id):
 
 def display_alert_submission_form():
     if "user" in st.session_state:
-        with st.expander("Submit New Alert", expanded=False):
+        with st.expander("**Submit New Alert**", expanded=False):
             st.markdown("Use this form to create a new wildlife trafficking alert. Your alert will be publicly visible once submitted.")
 
             # Campos controlados via session_state
@@ -1355,7 +1355,7 @@ if "user" in st.session_state:
     display_alert_submission_form()
 
 if "user" in st.session_state:
-    with st.expander("Submit New Case to Aurum", expanded=False):
+    with st.expander("**Submit New Case**", expanded=False):
         # Chaves dos campos para controlar o form
         field_keys = {
             "case_id": "case_id_input",
@@ -1420,7 +1420,7 @@ if "user" in st.session_state:
             # Força a atualização para limpar o form visualmente
             st.rerun()
             
-    with st.expander("Edit My Cases", expanded=False):
+    with st.expander("**Edit My Cases**", expanded=False):
         try:
             worksheet = get_worksheet()
             records = worksheet.get_all_records()
