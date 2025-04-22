@@ -16,7 +16,6 @@ from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
-import bcrypt
 import os
 from uuid import uuid4
 
@@ -1575,6 +1574,64 @@ if "user" in st.session_state:
 
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
+
+# 1. Import
+import openai
+
+# 2. Define the chatbot function first
+def run_chatbot():
+    st.title("🔎 Aurum Investigative Assistant")
+    openai.api_key = st.secrets["OPENAI_API_KEY"]
+
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    if st.button("🔄 New conversation"):
+        st.session_state.chat_history = []
+        st.experimental_rerun()
+
+    for msg in st.session_state.chat_history:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    prompt = st.chat_input("Ask something about the data or analyses...")
+
+    if prompt:
+        st.session_state.chat_history.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.chat_message("assistant"):
+            with st.spinner("Analyzing with GPT-3.5..."):
+
+                context = ""
+                if "aurum_outputs" in st.session_state:
+                    context += f"\n\nLoaded data:\n{st.session_state['aurum_outputs']}"
+
+                messages = [
+                    {"role": "system", "content": (
+                        "You are a criminal analyst specializing in wildlife trafficking. "
+                        "Help the user interpret analyses, identify patterns, and assess risks based on the available data."
+                    )},
+                    *st.session_state.chat_history,
+                    {"role": "user", "content": f"{prompt}\n\n{context}"}
+                ]
+
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=messages,
+                    temperature=0.7
+                )
+
+                answer = response.choices[0].message.content
+                st.markdown(answer)
+
+        st.session_state.chat_history.append({"role": "assistant", "content": answer})
+
+# 3. Sidebar menu
+menu = st.sidebar.selectbox("Choose a functionality", ["Analysis", "Cases", "Alerts", "Chatbot"])
+if menu == "Chatbot":
+    run_chatbot()
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Aurum: A Platform for Criminal Intelligence in Wildlife Trafficking. Wildlife Conservation Society, 2025.")
