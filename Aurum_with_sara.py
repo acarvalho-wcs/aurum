@@ -1581,7 +1581,7 @@ def run_chatbot():
     st.title("🔎 Aurum Investigative Assistant")
 
     # Use the updated OpenAI v1 SDK
-    client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    client = openai.OpenAI(api_key=st.secrets["openai"]["OPENAI_API_KEY"])
 
     # Initialize chat history
     if "chat_history" not in st.session_state:
