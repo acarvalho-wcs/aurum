@@ -1576,31 +1576,41 @@ if "user" in st.session_state:
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
 
+# Main function for the investigative chatbot
 def run_chatbot():
     st.title("🔎 Aurum Investigative Assistant")
-    openai.api_key = st.secrets["openai"]["OPENAI_API_KEY"]
 
+    # Use the updated OpenAI v1 SDK
+    client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+    # Initialize chat history
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
+    # Button to start a new conversation
     if st.button("🔄 New conversation"):
         st.session_state.chat_history = []
         st.experimental_rerun()
 
+    # Display previous chat history
     for msg in st.session_state.chat_history:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
+    # Chat input field
     prompt = st.chat_input("Ask something about the data or analyses...")
 
     if prompt:
+        # Add user message to history
         st.session_state.chat_history.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
+        # Generate response with GPT-3.5
         with st.chat_message("assistant"):
             with st.spinner("Analyzing with GPT-3.5..."):
 
+                # Inject Aurum analysis context if available
                 context = ""
                 if "aurum_outputs" in st.session_state:
                     context += f"\n\nLoaded data:\n{st.session_state['aurum_outputs']}"
@@ -1614,7 +1624,7 @@ def run_chatbot():
                     {"role": "user", "content": f"{prompt}\n\n{context}"}
                 ]
 
-                response = openai.ChatCompletion.create(
+                response = client.chat.completions.create(
                     model="gpt-3.5-turbo",
                     messages=messages,
                     temperature=0.7
@@ -1623,6 +1633,7 @@ def run_chatbot():
                 answer = response.choices[0].message.content
                 st.markdown(answer)
 
+        # Add assistant message to history
         st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
 menu = st.sidebar.selectbox("Choose a functionality", ["Analysis", "Cases", "Alerts", "Chatbot"])
