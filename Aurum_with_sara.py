@@ -146,9 +146,13 @@ def display_public_alerts_section(sheet_id):
 
     # Display
     for _, row in df_alerts.iterrows():
+        # Garante que cada alerta tem um ID válido
+        alert_id = row.get("ID") or str(uuid4())
+
+        # Carrega atualizações vinculadas a esse alerta
         try:
             df_updates = load_sheet_data("Alert Updates")
-            updates = df_updates[df_updates["Alert ID"] == row["ID"]] if "ID" in row else pd.DataFrame()
+            updates = df_updates[df_updates["Alert ID"] == alert_id] if "Alert ID" in df_updates.columns else pd.DataFrame()
         except:
             updates = pd.DataFrame()
 
@@ -173,14 +177,14 @@ def display_public_alerts_section(sheet_id):
 
             # Formulário de nova atualização (somente usuários logados)
             if "user" in st.session_state:
-                with st.form(f"update_form_{row['ID']}"):
+                with st.form(f"update_form_{alert_id}"):
                     st.markdown("**Add an update to this alert:**")
-                    new_update = st.text_area("Update description", key=f"update_input_{row['ID']}")
+                    new_update = st.text_area("Update description", key=f"update_input_{alert_id}")
                     submitted_update = st.form_submit_button("➕ Add Update")
 
                     if submitted_update and new_update.strip():
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        update_row = [row["ID"], timestamp, st.session_state["user"], new_update.strip()]
+                        update_row = [alert_id, timestamp, st.session_state["user"], new_update.strip()]
                         try:
                             update_ws = sheets.worksheet("Alert Updates")
                         except gspread.exceptions.WorksheetNotFound:
