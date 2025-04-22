@@ -1518,6 +1518,9 @@ if "user" in st.session_state:
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
 
+if uploaded_file is None and not st.session_state.get("user"):
+    display_public_alerts_section(SHEET_ID)
+
 if "user" in st.session_state:
     display_alert_submission_form()
 
