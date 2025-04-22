@@ -93,7 +93,7 @@ def display_public_alerts_section(sheet_id):
     with st.container():
         st.markdown("## 🌍 Wildlife Alert Board")
         st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
-        st.markdown("### 📢 Public Wildlife Trafficking Alerts")
+        st.markdown("### Public Wildlife Trafficking Alerts")
 
         # Acesso ao Google Sheets
         scope = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -116,7 +116,7 @@ def display_public_alerts_section(sheet_id):
 
             # Exibe os alertas em formato de colapsável
             for _, row in df_alerts.iterrows():
-                with st.expander(f"🚨 {row['Title']} ({row['Risk Level']})", expanded=False):
+                with st.expander(f"🚨 {row['**Title**']} ({row['Risk Level']})", expanded=False):
                     st.markdown(f"**Description:** {row['Description']}")
                     st.markdown(f"**Category:** {row['Category']}")
                     if row.get("Species"): st.markdown(f"**Species:** {row['Species']}")
