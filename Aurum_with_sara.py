@@ -1258,7 +1258,7 @@ def display_alert_update_tab(sheet_id):
 
             if selected_alert:
                 current_row = df_user[df_user["Title"] == selected_alert].iloc[0]
-                row_index = df_alerts[df_alerts["ID"] == current_row["ID"]].index[0] + 2
+                row_index = df_alerts[df_alerts["Alert ID"] == current_row["Alert ID"]].index[0] + 2
 
                 categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
                 risk_levels = ["Low", "Medium", "High"]
