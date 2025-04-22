@@ -1173,124 +1173,129 @@ def load_sheet_data(sheet_name, sheets):
         st.error(f"❌ Failed to load data from sheet '{sheet_name}': {e}")
         return pd.DataFrame()
 
-# --- Colunas superiores: Submit + Update de Alertas ---
+# --- Interface em colunas: Alertas (superior) e Casos (inferior) ---
 if "user" in st.session_state:
+    # --- Colunas superiores: Alertas ---
     col1, col2 = st.columns(2)
+
     with col1:
+        st.markdown("### 📢 Submit New Alert")
         display_alert_submission_form(SHEET_ID)
+
     with col2:
+        st.markdown("### 🔄 Update My Alerts")
         display_alert_update_timeline(SHEET_ID)
 
-# --- Colunas inferiores: Submit + Editar Casos ---
-if "user" in st.session_state:
+    # --- Colunas inferiores: Casos ---
     col3, col4 = st.columns(2)
+
     with col3:
-        with st.expander("**Submit New Case**", expanded=False):
-            # Chaves dos campos para controlar o form
-            field_keys = {
-                "case_id": "case_id_input",
-                "n_seized": "n_seized_input",
-                "year": "year_input",
-                "country": "country_input",
-                "seizure_status": "seizure_status_input",
-                "transit": "transit_input",
-                "notes": "notes_input"
-            }
+        st.markdown("### 📂 Submit New Case")
+        # Chaves dos campos para controlar o form
+        field_keys = {
+            "case_id": "case_id_input",
+            "n_seized": "n_seized_input",
+            "year": "year_input",
+            "country": "country_input",
+            "seizure_status": "seizure_status_input",
+            "transit": "transit_input",
+            "notes": "notes_input"
+        }
 
-            default_values = {
-                "case_id": "",
-                "n_seized": "",
-                "year": 2024,
-                "country": "",
-                "seizure_status": "",
-                "transit": "",
-                "notes": ""
-            }
+        default_values = {
+            "case_id": "",
+            "n_seized": "",
+            "year": 2024,
+            "country": "",
+            "seizure_status": "",
+            "transit": "",
+            "notes": ""
+        }
 
-            for key, default in default_values.items():
-                st.session_state.setdefault(field_keys[key], default)
+        for key, default in default_values.items():
+            st.session_state.setdefault(field_keys[key], default)
 
-            with st.form("aurum_form"):
-                case_id = st.text_input("Case #", key=field_keys["case_id"])
-                seizure_country = st.text_input("Country of seizure or shipment")
-                n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)", key=field_keys["n_seized"])
-                year = st.number_input("Year", step=1, format="%d", min_value=1900, max_value=2100, key=field_keys["year"])
-                country = st.text_input("Country of offenders", key=field_keys["country"])
-                seizure_status = st.text_input("Seizure status", key=field_keys["seizure_status"])
-                transit = st.text_input("Transit feature", key=field_keys["transit"])
-                notes = st.text_area("Additional notes", key=field_keys["notes"])
+        with st.form("aurum_form"):
+            case_id = st.text_input("Case #", key=field_keys["case_id"])
+            seizure_country = st.text_input("Country of seizure or shipment")
+            n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)", key=field_keys["n_seized"])
+            year = st.number_input("Year", step=1, format="%d", min_value=1900, max_value=2100, key=field_keys["year"])
+            country = st.text_input("Country of offenders", key=field_keys["country"])
+            seizure_status = st.text_input("Seizure status", key=field_keys["seizure_status"])
+            transit = st.text_input("Transit feature", key=field_keys["transit"])
+            notes = st.text_area("Additional notes", key=field_keys["notes"])
 
-                submitted = st.form_submit_button("Submit Case")
+            submitted = st.form_submit_button("Submit Case")
 
-            if submitted:
-                new_row = [
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    case_id,
-                    seizure_country,
-                    n_seized,
-                    year,
-                    country,
-                    seizure_status,
-                    transit,
-                    notes,
-                    st.session_state["user"]
-                ]
+        if submitted:
+            new_row = [
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                case_id,
+                seizure_country,
+                n_seized,
+                year,
+                country,
+                seizure_status,
+                transit,
+                notes,
+                st.session_state["user"]
+            ]
 
-                worksheet = get_worksheet()
-                worksheet.append_row(new_row)
-                st.success("✅ Case submitted to Aurum successfully!")
+            worksheet = get_worksheet()
+            worksheet.append_row(new_row)
+            st.success("✅ Case submitted to Aurum successfully!")
 
-                for k in field_keys.values():
-                    if k in st.session_state:
-                        del st.session_state[k]
-                st.rerun()
+            for k in field_keys.values():
+                if k in st.session_state:
+                    del st.session_state[k]
+            st.rerun()
 
     with col4:
-        with st.expander("**Edit My Cases**", expanded=False):
-            try:
-                worksheet = get_worksheet()
-                records = worksheet.get_all_records()
-                df_user = pd.DataFrame(records)
-                df_user = df_user[df_user["Author"] == st.session_state["user"]]
+        st.markdown("### ✏️ Edit My Cases")
+        try:
+            worksheet = get_worksheet()
+            records = worksheet.get_all_records()
+            df_user = pd.DataFrame(records)
+            df_user = df_user[df_user["Author"] == st.session_state["user"]]
 
-                if df_user.empty:
-                    st.info("You haven't submitted any cases yet.")
-                else:
-                    selected_case = st.selectbox("Select a case to edit:", df_user["Case #"].unique())
-                    if selected_case:
-                        row_index = df_user[df_user["Case #"] == selected_case].index[0] + 2
-                        current_row = df_user.loc[df_user["Case #"] == selected_case].iloc[0]
+            if df_user.empty:
+                st.info("You haven't submitted any cases yet.")
+            else:
+                selected_case = st.selectbox("Select a case to edit:", df_user["Case #"].unique())
+                if selected_case:
+                    row_index = df_user[df_user["Case #"] == selected_case].index[0] + 2
+                    current_row = df_user.loc[df_user["Case #"] == selected_case].iloc[0]
 
-                        with st.form("edit_case_form"):
-                            new_case_id = st.text_input("Case #", value=current_row["Case #"])
-                            new_seizure_country = st.text_input("Country of seizure or shipment", value=current_row["Country of seizure or shipment"])
-                            new_n_seized = st.text_input("N seized specimens", value=current_row["N seized specimens"])
-                            new_year = st.number_input("Year", step=1, format="%d", value=int(current_row["Year"]))
-                            new_country = st.text_input("Country of offenders", value=current_row["Country of offenders"])
-                            new_status = st.text_input("Seizure status", value=current_row["Seizure status"])
-                            new_transit = st.text_input("Transit feature", value=current_row["Transit feature"])
-                            new_notes = st.text_area("Additional notes", value=current_row["Notes"])
+                    with st.form("edit_case_form"):
+                        new_case_id = st.text_input("Case #", value=current_row["Case #"])
+                        new_seizure_country = st.text_input("Country of seizure or shipment", value=current_row["Country of seizure or shipment"])
+                        new_n_seized = st.text_input("N seized specimens", value=current_row["N seized specimens"])
+                        new_year = st.number_input("Year", step=1, format="%d", value=int(current_row["Year"]))
+                        new_country = st.text_input("Country of offenders", value=current_row["Country of offenders"])
+                        new_status = st.text_input("Seizure status", value=current_row["Seizure status"])
+                        new_transit = st.text_input("Transit feature", value=current_row["Transit feature"])
+                        new_notes = st.text_area("Additional notes", value=current_row["Notes"])
 
-                            submitted_edit = st.form_submit_button("Save Changes")
+                        submitted_edit = st.form_submit_button("Save Changes")
 
-                        if submitted_edit:
-                            updated_row = [
-                                current_row["Timestamp"],
-                                new_case_id,
-                                new_seizure_country,
-                                new_n_seized,
-                                new_year,
-                                new_country,
-                                new_status,
-                                new_transit,
-                                new_notes,
-                                st.session_state["user"]
-                            ]
-                            worksheet.update(f"A{row_index}:J{row_index}", [updated_row])
-                            st.success("✅ Case updated successfully!")
-                            st.rerun()
-            except Exception as e:
-                st.error(f"❌ Failed to load or update your cases: {e}")
+                    if submitted_edit:
+                        updated_row = [
+                            current_row["Timestamp"],
+                            new_case_id,
+                            new_seizure_country,
+                            new_n_seized,
+                            new_year,
+                            new_country,
+                            new_status,
+                            new_transit,
+                            new_notes,
+                            st.session_state["user"]
+                        ]
+                        worksheet.update(f"A{row_index}:J{row_index}", [updated_row])
+                        st.success("✅ Case updated successfully!")
+                        st.rerun()
+        except Exception as e:
+            st.error(f"❌ Failed to load or update your cases: {e}")
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Aurum: A Platform for Criminal Intelligence in Wildlife Trafficking. Wildlife Conservation Society, 2025.")
