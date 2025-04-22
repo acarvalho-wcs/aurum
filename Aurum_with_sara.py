@@ -1285,12 +1285,7 @@ def display_alert_update_timeline(sheet_id):
                         st.rerun()
                     except Exception as e:
                         st.error(f"❌ Failed to add update: {e}")
-
-# --- Execução ---
-if "user" in st.session_state:
-    display_alert_submission_form(SHEET_ID)
-    display_alert_update_timeline(SHEET_ID)
-   
+  
 if "user" in st.session_state:
     with st.expander("**Submit New Case**", expanded=False):
         # Chaves dos campos para controlar o form
