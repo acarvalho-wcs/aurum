@@ -1291,23 +1291,23 @@ def display_alert_update_timeline(sheet_id):
 if "user" in st.session_state:
 
     # --- Colunas superiores: Alertas ---
-    st.markdown("### 🔔 Alert Management")
+    st.markdown("### Alert Management")
     col1, col2 = st.columns(2)
 
     with col1:
-        with st.expander("📢 Submit New Alert", expanded=False):
+        with st.expander("**Submit New Alert**", expanded=False):
             display_alert_submission_form(SHEET_ID)
 
     with col2:
-        with st.expander("🔄 Update My Alerts", expanded=False):
+        with st.expander("**Update My Alerts**", expanded=False):
             display_alert_update_timeline(SHEET_ID)
 
     # --- Colunas inferiores: Casos ---
-    st.markdown("### 🐾 Case Management")
+    st.markdown("### Case Management")
     col3, col4 = st.columns(2)
 
     with col3:
-        with st.expander("📥 Submit New Case", expanded=False):
+        with st.expander("**Submit New Case**", expanded=False):
             # Chaves dos campos para controlar o form
             field_keys = {
                 "case_id": "case_id_input",
@@ -1368,7 +1368,7 @@ if "user" in st.session_state:
                 st.rerun()
 
     with col4:
-        with st.expander("✏️ Edit My Cases", expanded=False):
+        with st.expander("**Edit My Cases**", expanded=False):
             try:
                 worksheet = get_worksheet()
                 records = worksheet.get_all_records()
