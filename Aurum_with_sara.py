@@ -18,6 +18,7 @@ from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 import bcrypt
 import os
+from uuid import uuid4
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Aurum Dashboard", layout="wide")
@@ -238,7 +239,6 @@ def display_alert_submission_form():
                 if not title or not description:
                     st.warning("Title and Description are required.")
                 else:
-                    from uuid import uuid4
                     alert_id = str(uuid4())
                     created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
