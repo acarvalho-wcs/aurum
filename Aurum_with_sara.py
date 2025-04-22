@@ -117,8 +117,14 @@ def display_public_alerts_section(sheet_id):
         return
 
     # Filter only public alerts
-    df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
-
+    if "user" in st.session_state:
+        df_alerts = df_alerts[
+            (df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE") |
+            (df_alerts["Author"] == st.session_state["user"])
+        ]
+    else:
+        df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
+    
     if df_alerts.empty:
         st.warning("No public alerts available.")
         return
@@ -152,6 +158,9 @@ def display_public_alerts_section(sheet_id):
         df_alerts = df_alerts[df_alerts["Country"] == country]
 
     # Display
+    categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
+    risk_levels = ["Low", "Medium", "High"]
+
     for _, row in df_alerts.iterrows():
         # Garante que cada alerta tem um ID válido
         alert_id = row.get("ID") or str(uuid4())
@@ -200,6 +209,32 @@ def display_public_alerts_section(sheet_id):
                         update_ws.append_row(update_row)
                         st.success("✅ Update added!")
                         st.rerun()
+
+            # Formulário de edição do alerta (somente autor)
+            if "user" in st.session_state and row["Author"] == st.session_state["user"]:
+                with st.expander("✏️ Edit your alert"):
+                    with st.form(f"edit_alert_form_{alert_id}"):
+                        new_title = st.text_input("Title", value=row["Title"])
+                        new_description = st.text_area("Description", value=row["Description"])
+                        new_category = st.selectbox("Category", categories, index=categories.index(row["Category"]) if row["Category"] in categories else 0)
+                        new_risk = st.selectbox("Risk Level", risk_levels, index=risk_levels.index(row["Risk Level"]) if row["Risk Level"] in risk_levels else 0)
+                        new_species = st.text_input("Species", value=row["Species"])
+                        new_country = st.text_input("Country", value=row["Country"])
+                        new_source = st.text_input("Source Link", value=row["Source Link"])
+                        submitted_edit = st.form_submit_button("💾 Save Changes")
+
+                    if submitted_edit:
+                        try:
+                            worksheet_alerts = sheets.worksheet("Alerts")
+                            row_number = df_alerts[df_alerts["ID"] == alert_id].index[0] + 2  # header + 1-indexed
+                            worksheet_alerts.update(f"D{row_number}:K{row_number}", [[
+                                new_title, new_description, new_category, new_species,
+                                new_country, new_risk, new_source
+                            ]])
+                            st.success("✅ Alert updated successfully!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Failed to update alert: {e}")
 
 def display_alert_submission_form():
     if "user" in st.session_state:
