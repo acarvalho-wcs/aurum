@@ -18,47 +18,13 @@ from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 import bcrypt
 import os
-import requests  # necessário para obter localização
-from PIL import Image
 
-# --- PAGE CONFIG (must be first Streamlit command) ---
+# --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Aurum Dashboard", layout="wide")
-
-# --- LOG APP OPENING ---
-def log_app_open():
-    try:
-        now = datetime.now().isoformat()
-
-        # Novo endpoint com fallback mais confiável
-        location = requests.get('https://ipinfo.io/json').json()
-        city = location.get("city", "Unknown")
-        country = location.get("country", "Unknown")
-
-        scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-        creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scopes)
-        client = gspread.authorize(creds)
-
-        sheet = client.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-
-        try:
-            worksheet = sheet.worksheet("App Open Logs")
-        except gspread.exceptions.WorksheetNotFound:
-            worksheet = sheet.add_worksheet(title="App Open Logs", rows="1000", cols="3")
-            worksheet.append_row(["Timestamp", "City", "Country"])
-
-        worksheet.append_row([now, city, country])
-
-    except Exception as e:
-        st.warning("⚠️ Failed to log app opening.")
-        print("Error logging app opening:", e)
-
-# Call logging function immediately after page config
-log_app_open()
-
-# --- HEADER ---
 st.title("Aurum - Criminal Intelligence in Wildlife Trafficking")
 
-# --- SIDEBAR HEADER ---
+# Upload do arquivo
+from PIL import Image
 logo = Image.open("logo.png")
 st.sidebar.image("logo.png", use_container_width=True)
 st.sidebar.markdown("## Welcome to Aurum")
