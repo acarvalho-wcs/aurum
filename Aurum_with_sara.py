@@ -1164,132 +1164,129 @@ def get_worksheet(sheet_name="Aurum_data"):
     return sh.worksheet(sheet_name)
 
 # --- Função para carregar dados de qualquer aba ---
-def load_sheet_data(sheet_name):
+def load_sheet_data(sheet_name, sheets):
     try:
         worksheet = sheets.worksheet(sheet_name)
         records = worksheet.get_all_records()
-        df = pd.DataFrame(records)
-        return df
+        return pd.DataFrame(records)
     except Exception as e:
         st.error(f"❌ Failed to load data from sheet '{sheet_name}': {e}")
         return pd.DataFrame()
 
 # --- Interface para submissão de alertas ---
 def display_alert_submission_form(sheet_id):
-    st.subheader("📢 Submit New Alert")
+    with st.expander("📢 Submit New Alert", expanded=False):
+        scope = ["https://www.googleapis.com/auth/spreadsheets"]
+        credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+        client = gspread.authorize(credentials)
+        sheets = client.open_by_key(sheet_id)
 
-    scope = ["https://www.googleapis.com/auth/spreadsheets"]
-    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-    client = gspread.authorize(credentials)
-    sheets = client.open_by_key(sheet_id)
+        field_keys = {
+            "title": "alert_title_input",
+            "description": "alert_description_input",
+            "category": "alert_category_select",
+            "risk_level": "alert_risk_select",
+            "species": "alert_species_input",
+            "country": "alert_country_input",
+            "source_link": "alert_source_input"
+        }
 
-    field_keys = {
-        "title": "alert_title_input",
-        "description": "alert_description_input",
-        "category": "alert_category_select",
-        "risk_level": "alert_risk_select",
-        "species": "alert_species_input",
-        "country": "alert_country_input",
-        "source_link": "alert_source_input"
-    }
+        categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
+        risk_levels = ["Low", "Medium", "High"]
 
-    categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
-    risk_levels = ["Low", "Medium", "High"]
+        # Corrigir valores default para campos do tipo selectbox
+        st.session_state.setdefault(field_keys["category"], categories[0])
+        st.session_state.setdefault(field_keys["risk_level"], risk_levels[0])
 
-    # Corrigir valores default para campos do tipo selectbox
-    st.session_state.setdefault(field_keys["category"], categories[0])
-    st.session_state.setdefault(field_keys["risk_level"], risk_levels[0])
+        for key in field_keys:
+            if key not in ["category", "risk_level"]:
+                st.session_state.setdefault(field_keys[key], "")
 
-    for key in field_keys:
-        if key not in ["category", "risk_level"]:
-            st.session_state.setdefault(field_keys[key], "")
+        with st.form("alert_form"):
+            title = st.text_input("Alert Title", key=field_keys["title"])
+            description = st.text_area("Alert Description", key=field_keys["description"])
+            category = st.selectbox("Category", categories, key=field_keys["category"])
+            risk_level = st.selectbox("Risk Level", risk_levels, key=field_keys["risk_level"])
+            species = st.text_input("Species involved (optional)", key=field_keys["species"])
+            country = st.text_input("Country or Region (optional)", key=field_keys["country"])
+            source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
+            public = True
 
-    with st.form("alert_form"):
-        title = st.text_input("Alert Title", key=field_keys["title"])
-        description = st.text_area("Alert Description", key=field_keys["description"])
-        category = st.selectbox("Category", categories, key=field_keys["category"])
-        risk_level = st.selectbox("Risk Level", risk_levels, key=field_keys["risk_level"])
-        species = st.text_input("Species involved (optional)", key=field_keys["species"])
-        country = st.text_input("Country or Region (optional)", key=field_keys["country"])
-        source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
-        public = True
+            submitted = st.form_submit_button("📤 Submit Alert")
 
-        submitted = st.form_submit_button("📤 Submit Alert")
+        if submitted:
+            if not title or not description:
+                st.warning("Title and Description are required.")
+            else:
+                alert_id = str(uuid4())
+                created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                alert_row = [
+                    alert_id, created_at, st.session_state["user"], title, description,
+                    category, species, country, risk_level, source_link, str(public), "", ""
+                ]
 
-    if submitted:
-        if not title or not description:
-            st.warning("Title and Description are required.")
-        else:
-            alert_id = str(uuid4())
-            created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            alert_row = [
-                alert_id, created_at, st.session_state["user"], title, description,
-                category, species, country, risk_level, source_link, str(public), "", ""
-            ]
-
-            try:
-                worksheet = sheets.worksheet("Alerts")
-                worksheet.append_row(alert_row, value_input_option="USER_ENTERED")
-                st.success("✅ Alert submitted successfully!")
-                st.balloons()
-                for k in field_keys.values():
-                    if k in st.session_state:
-                        del st.session_state[k]
-                st.rerun()
-            except Exception as e:
-                st.error(f"❌ Failed to submit alert: {e}")
+                try:
+                    worksheet = sheets.worksheet("Alerts")
+                    worksheet.append_row(alert_row, value_input_option="USER_ENTERED")
+                    st.success("✅ Alert submitted successfully!")
+                    st.balloons()
+                    for k in field_keys.values():
+                        if k in st.session_state:
+                            del st.session_state[k]
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Failed to submit alert: {e}")
 
 # --- Interface para edição de alertas ---
 def display_alert_update_tab(sheet_id):
-    st.subheader("🔄 Update Your Alert")
+    with st.expander("🛠️ Update My Alerts", expanded=False):
+        scope = ["https://www.googleapis.com/auth/spreadsheets"]
+        credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+        client = gspread.authorize(credentials)
+        sheets = client.open_by_key(sheet_id)
 
-    scope = ["https://www.googleapis.com/auth/spreadsheets"]
-    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-    client = gspread.authorize(credentials)
-    sheets = client.open_by_key(sheet_id)
+        try:
+            worksheet = sheets.worksheet("Alerts")
+            records = worksheet.get_all_records()
+            df_alerts = pd.DataFrame(records)
+            df_user = df_alerts[df_alerts["Author"] == st.session_state["user"]]
 
-    try:
-        worksheet = sheets.worksheet("Alerts")
-        records = worksheet.get_all_records()
-        df_alerts = pd.DataFrame(records)
-        df_user = df_alerts[df_alerts["Author"] == st.session_state["user"]]
+            if df_user.empty:
+                st.info("You haven't submitted any alerts yet.")
+                return
 
-        if df_user.empty:
-            st.info("You haven't submitted any alerts yet.")
-            return
+            selected_alert = st.selectbox("Select an alert to edit:", df_user["Title"].tolist())
 
-        selected_alert = st.selectbox("Select an alert to edit:", df_user["Title"].tolist())
+            if selected_alert:
+                current_row = df_user[df_user["Title"] == selected_alert].iloc[0]
+                row_index = df_alerts[df_alerts["ID"] == current_row["ID"]].index[0] + 2
 
-        if selected_alert:
-            current_row = df_user[df_user["Title"] == selected_alert].iloc[0]
-            row_index = df_alerts[df_alerts["ID"] == current_row["ID"]].index[0] + 2
+                categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
+                risk_levels = ["Low", "Medium", "High"]
 
-            categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
-            risk_levels = ["Low", "Medium", "High"]
+                with st.form("edit_alert_form"):
+                    new_title = st.text_input("Title", value=current_row["Title"])
+                    new_description = st.text_area("Description", value=current_row["Description"])
+                    new_category = st.selectbox("Category", categories, index=categories.index(current_row["Category"]))
+                    new_risk = st.selectbox("Risk Level", risk_levels, index=risk_levels.index(current_row["Risk Level"]))
+                    new_species = st.text_input("Species", value=current_row["Species"])
+                    new_country = st.text_input("Country", value=current_row["Country"])
+                    new_source = st.text_input("Source Link", value=current_row["Source Link"])
+                    submitted_edit = st.form_submit_button("💾 Save Changes")
 
-            with st.form("edit_alert_form"):
-                new_title = st.text_input("Title", value=current_row["Title"])
-                new_description = st.text_area("Description", value=current_row["Description"])
-                new_category = st.selectbox("Category", categories, index=categories.index(current_row["Category"]))
-                new_risk = st.selectbox("Risk Level", risk_levels, index=risk_levels.index(current_row["Risk Level"]))
-                new_species = st.text_input("Species", value=current_row["Species"])
-                new_country = st.text_input("Country", value=current_row["Country"])
-                new_source = st.text_input("Source Link", value=current_row["Source Link"])
-                submitted_edit = st.form_submit_button("💾 Save Changes")
+                if submitted_edit:
+                    try:
+                        worksheet.update(f"D{row_index}:K{row_index}", [[
+                            new_title, new_description, new_category, new_species,
+                            new_country, new_risk, new_source
+                        ]])
+                        st.success("✅ Alert updated successfully!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Failed to update alert: {e}")
 
-            if submitted_edit:
-                try:
-                    worksheet.update(f"D{row_index}:K{row_index}", [[
-                        new_title, new_description, new_category, new_species,
-                        new_country, new_risk, new_source
-                    ]])
-                    st.success("✅ Alert updated successfully!")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"❌ Failed to update alert: {e}")
-
-    except Exception as e:
-        st.error(f"❌ Could not load alerts: {e}")
+        except Exception as e:
+            st.error(f"❌ Could not load alerts: {e}")
 
 if "user" in st.session_state:
     display_alert_submission_form(SHEET_ID)
