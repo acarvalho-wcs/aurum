@@ -99,7 +99,7 @@ if uploaded_file is None:
     """)
 
 def display_public_alerts_section(sheet_id):
-    st.markdown("## 📢 Wildlife Trafficking Alerts")
+    st.markdown("## Wildlife Trafficking Alerts")
     st.info("These alerts were submitted by logged-in users and highlight patterns, risks, and urgent issues. Everyone can see them.")
 
     df_alerts = load_sheet_data("Alerts")
