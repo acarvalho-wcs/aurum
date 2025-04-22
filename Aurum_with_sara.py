@@ -103,7 +103,7 @@ def display_public_alerts_section(sheet_id):
     st.info("These alerts were submitted by logged-in users and highlight patterns, risks, and urgent issues. Everyone can see them.")
 
     df_alerts = load_sheet_data("Alerts")
-    df_alerts = df_alerts[df_alerts["Public"] == True]
+    df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
     df_alerts = df_alerts.sort_values("Created At", ascending=False)
 
     if df_alerts.empty:
