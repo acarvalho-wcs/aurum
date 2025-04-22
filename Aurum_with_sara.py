@@ -1303,6 +1303,12 @@ def get_worksheet(sheet_name="Aurum_data"):
     sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
     return sh.worksheet(sheet_name)
 
+if uploaded_file is None and not st.session_state.get("user"):
+    display_public_alerts_section(SHEET_ID)
+
+if "user" in st.session_state:
+    display_alert_submission_form()
+
 if "user" in st.session_state:
     with st.expander("📥 Submit New Case to Aurum", expanded=False):
         # Chaves dos campos para controlar o form
@@ -1526,12 +1532,6 @@ if "user" in st.session_state:
 
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
-
-if uploaded_file is None and not st.session_state.get("user"):
-    display_public_alerts_section(SHEET_ID)
-
-if "user" in st.session_state:
-    display_alert_submission_form()
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Aurum: A Platform for Criminal Intelligence in Wildlife Trafficking. Wildlife Conservation Society, 2025.")
