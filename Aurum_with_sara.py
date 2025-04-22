@@ -104,6 +104,11 @@ def display_public_alerts_section(sheet_id):
         try:
             df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
 
+            # Verifica se o DataFrame tem dados e a coluna 'Public'
+            if df_alerts.empty or "Public" not in df_alerts.columns:
+                st.info("No public alerts available.")
+                return
+
             # Filtro: apenas alertas marcados como públicos
             df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
 
@@ -111,28 +116,22 @@ def display_public_alerts_section(sheet_id):
                 st.info("No public alerts available.")
                 return
 
-            # Ordena por data de criação (mais recente primeiro)
-            df_alerts = df_alerts.sort_values("Created At", ascending=False).reset_index(drop=True)
+            # Ordena por data de criação
+            df_alerts = df_alerts.sort_values("Created At", ascending=False)
 
-            # Número de colunas por linha
-            num_cols = 3
-
-            # Gera linhas de 3 colunas dinamicamente
-            for i in range(0, len(df_alerts), num_cols):
-                row_data = df_alerts.iloc[i:i + num_cols]
-                cols = st.columns(len(row_data))
-
-                for idx, (_, alert) in enumerate(row_data.iterrows()):
-                    with cols[idx].expander(f"🚨 {alert['Title']} ({alert['Risk Level']})", expanded=False):
-                        st.markdown(f"**Description:** {alert['Description']}")
-                        st.markdown(f"**Category:** {alert['Category']}")
-                        if alert.get("Species"):
-                            st.markdown(f"**Species:** {alert['Species']}")
-                        if alert.get("Country"):
-                            st.markdown(f"**Country:** {alert['Country']}")
-                        if alert.get("Source Link"):
-                            st.markdown(f"[🔗 Source]({alert['Source Link']})", unsafe_allow_html=True)
-                        st.caption(f"📅 Submitted on {alert['Created At']} by *{alert['Created By']}*")
+            # Divide em até 6 colunas (3 por linha)
+            alert_cols = st.columns(3)
+            for idx, (_, row) in enumerate(df_alerts.iterrows()):
+                col = alert_cols[idx % 3]
+                with col:
+                    with st.expander(f"🚨 {row['Title']} ({row['Risk Level']})", expanded=False):
+                        st.markdown(f"**Description:** {row['Description']}")
+                        st.markdown(f"**Category:** {row['Category']}")
+                        if row.get("Species"): st.markdown(f"**Species:** {row['Species']}")
+                        if row.get("Country"): st.markdown(f"**Country:** {row['Country']}")
+                        if row.get("Source Link"):
+                            st.markdown(f"[🔗 Source]({row['Source Link']})", unsafe_allow_html=True)
+                        st.caption(f"📅 Submitted on {row['Created At']} by *{row['Created By']}*")
 
         except Exception as e:
             st.error(f"❌ Failed to load public alerts: {e}")
