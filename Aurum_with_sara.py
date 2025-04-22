@@ -1194,7 +1194,6 @@ def display_alert_submission_form(sheet_id):
         categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
         risk_levels = ["Low", "Medium", "High"]
 
-        # Corrigir valores default para campos do tipo selectbox
         st.session_state.setdefault(field_keys["category"], categories[0])
         st.session_state.setdefault(field_keys["risk_level"], risk_levels[0])
 
@@ -1212,7 +1211,7 @@ def display_alert_submission_form(sheet_id):
             source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
             public = True
 
-            submitted = st.form_submit_button("📤 Submit Alert")
+            submitted = st.form_submit_button("📄 Submit Alert")
 
         if submitted:
             if not title or not description:
@@ -1272,7 +1271,7 @@ def display_alert_update_tab(sheet_id):
                     new_species = st.text_input("Species", value=current_row["Species"])
                     new_country = st.text_input("Country", value=current_row["Country"])
                     new_source = st.text_input("Source Link", value=current_row["Source Link"])
-                    submitted_edit = st.form_submit_button("💾 Save Changes")
+                    submitted_edit = st.form_submit_button("📅 Save Changes")
 
                 if submitted_edit:
                     try:
@@ -1288,11 +1287,11 @@ def display_alert_update_tab(sheet_id):
         except Exception as e:
             st.error(f"❌ Could not load alerts: {e}")
 
+# --- Execução ---
 if "user" in st.session_state:
     display_alert_submission_form(SHEET_ID)
-    with st.expander("🛠️ Update My Alerts", expanded=False):
-        display_alert_update_tab(SHEET_ID)
-    
+    display_alert_update_tab(SHEET_ID)
+   
 if "user" in st.session_state:
     with st.expander("**Submit New Case**", expanded=False):
         # Chaves dos campos para controlar o form
