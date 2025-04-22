@@ -172,10 +172,14 @@ def display_alert_submission_form():
                 "source_link": "alert_source_input"
             }
 
-            # Show clean button if flagged
-            show_clean_button = st.session_state.get("alert_submitted", False)
+            # --- Clean Form button OUTSIDE the form ---
+            if st.session_state.get("alert_submitted", False):
+                if st.button("🧹 Clean Form", type="secondary"):
+                    for key in field_keys.values():
+                        st.session_state[key] = ""
+                    st.session_state["alert_submitted"] = False
+                    st.experimental_rerun()
 
-            # Form start
             with st.form("alert_form"):
                 title = st.text_input("Alert Title", key=field_keys["title"])
                 description = st.text_area("Description of the Alert", key=field_keys["description"])
@@ -186,14 +190,8 @@ def display_alert_submission_form():
                 source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
                 public = True
 
-                # Two buttons in a row
-                col1, col2 = st.columns([1, 1])
-                with col1:
-                    submit = st.form_submit_button("📤 Submit Alert")
-                with col2:
-                    clean_form = st.form_submit_button("🧹 Clean Form", disabled=not show_clean_button)
+                submit = st.form_submit_button("📤 Submit Alert")
 
-            # On submit
             if submit:
                 if not title or not description:
                     st.warning("Title and Description are required.")
@@ -223,18 +221,9 @@ def display_alert_submission_form():
                         worksheet_alerts.append_row(alert_row, value_input_option="USER_ENTERED")
                         st.success("✅ Alert submitted successfully!")
                         st.balloons()
-
                         st.session_state["alert_submitted"] = True
-
                     except Exception as e:
                         st.error(f"❌ Failed to submit alert: {e}")
-
-            # On Clean Form click
-            if clean_form:
-                for key in field_keys.values():
-                    st.session_state[key] = ""
-                st.session_state["alert_submitted"] = False
-                st.experimental_rerun()
 
 # --- DASHBOARD RESUMO INICIAL (sem login, baseado no Google Sheets) ---
 if uploaded_file is None and not st.session_state.get("user"):
