@@ -111,19 +111,28 @@ def display_public_alerts_section(sheet_id):
                 st.info("No public alerts available.")
                 return
 
-            # Ordena por data de criação
-            df_alerts = df_alerts.sort_values("Created At", ascending=False)
+            # Ordena por data de criação (mais recente primeiro)
+            df_alerts = df_alerts.sort_values("Created At", ascending=False).reset_index(drop=True)
 
-            # Exibe os alertas em formato de colapsável
-            for _, row in df_alerts.iterrows():
-                with st.expander(f"🚨 {row['Title']} ({row['Risk Level']})", expanded=False):
-                    st.markdown(f"**Description:** {row['Description']}")
-                    st.markdown(f"**Category:** {row['Category']}")
-                    if row.get("Species"): st.markdown(f"**Species:** {row['Species']}")
-                    if row.get("Country"): st.markdown(f"**Country:** {row['Country']}")
-                    if row.get("Source Link"): 
-                        st.markdown(f"[🔗 Source]({row['Source Link']})", unsafe_allow_html=True)
-                    st.caption(f"📅 Submitted on {row['Created At']} by *{row['Created By']}*")
+            # Número de colunas por linha
+            num_cols = 3
+
+            # Gera linhas de 3 colunas dinamicamente
+            for i in range(0, len(df_alerts), num_cols):
+                row_data = df_alerts.iloc[i:i + num_cols]
+                cols = st.columns(len(row_data))
+
+                for idx, (_, alert) in enumerate(row_data.iterrows()):
+                    with cols[idx].expander(f"🚨 {alert['Title']} ({alert['Risk Level']})", expanded=False):
+                        st.markdown(f"**Description:** {alert['Description']}")
+                        st.markdown(f"**Category:** {alert['Category']}")
+                        if alert.get("Species"):
+                            st.markdown(f"**Species:** {alert['Species']}")
+                        if alert.get("Country"):
+                            st.markdown(f"**Country:** {alert['Country']}")
+                        if alert.get("Source Link"):
+                            st.markdown(f"[🔗 Source]({alert['Source Link']})", unsafe_allow_html=True)
+                        st.caption(f"📅 Submitted on {alert['Created At']} by *{alert['Created By']}*")
 
         except Exception as e:
             st.error(f"❌ Failed to load public alerts: {e}")
