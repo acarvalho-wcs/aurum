@@ -147,49 +147,51 @@ def display_public_alerts_section(sheet_id):
 
 def display_alert_submission_form():
     if "user" in st.session_state:
-        st.markdown("## 📝 Submit a New Alert")
-        with st.form("alert_form"):
-            title = st.text_input("Alert Title")
-            description = st.text_area("Description of the Alert")
-            category = st.selectbox("Category", ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"])
-            risk_level = st.selectbox("Risk Level", ["Low", "Medium", "High"])
-            species = st.text_input("Species involved (optional)")
-            country = st.text_input("Country or Region (optional)")
-            source_link = st.text_input("Source Link (optional)")
-            public = True  # all alerts are public by default
+        with st.expander("📢 Submit New Alert", expanded=False):
+            st.markdown("Use this form to create a new wildlife trafficking alert. Your alert will be publicly visible once submitted.")
 
-            submit = st.form_submit_button("📤 Submit Alert")
+            with st.form("alert_form"):
+                title = st.text_input("Alert Title")
+                description = st.text_area("Description of the Alert")
+                category = st.selectbox("Category", ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"])
+                risk_level = st.selectbox("Risk Level", ["Low", "Medium", "High"])
+                species = st.text_input("Species involved (optional)")
+                country = st.text_input("Country or Region (optional)")
+                source_link = st.text_input("Source Link (optional)")
+                public = True  # always public for now
 
-        if submit:
-            if not title or not description:
-                st.warning("Title and Description are required.")
-            else:
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                alert_id = timestamp  # or use a UUID if needed
+                submit = st.form_submit_button("📤 Submit Alert")
 
-                alert_row = [
-                    alert_id,                 # Alert ID (A)
-                    timestamp,                # Created At (B)
-                    st.session_state["user"], # Created By (C)
-                    title,                    # Title (D)
-                    description,              # Description (E)
-                    category,                 # Category (F)
-                    species,                  # Species (G)
-                    country,                  # Country (H)
-                    risk_level,               # Risk Level (I)
-                    source_link,              # Source Link (J)
-                    str(public),              # Public (K)
-                    "",                       # Edited By (L)
-                    ""                        # Last Modified (M)
-                ]
+            if submit:
+                if not title or not description:
+                    st.warning("Title and Description are required.")
+                else:
+                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    alert_id = timestamp  # or generate UUID
 
-                try:
-                    worksheet_alerts = sheets.worksheet("Alerts")
-                    worksheet_alerts.append_row(alert_row, value_input_option="USER_ENTERED")
-                    st.success("✅ Alert submitted successfully!")
-                    st.balloons()
-                except Exception as e:
-                    st.error(f"❌ Failed to submit alert: {e}")
+                    alert_row = [
+                        alert_id,                 # Alert ID
+                        timestamp,                # Created At
+                        st.session_state["user"], # Created By
+                        title,
+                        description,
+                        category,
+                        species,
+                        country,
+                        risk_level,
+                        source_link,
+                        str(public),
+                        "",  # Edited By
+                        ""   # Last Modified
+                    ]
+
+                    try:
+                        worksheet_alerts = sheets.worksheet("Alerts")
+                        worksheet_alerts.append_row(alert_row, value_input_option="USER_ENTERED")
+                        st.success("✅ Alert submitted successfully!")
+                        st.balloons()
+                    except Exception as e:
+                        st.error(f"❌ Failed to submit alert: {e}")
 
 # --- DASHBOARD RESUMO INICIAL (sem login, baseado no Google Sheets) ---
 if uploaded_file is None and not st.session_state.get("user"):
