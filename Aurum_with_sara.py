@@ -1714,7 +1714,7 @@ if st.session_state["show_sidebar_feedback"]:
                 except Exception as e:
                     st.error(f"❌ Failed to submit feedback: {e}")
 
-def display_suggestions_section(sheet_id):
+def display_suggestions_section(SHEET_ID):
     """Exibe sugestões enviadas pelo formulário (apenas admins)."""
     if not st.session_state.get("is_admin"):
         return
