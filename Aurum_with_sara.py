@@ -1237,17 +1237,19 @@ def display_alert_submission_form(sheet_id):
         "risk_level": "alert_risk_select",
         "species": "alert_species_input",
         "country": "alert_country_input",
-        "source_link": "alert_source_input"
+        "source_link": "alert_source_input",
+        "author_choice": "alert_author_choice"
     }
 
     categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
     risk_levels = ["Low", "Medium", "High"]
 
+    # Inicializa os campos
+    for key in field_keys:
+        st.session_state.setdefault(field_keys[key], "")
+
     st.session_state.setdefault(field_keys["category"], categories[0])
     st.session_state.setdefault(field_keys["risk_level"], risk_levels[0])
-    for key in field_keys:
-        if key not in ["category", "risk_level"]:
-            st.session_state.setdefault(field_keys[key], "")
 
     with st.form("alert_form"):
         title = st.text_input("Alert Title", key=field_keys["title"])
@@ -1257,7 +1259,18 @@ def display_alert_submission_form(sheet_id):
         species = st.text_input("Species involved (optional)", key=field_keys["species"])
         country = st.text_input("Country or Region (optional)", key=field_keys["country"])
         source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
-        public = True
+
+        # NOVO CAMPO: Escolha de autoria
+        author_choice = st.radio(
+            "Choose how to display your name:",
+            ["🔓 Show my username", "🙈 Submit anonymously"],
+            key=field_keys["author_choice"]
+        )
+        created_by = (
+            st.session_state["user"]
+            if author_choice == "🔓 Show my username"
+            else "Anonymous"
+        )
 
         submitted = st.form_submit_button("📤 Submit Alert")
 
@@ -1267,18 +1280,25 @@ def display_alert_submission_form(sheet_id):
         else:
             alert_id = str(uuid4())
             created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            public = True  # Continua como visível publicamente por padrão
+
             alert_row = [
-                alert_id, created_at, st.session_state["user"], title, description,
-                category, species, country, risk_level, source_link, str(public), "", ""
+                alert_id, created_at, created_by, title, description,
+                category, species, country, risk_level, source_link,
+                str(public), "", ""  # Atualizações e comentários futuros
             ]
+
             try:
                 worksheet = sheets.worksheet("Alerts")
                 worksheet.append_row(alert_row, value_input_option="USER_ENTERED")
                 st.success("✅ Alert submitted successfully!")
                 st.balloons()
+
+                # Limpa os campos após envio
                 for k in field_keys.values():
                     if k in st.session_state:
                         del st.session_state[k]
+
                 st.rerun()
             except Exception as e:
                 st.error(f"❌ Failed to submit alert: {e}")
@@ -1292,7 +1312,7 @@ def display_alert_update_timeline(sheet_id):
 
     try:
         df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
-        df_user = df_alerts[df_alerts["Created By"] == st.session_state["user"]]
+        df_user = df_alerts[df_alerts["Created By"].isin([st.session_state["user"], "Anonymous"])]
 
         if df_user.empty:
             st.info("You haven't submitted any alerts yet.")
@@ -1312,6 +1332,18 @@ def display_alert_update_timeline(sheet_id):
         else:
             st.info("This alert has no updates yet.")
 
+        # NOVO: Escolha do autor da atualização
+        update_author_choice = st.radio(
+            "Choose how to display your name in this update:",
+            ["🔓 Show my username", "🙈 Submit anonymously"],
+            key="update_author_choice"
+        )
+        update_user = (
+            st.session_state["user"]
+            if update_author_choice == "🔓 Show my username"
+            else "Anonymous"
+        )
+
         with st.form(f"update_form_{alert_id}"):
             st.markdown("**Add a new update to this alert:**")
             new_update = st.text_area("Update Description")
@@ -1319,7 +1351,7 @@ def display_alert_update_timeline(sheet_id):
 
             if submitted and new_update.strip():
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                update_row = [alert_id, timestamp, st.session_state["user"], new_update.strip()]
+                update_row = [alert_id, timestamp, update_user, new_update.strip()]
 
                 try:
                     try:
