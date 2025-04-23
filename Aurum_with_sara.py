@@ -1662,9 +1662,17 @@ if "user" in st.session_state:
         st.error(f"❌ Failed to load data: {e}")
 
 # --- SUGGESTIONS AND COMMENTS (SIDEBAR) ---
-if st.sidebar.button("💬 Suggestions and Comments"):
+if "show_sidebar_feedback" not in st.session_state:
+    st.session_state["show_sidebar_feedback"] = False
+
+# --- BOTÃO FIXO NA SIDEBAR ---
+feedback_toggle = st.sidebar.button("💬 Suggestions and Comments")
+
+# Alterna visibilidade do formulário
+if feedback_toggle:
     st.session_state["show_sidebar_feedback"] = not st.session_state["show_sidebar_feedback"]
 
+# Exibe o formulário se o botão estiver ativado
 if st.session_state["show_sidebar_feedback"]:
     with st.sidebar.form("suggestion_form"):
         st.markdown("### 💬 Feedback Form")
@@ -1679,15 +1687,14 @@ if st.session_state["show_sidebar_feedback"]:
                 st.warning("All fields are required.")
             else:
                 timestamp = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
+
                 try:
-                    # Acesso ao Google Sheets
                     scope = ["https://www.googleapis.com/auth/spreadsheets"]
                     credentials = Credentials.from_service_account_info(
                         st.secrets["gcp_service_account"], scopes=scope)
                     client = gspread.authorize(credentials)
                     sheet = client.open_by_key(sheet_id)
 
-                    # Criar aba 'Suggestions' se não existir
                     try:
                         suggestion_ws = sheet.worksheet("Suggestions")
                     except gspread.exceptions.WorksheetNotFound:
@@ -1704,7 +1711,6 @@ if st.session_state["show_sidebar_feedback"]:
 
                     st.success("✅ Thank you for your feedback!")
                     st.session_state["show_sidebar_feedback"] = False  # fecha o formulário
-
                 except Exception as e:
                     st.error(f"❌ Failed to submit feedback: {e}")
 
@@ -1735,6 +1741,7 @@ def display_suggestions_section(sheet_id):
     except Exception as e:
         st.error(f"❌ Failed to load suggestions: {e}")
 
+# CHAMADA DA VISUALIZAÇÃO (APENAS ADMIN)
 display_suggestions_section(sheet_id)
 
 st.sidebar.markdown("---")    
