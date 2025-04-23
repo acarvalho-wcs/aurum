@@ -1711,12 +1711,8 @@ if st.session_state["show_sidebar_feedback"]:
 
                     st.success("✅ Thank you for your feedback!")
 
-                    st.session_state["suggestion_name"] = ""
-                    st.session_state["suggestion_email"] = ""
-                    st.session_state["suggestion_institution"] = ""
-                    st.session_state["suggestion_message"] = ""
-
-                    st.session_state["show_sidebar_feedback"] = False  # fecha o formulário
+                    st.session_state["show_sidebar_feedback"] = False
+                    st.experimental_rerun()  # fecha o formulário
                 except Exception as e:
                     st.error(f"❌ Failed to submit feedback: {e}")
 
