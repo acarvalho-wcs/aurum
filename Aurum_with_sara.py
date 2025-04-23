@@ -1238,8 +1238,6 @@ if st.session_state.get("is_admin"):
                                 users_ws.append_row([
                                     new_user,
                                     new_password,
-                                    user_row.iloc[0]["Institution"],
-                                    user_row.iloc[0]["E-mail"],
                                     is_admin_str,
                                     "TRUE"
                                 ])
