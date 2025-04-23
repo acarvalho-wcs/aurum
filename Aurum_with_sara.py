@@ -1219,9 +1219,35 @@ if st.session_state.get("is_admin"):
                 if not new_user or not new_password:
                     st.warning("Username and password are required.")
                 else:
-                    hashed_pw = new_password
-                    users_ws.append_row([new_user, hashed_pw, str(is_admin), "TRUE"])
-                    st.success(f"✅ {new_user} has been approved and added to the system.")
+                    try:
+                        # Buscar índice da linha correspondente
+                        user_row = request_df[request_df["Username"] == new_user]
+                        if user_row.empty:
+                            st.warning("User not found in access requests.")
+                        else:
+                            row_index = user_row.index[0]
+                            is_admin_str = "TRUE" if is_admin else "FALSE"
+
+                            # Atualizar Access Requests
+                            requests_ws.update_cell(row_index + 2, request_df.columns.get_loc("Approved") + 1, "TRUE")
+                            requests_ws.update_cell(row_index + 2, request_df.columns.get_loc("Is_Admin") + 1, is_admin_str)
+
+                            # Verificar se já existe na aba Users
+                            users_df = pd.DataFrame(users_ws.get_all_records())
+                            if new_user not in users_df["Username"].values:
+                                users_ws.append_row([
+                                    new_user,
+                                    new_password,
+                                    user_row.iloc[0]["Institution"],
+                                    user_row.iloc[0]["E-mail"],
+                                    is_admin_str,
+                                    "TRUE"
+                                ])
+
+                            st.success(f"✅ {new_user} has been approved and added to the system.")
+                            st.info("🔐 The user is now authorized to log into Aurum.")
+                    except Exception as e:
+                        st.error(f"❌ Failed to approve user: {e}")
 
 # --- FORMULÁRIO ---
 def get_worksheet(sheet_name="Aurum_data"):
