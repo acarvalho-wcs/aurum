@@ -1693,7 +1693,7 @@ if st.session_state["show_sidebar_feedback"]:
                     credentials = Credentials.from_service_account_info(
                         st.secrets["gcp_service_account"], scopes=scope)
                     client = gspread.authorize(credentials)
-                    sheet = client.open_by_key(sheet_id)
+                    sheet = client.open_by_key(SHEET_ID)
 
                     try:
                         suggestion_ws = sheet.worksheet("Suggestions")
@@ -1725,7 +1725,7 @@ def display_suggestions_section(SHEET_ID):
         scope = ["https://www.googleapis.com/auth/spreadsheets"]
         credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
         client = gspread.authorize(credentials)
-        sheet = client.open_by_key(sheet_id)
+        sheet = client.open_by_key(SHEET_ID)
 
         suggestions_ws = sheet.worksheet("Suggestions")
         df = pd.DataFrame(suggestions_ws.get_all_records())
