@@ -1244,12 +1244,18 @@ def display_alert_submission_form(sheet_id):
     categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
     risk_levels = ["Low", "Medium", "High"]
 
-    # Inicializa os campos
-    for key in field_keys:
+    # Inicializa todos os campos com valores válidos
+    for key in ["title", "description", "species", "country", "source_link"]:
         st.session_state.setdefault(field_keys[key], "")
 
-    st.session_state.setdefault(field_keys["category"], categories[0])
-    st.session_state.setdefault(field_keys["risk_level"], risk_levels[0])
+    # Garante que a categoria e risco tenham valores válidos
+    if st.session_state.get(field_keys["category"]) not in categories:
+        st.session_state[field_keys["category"]] = categories[0]
+    if st.session_state.get(field_keys["risk_level"]) not in risk_levels:
+        st.session_state[field_keys["risk_level"]] = risk_levels[0]
+
+    # Inicializa o campo de autoria
+    st.session_state.setdefault(field_keys["author_choice"], "🔓 Show my username")
 
     with st.form("alert_form"):
         title = st.text_input("Alert Title", key=field_keys["title"])
@@ -1260,7 +1266,6 @@ def display_alert_submission_form(sheet_id):
         country = st.text_input("Country or Region (optional)", key=field_keys["country"])
         source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
 
-        # NOVO CAMPO: Escolha de autoria
         author_choice = st.radio(
             "Choose how to display your name:",
             ["🔓 Show my username", "🙈 Submit anonymously"],
@@ -1280,12 +1285,12 @@ def display_alert_submission_form(sheet_id):
         else:
             alert_id = str(uuid4())
             created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            public = True  # Continua como visível publicamente por padrão
+            public = True  # Continua visível publicamente
 
             alert_row = [
                 alert_id, created_at, created_by, title, description,
                 category, species, country, risk_level, source_link,
-                str(public), "", ""  # Atualizações e comentários futuros
+                str(public), "", ""
             ]
 
             try:
@@ -1298,7 +1303,6 @@ def display_alert_submission_form(sheet_id):
                 for k in field_keys.values():
                     if k in st.session_state:
                         del st.session_state[k]
-
                 st.rerun()
             except Exception as e:
                 st.error(f"❌ Failed to submit alert: {e}")
