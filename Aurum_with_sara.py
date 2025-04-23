@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
-from datetime import datetime
 import re
 import unicodedata
 import statsmodels.api as sm
@@ -18,6 +17,9 @@ from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 import os
 from uuid import uuid4
+from datetime import datetime
+import pytz
+brt = pytz.timezone("America/Sao_Paulo")
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Aurum Dashboard", layout="wide")
@@ -1061,7 +1063,7 @@ if export_xlsx and df_selected is not None:
     )
 if export_html and df_selected is not None:
     from datetime import datetime
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
 
     html_sections = []
     html_sections.append(f"<h1>Aurum Wildlife Trafficking Report</h1>")
@@ -1188,7 +1190,7 @@ if st.session_state["show_sidebar_request"]:
             if not new_username or not new_password or not reason:
                 st.sidebar.warning("All fields are required.")
             else:
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                timestamp = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
                 requests_ws.append_row([
                     timestamp,
                     new_username,
@@ -1298,7 +1300,7 @@ def display_alert_submission_form(sheet_id):
             st.warning("Title and Description are required.")
         else:
             alert_id = str(uuid4())
-            created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            created_at = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
             public = True  # Continua visível publicamente
 
             alert_row = [
@@ -1313,7 +1315,6 @@ def display_alert_submission_form(sheet_id):
                 st.success("✅ Alert submitted successfully!")
                 st.balloons()
 
-                # Limpa os campos após envio
                 for k in field_keys.values():
                     if k in st.session_state:
                         del st.session_state[k]
@@ -1380,7 +1381,7 @@ def display_alert_update_timeline(sheet_id):
             submitted = st.form_submit_button("➕ Add Update")
 
             if submitted and new_update.strip():
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                timestamp = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
                 update_row = [alert_id, timestamp, update_user, new_update.strip()]
 
                 try:
@@ -1458,7 +1459,7 @@ if "user" in st.session_state:
 
             if submitted:
                 new_row = [
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)"),
                     case_id,
                     seizure_country,
                     n_seized,
@@ -1582,7 +1583,7 @@ if "user" in st.session_state:
                     """)
                 else:
                     batch_data = batch_data.fillna("")
-                    batch_data["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    batch_data["Timestamp"] = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
                     batch_data["Author"] = st.session_state["user"]
 
                     # Renomeia colunas normalizadas de volta para os nomes originais
