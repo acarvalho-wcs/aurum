@@ -315,7 +315,7 @@ if uploaded_file is None and not st.session_state.get("user"):
                         if not df_species.empty and df_species["N_seized"].max() > 0:
                             idx_max = df_species["N_seized"].idxmax()
                             max_row = df_species.loc[idx_max]
-                            max_apreensao = f"{max_row['Country of seizure or shipment']}in {int(max_row['Year'])}"
+                            max_apreensao = f"{max_row['Country of seizure or shipment']} in {int(max_row['Year'])}"
                         else:
                             max_apreensao = "No data"
 
