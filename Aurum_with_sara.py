@@ -1742,7 +1742,7 @@ def display_suggestions_section(sheet_id):
         st.error(f"❌ Failed to load suggestions: {e}")
 
 # CHAMADA DA VISUALIZAÇÃO (APENAS ADMIN)
-display_suggestions_section(sheet_id)
+display_suggestions_section(SHEET_ID)
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Aurum: A Platform for Criminal Intelligence in Wildlife Trafficking. Wildlife Conservation Society, 2025.")
