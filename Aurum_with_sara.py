@@ -1661,5 +1661,27 @@ if "user" in st.session_state:
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
 
+# --- Seção de Sugestões na Sidebar ---
+if "show_sidebar_feedback" not in st.session_state:
+    st.session_state["show_sidebar_feedback"] = False
+
+if st.sidebar.button("💬 Suggestions and Comments"):
+    st.session_state["show_sidebar_feedback"] = not st.session_state["show_sidebar_feedback"]
+
+if st.session_state["show_sidebar_feedback"]:
+    with st.sidebar.form("suggestion_form"):
+        st.markdown("### 💬 Feedback Form")
+        name = st.text_input("Name", key="suggestion_name")
+        email = st.text_input("E-mail", key="suggestion_email")
+        institution = st.text_input("Institution", key="suggestion_institution")
+        message = st.text_area("Suggestions or comments", key="suggestion_message")
+        submit_suggestion = st.form_submit_button("Submit")
+
+        if submit_suggestion:
+            if not name or not email or not institution or not message:
+                st.warning("All fields are required.")
+            else:
+                st.success("✅ Thank you for your feedback!")
+
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Aurum: A Platform for Criminal Intelligence in Wildlife Trafficking. Wildlife Conservation Society, 2025.")
