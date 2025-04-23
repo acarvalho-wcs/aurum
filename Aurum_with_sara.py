@@ -90,9 +90,9 @@ if uploaded_file is None:
 # --- ALERTAS PÚBLICOS (visível para todos, inclusive sem login) ---
 def display_public_alerts_section(sheet_id):
     with st.container():
-        st.markdown("## 🌍 Wildlife Alert Board")
+        st.markdown("## 🌍 Alert Board")
         st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
-        st.markdown("### Public Wildlife Trafficking Alerts")
+        st.markdown("### Wildlife Trafficking Alerts")
 
         # Acesso ao Google Sheets
         scope = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -118,6 +118,12 @@ def display_public_alerts_section(sheet_id):
             # Ordena por data de criação
             df_alerts = df_alerts.sort_values("Created At", ascending=False)
 
+            # Tenta carregar updates para exibir linha do tempo
+            try:
+                df_updates = pd.DataFrame(sheets.worksheet("Alert Updates").get_all_records())
+            except Exception:
+                df_updates = pd.DataFrame()
+
             # Divide em até 6 colunas (3 por linha)
             alert_cols = st.columns(3)
             for idx, (_, row) in enumerate(df_alerts.iterrows()):
@@ -130,7 +136,15 @@ def display_public_alerts_section(sheet_id):
                         if row.get("Country"): st.markdown(f"**Country:** {row['Country']}")
                         if row.get("Source Link"):
                             st.markdown(f"[🔗 Source]({row['Source Link']})", unsafe_allow_html=True)
-                        st.caption(f"📅 Submitted on {row['Created At']} by *{row['Created By']}*")
+                        st.caption(f"Submitted on {row['Created At']} by *{row['Created By']}*")
+
+                        # NOVO: Linha do tempo pública
+                        if not df_updates.empty and "Alert ID" in df_updates.columns:
+                            updates = df_updates[df_updates["Alert ID"] == row["Alert ID"]].sort_values("Timestamp")
+                            if not updates.empty:
+                                st.markdown("**Update Timeline**")
+                                for _, upd in updates.iterrows():
+                                    st.markdown(f"🕒 **{upd['Timestamp']}** – *{upd['User']}*: {upd['Update Text']}")
 
         except Exception as e:
             st.error(f"❌ Failed to load public alerts: {e}")
