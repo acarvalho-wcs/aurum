@@ -1661,10 +1661,7 @@ if "user" in st.session_state:
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
 
-# --- Seção de Sugestões na Sidebar ---
-if "show_sidebar_feedback" not in st.session_state:
-    st.session_state["show_sidebar_feedback"] = False
-
+# --- SUGGESTIONS AND COMMENTS (SIDEBAR) ---
 if st.sidebar.button("💬 Suggestions and Comments"):
     st.session_state["show_sidebar_feedback"] = not st.session_state["show_sidebar_feedback"]
 
@@ -1675,13 +1672,70 @@ if st.session_state["show_sidebar_feedback"]:
         email = st.text_input("E-mail", key="suggestion_email")
         institution = st.text_input("Institution", key="suggestion_institution")
         message = st.text_area("Suggestions or comments", key="suggestion_message")
-        submit_suggestion = st.form_submit_button("Submit")
+        submitted = st.form_submit_button("Submit")
 
-        if submit_suggestion:
+        if submitted:
             if not name or not email or not institution or not message:
                 st.warning("All fields are required.")
             else:
-                st.success("✅ Thank you for your feedback!")
+                timestamp = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
+                try:
+                    # Acesso ao Google Sheets
+                    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+                    credentials = Credentials.from_service_account_info(
+                        st.secrets["gcp_service_account"], scopes=scope)
+                    client = gspread.authorize(credentials)
+                    sheet = client.open_by_key(sheet_id)
+
+                    # Criar aba 'Suggestions' se não existir
+                    try:
+                        suggestion_ws = sheet.worksheet("Suggestions")
+                    except gspread.exceptions.WorksheetNotFound:
+                        suggestion_ws = sheet.add_worksheet(title="Suggestions", rows="1000", cols="5")
+                        suggestion_ws.append_row(["Timestamp", "Name", "Email", "Institution", "Message"])
+
+                    suggestion_ws.append_row([
+                        timestamp,
+                        name,
+                        email,
+                        institution,
+                        message.strip()
+                    ])
+
+                    st.success("✅ Thank you for your feedback!")
+                    st.session_state["show_sidebar_feedback"] = False  # fecha o formulário
+
+                except Exception as e:
+                    st.error(f"❌ Failed to submit feedback: {e}")
+
+def display_suggestions_section(sheet_id):
+    """Exibe sugestões enviadas pelo formulário (apenas admins)."""
+    if not st.session_state.get("is_admin"):
+        return
+
+    st.markdown("## 💬 User Suggestions and Comments")
+
+    try:
+        scope = ["https://www.googleapis.com/auth/spreadsheets"]
+        credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+        client = gspread.authorize(credentials)
+        sheet = client.open_by_key(sheet_id)
+
+        suggestions_ws = sheet.worksheet("Suggestions")
+        df = pd.DataFrame(suggestions_ws.get_all_records())
+        df.columns = [col.strip() for col in df.columns]
+
+        if df.empty:
+            st.info("No feedback has been submitted yet.")
+        else:
+            st.dataframe(df.sort_values("Timestamp", ascending=False))
+
+    except gspread.exceptions.WorksheetNotFound:
+        st.warning("📭 The 'Suggestions' sheet was not found.")
+    except Exception as e:
+        st.error(f"❌ Failed to load suggestions: {e}")
+
+display_suggestions_section(sheet_id)
 
 st.sidebar.markdown("---")    
 st.sidebar.markdown("**How to cite:** Carvalho, A. F. Aurum: A Platform for Criminal Intelligence in Wildlife Trafficking. Wildlife Conservation Society, 2025.")
