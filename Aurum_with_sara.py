@@ -1255,7 +1255,7 @@ def display_alert_submission_form(sheet_id):
         st.session_state[field_keys["risk_level"]] = risk_levels[0]
 
     # Inicializa o campo de autoria
-    st.session_state.setdefault(field_keys["author_choice"], "🔓 Show my username")
+    st.session_state.setdefault(field_keys["author_choice"], "Show my username")
 
     with st.form("alert_form"):
         title = st.text_input("Alert Title", key=field_keys["title"])
@@ -1268,12 +1268,12 @@ def display_alert_submission_form(sheet_id):
 
         author_choice = st.radio(
             "Choose how to display your name:",
-            ["🔓 Show my username", "🙈 Submit anonymously"],
+            ["Show my username", "Submit anonymously"],
             key=field_keys["author_choice"]
         )
         created_by = (
             st.session_state["user"]
-            if author_choice == "🔓 Show my username"
+            if author_choice == "Show my username"
             else "Anonymous"
         )
 
@@ -1330,7 +1330,7 @@ def display_alert_update_timeline(sheet_id):
         timeline = df_updates[df_updates["Alert ID"] == alert_id].sort_values("Timestamp") if not df_updates.empty else pd.DataFrame()
 
         if not timeline.empty:
-            st.markdown("### 🗓️ Update Timeline")
+            st.markdown("### Update Timeline")
             for _, row in timeline.iterrows():
                 st.markdown(f"**{row['Timestamp']}** – *{row['User']}*: {row['Update Text']}")
         else:
@@ -1339,19 +1339,19 @@ def display_alert_update_timeline(sheet_id):
         # NOVO: Escolha do autor da atualização
         update_author_choice = st.radio(
             "Choose how to display your name in this update:",
-            ["🔓 Show my username", "🙈 Submit anonymously"],
+            ["Show my username", "Submit anonymously"],
             key="update_author_choice"
         )
         update_user = (
             st.session_state["user"]
-            if update_author_choice == "🔓 Show my username"
+            if update_author_choice == "Show my username"
             else "Anonymous"
         )
 
         with st.form(f"update_form_{alert_id}"):
             st.markdown("**Add a new update to this alert:**")
             new_update = st.text_area("Update Description")
-            submitted = st.form_submit_button("➕ Add Update")
+            submitted = st.form_submit_button("Add Update")
 
             if submitted and new_update.strip():
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
