@@ -139,7 +139,7 @@ def display_public_alerts_section(sheet_id):
                                     <small>Submitted on {row['Created At']} by <i>{row['Created By']}</i></small>
                                 </div>
                                 <img src="https://raw.githubusercontent.com/acarvalho-wcs/aurum/main/logo.png" 
-                                     style="position: absolute; bottom: 10px; right: 10px; width: 45px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);" 
+                                     style="position: absolute; bottom: 10px; right: 10px; width: 75px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);" 
                                      alt="Aurum Logo"/>
                             </div>
                             """,
