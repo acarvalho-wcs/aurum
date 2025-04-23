@@ -1354,21 +1354,24 @@ def display_alert_update_timeline(sheet_id):
 
     try:
         df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
+        df_alerts.columns = [col.strip() for col in df_alerts.columns]
+
         df_updates = pd.DataFrame(sheets.worksheet("Alert Updates").get_all_records())
+        df_updates.columns = [col.strip() for col in df_updates.columns]
 
         user = st.session_state["user"]
 
-        # 1. Alertas criados pelo usuário
+        # Alertas criados pelo usuário
         created_alerts = df_alerts[df_alerts["Created By"] == user]
 
-        # 2. Alertas que o usuário atualizou ou que foram atualizados como 'Anonymous'
+        # Alertas com updates do usuário ou de forma anônima
         relevant_updates = df_updates[
             (df_updates["User"] == user) | (df_updates["User"] == "Anonymous")
         ]
         updated_alert_ids = relevant_updates["Alert ID"].unique()
         updated_alerts = df_alerts[df_alerts["Alert ID"].isin(updated_alert_ids)]
 
-        # 3. Juntar todos os alertas relevantes (criador ou atualizador)
+        # Junta ambos
         df_user_alerts = pd.concat([created_alerts, updated_alerts]).drop_duplicates(subset="Alert ID")
 
         if df_user_alerts.empty:
@@ -1379,7 +1382,6 @@ def display_alert_update_timeline(sheet_id):
         selected_row = df_user_alerts[df_user_alerts["Title"] == selected_title].iloc[0]
         alert_id = selected_row["Alert ID"]
 
-        # Mostrar linha do tempo do alerta selecionado
         timeline = df_updates[df_updates["Alert ID"] == alert_id].sort_values("Timestamp")
 
         if not timeline.empty:
@@ -1389,7 +1391,6 @@ def display_alert_update_timeline(sheet_id):
         else:
             st.info("This alert has no updates yet.")
 
-        # Autoria da atualização
         update_author_choice = st.radio(
             "Choose how to display your name in this update:",
             ["Show my username", "Submit anonymously"],
