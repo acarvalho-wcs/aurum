@@ -1711,9 +1711,10 @@ if st.session_state["show_sidebar_feedback"]:
 
                     st.success("✅ Thank you for your feedback!")
 
-                    # Limpa campos preenchidos
-                    for key in ["suggestion_name", "suggestion_email", "suggestion_institution", "suggestion_message"]:
-                        st.session_state.pop(key, None)
+                    st.session_state["suggestion_name"] = ""
+                    st.session_state["suggestion_email"] = ""
+                    st.session_state["suggestion_institution"] = ""
+                    st.session_state["suggestion_message"] = ""
 
                     st.session_state["show_sidebar_feedback"] = False  # fecha o formulário
                 except Exception as e:
