@@ -1316,18 +1316,30 @@ def display_alert_update_timeline(sheet_id):
 
     try:
         df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
-        df_user = df_alerts[df_alerts["Created By"].isin([st.session_state["user"], "Anonymous"])]
+        df_updates = pd.DataFrame(sheets.worksheet("Alert Updates").get_all_records())
 
-        if df_user.empty:
-            st.info("You haven't submitted any alerts yet.")
+        # Filtra updates do usuário atual OU feitos anonimamente
+        relevant_updates = df_updates[
+            (df_updates["User"] == st.session_state["user"]) |
+            (df_updates["User"] == "Anonymous")
+        ]
+
+        # Pega os Alert IDs desses updates
+        relevant_ids = relevant_updates["Alert ID"].unique()
+
+        # Encontra os alertas que correspondem aos updates
+        df_user_alerts = df_alerts[df_alerts["Alert ID"].isin(relevant_ids)]
+
+        if df_user_alerts.empty:
+            st.info("You haven't submitted or updated any alerts yet.")
             return
 
-        selected_title = st.selectbox("Select an alert to update:", df_user["Title"].tolist())
-        selected_row = df_user[df_user["Title"] == selected_title].iloc[0]
+        selected_title = st.selectbox("Select an alert to update:", df_user_alerts["Title"].tolist())
+        selected_row = df_user_alerts[df_user_alerts["Title"] == selected_title].iloc[0]
         alert_id = selected_row["Alert ID"]
 
-        df_updates = pd.DataFrame(sheets.worksheet("Alert Updates").get_all_records()) if "Alert Updates" in [ws.title for ws in sheets.worksheets()] else pd.DataFrame()
-        timeline = df_updates[df_updates["Alert ID"] == alert_id].sort_values("Timestamp") if not df_updates.empty else pd.DataFrame()
+        # Mostra linha do tempo
+        timeline = df_updates[df_updates["Alert ID"] == alert_id].sort_values("Timestamp")
 
         if not timeline.empty:
             st.markdown("### Update Timeline")
@@ -1336,7 +1348,7 @@ def display_alert_update_timeline(sheet_id):
         else:
             st.info("This alert has no updates yet.")
 
-        # NOVO: Escolha do autor da atualização
+        # Autoria da atualização
         update_author_choice = st.radio(
             "Choose how to display your name in this update:",
             ["Show my username", "Submit anonymously"],
@@ -1351,7 +1363,7 @@ def display_alert_update_timeline(sheet_id):
         with st.form(f"update_form_{alert_id}"):
             st.markdown("**Add a new update to this alert:**")
             new_update = st.text_area("Update Description")
-            submitted = st.form_submit_button("Add Update")
+            submitted = st.form_submit_button("➕ Add Update")
 
             if submitted and new_update.strip():
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1371,7 +1383,7 @@ def display_alert_update_timeline(sheet_id):
                     st.error(f"❌ Failed to add update: {e}")
 
     except Exception as e:
-        st.error(f"❌ Could not load alerts: {e}")
+        st.error(f"❌ Could not load alerts or updates: {e}")
 
 # --- Interface em colunas: Alertas (superior) e Casos (inferior) ---
 if "user" in st.session_state:
