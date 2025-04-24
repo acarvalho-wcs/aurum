@@ -126,16 +126,7 @@ def display_public_alerts_section(sheet_id):
             for idx, (_, row) in enumerate(df_alerts.iterrows()):
                 col = alert_cols[idx % 3]
                 with col:
-                    with st.expander(f"🚨 {row['Title']} ({row['Risk Level']})", expanded=False):
-                        # Título destacado dentro do alerta
-                        st.markdown(
-                            f"""
-                            <div style='font-weight: bold; font-size: 16px; margin-bottom: 8px;'>
-                                🚨 {row['Title']} ({row['Risk Level']})
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
+                     with st.expander(f"**🚨 {row['Title']} ({row['Risk Level']})**", expanded=False):
                         st.markdown(f"**Description:** {row['Description']}")
                         st.markdown(f"**Category:** {row['Category']}")
                         if row.get("Species"):
@@ -143,16 +134,17 @@ def display_public_alerts_section(sheet_id):
                         if row.get("Country"):
                             st.markdown(f"**Country:** {row['Country']}")
 
-                        # ✅ Link visível
+                        # ✅ Link visível (sem duplicação)
                         if row.get("Source Link"):
+                            link = row['Source Link']
                             st.markdown(
-                                f"🔗 **Source:** [{row['Source Link']}]({row['Source Link']})",
+                                f"🔗 **Source:** <a href='{link}' target='_blank'>{link}</a>",
                                 unsafe_allow_html=True
                             )
 
                         st.caption(f"Submitted on {row['Created At']} by *{row['Created By']}*")
 
-                        # ✅ Rodapé institucional (em inglês)
+                        # ✅ Rodapé institucional
                         st.markdown(
                             """
                             <div style='font-size: 12px; color: #666; margin-top: 6px;'>
