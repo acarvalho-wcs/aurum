@@ -126,7 +126,7 @@ def display_public_alerts_section(sheet_id):
             for idx, (_, row) in enumerate(df_alerts.iterrows()):
                 col = alert_cols[idx % 3]
                 with col:
-                     with st.expander(f"**🚨 {row['Title']} ({row['Risk Level']})**", expanded=False):
+                    with st.expander(f"**🚨 {row['Title']} ({row['Risk Level']})**", expanded=False):
                         st.markdown(f"**Description:** {row['Description']}")
                         st.markdown(f"**Category:** {row['Category']}")
                         if row.get("Species"):
@@ -134,7 +134,7 @@ def display_public_alerts_section(sheet_id):
                         if row.get("Country"):
                             st.markdown(f"**Country:** {row['Country']}")
 
-                        # ✅ Link visível (sem duplicação)
+                        # ✅ Link visível (sem duplicacao)
                         if row.get("Source Link"):
                             link = row['Source Link']
                             st.markdown(
@@ -142,7 +142,9 @@ def display_public_alerts_section(sheet_id):
                                 unsafe_allow_html=True
                             )
 
-                        st.caption(f"Submitted on {row['Created At']} by *{row['Created By']}*")
+                        # Exibe o nome visível (pode ser Anonymous)
+                        display_name = row.get("Display As", row.get("Created By", "Unknown"))
+                        st.caption(f"Submitted on {row['Created At']} by *{display_name}*")
 
                         # ✅ Rodapé institucional
                         st.markdown(
@@ -154,9 +156,9 @@ def display_public_alerts_section(sheet_id):
                             unsafe_allow_html=True
                         )
 
-                        # 🗑️ Botão de remoção (se for o criador)
+                        # 🗑️ Botão de remoção (se for o criador real)
                         user_email = st.session_state.get("user_email", "").strip().lower()
-                        creator = row["Created By"].strip().lower()
+                        creator = row.get("Created By", "").strip().lower()
                         if creator == user_email:
                             if st.button(f"🗑️ Remove alert from public board", key=f"delete_{row['Alert ID']}"):
                                 try:
@@ -1313,17 +1315,14 @@ def display_alert_submission_form(sheet_id):
     categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
     risk_levels = ["Low", "Medium", "High"]
 
-    # Inicializa todos os campos com valores válidos
     for key in ["title", "description", "species", "country", "source_link"]:
         st.session_state.setdefault(field_keys[key], "")
 
-    # Garante que a categoria e risco tenham valores válidos
     if st.session_state.get(field_keys["category"]) not in categories:
         st.session_state[field_keys["category"]] = categories[0]
     if st.session_state.get(field_keys["risk_level"]) not in risk_levels:
         st.session_state[field_keys["risk_level"]] = risk_levels[0]
 
-    # Inicializa o campo de autoria
     st.session_state.setdefault(field_keys["author_choice"], "Show my username")
 
     with st.form("alert_form"):
@@ -1340,11 +1339,9 @@ def display_alert_submission_form(sheet_id):
             ["Show my username", "Submit anonymously"],
             key=field_keys["author_choice"]
         )
-        created_by = (
-            st.session_state["user"]
-            if author_choice == "Show my username"
-            else "Anonymous"
-        )
+
+        created_by = st.session_state["user_email"]
+        display_as = st.session_state["user"] if author_choice == "Show my username" else "Anonymous"
 
         submitted = st.form_submit_button("📤 Submit Alert")
 
@@ -1354,12 +1351,12 @@ def display_alert_submission_form(sheet_id):
         else:
             alert_id = str(uuid4())
             created_at = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
-            public = True  # Continua visível publicamente
+            public = True
 
             alert_row = [
-                alert_id, created_at, created_by, title, description,
+                alert_id, created_at, created_by, display_as, title, description,
                 category, species, country, risk_level, source_link,
-                str(public), "", ""
+                str(public)
             ]
 
             try:
