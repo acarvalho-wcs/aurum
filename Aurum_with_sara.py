@@ -105,48 +105,42 @@ def display_public_alerts_section(sheet_id):
         try:
             df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
 
+            # Verifica se o DataFrame tem dados e a coluna 'Public'
             if df_alerts.empty or "Public" not in df_alerts.columns:
                 st.info("No public alerts available.")
                 return
 
+            # Filtro: apenas alertas marcados como públicos
             df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
 
             if df_alerts.empty:
                 st.info("No public alerts available.")
                 return
 
+            # Ordena por data de criação
             df_alerts = df_alerts.sort_values("Created At", ascending=False)
 
+            # Tenta carregar updates para exibir linha do tempo
             try:
                 df_updates = pd.DataFrame(sheets.worksheet("Alert Updates").get_all_records())
             except Exception:
                 df_updates = pd.DataFrame()
 
+            # Divide em até 6 colunas (3 por linha)
             alert_cols = st.columns(3)
             for idx, (_, row) in enumerate(df_alerts.iterrows()):
                 col = alert_cols[idx % 3]
                 with col:
                     with st.expander(f"🚨 {row['Title']} ({row['Risk Level']})", expanded=False):
-                        st.markdown(
-                            f"""
-                            <div style="position: relative; min-height: 180px; border: 1px solid #ccc; padding: 10px; border-radius: 10px;">
-                                <div style="margin-bottom: 50px;">
-                                    <strong>Description:</strong> {row['Description']}<br>
-                                    <strong>Category:</strong> {row['Category']}<br>
-                                    {"<strong>Species:</strong> " + row['Species'] + "<br>" if row.get("Species") else ""}
-                                    {"<strong>Country:</strong> " + row['Country'] + "<br>" if row.get("Country") else ""}
-                                    {"<a href='" + row['Source Link'] + "' target='_blank'>🔗 Source</a><br>" if row.get("Source Link") else ""}
-                                    <small>Submitted on {row['Created At']} by <i>{row['Created By']}</i></small>
-                                </div>
-                                <img src="https://raw.githubusercontent.com/acarvalho-wcs/aurum/main/aurum_alert.png" 
-                                     style="position: absolute; bottom: 10px; right: 10px; width: 75px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);" 
-                                     alt="Aurum Logo"/>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
+                        st.markdown(f"**Description:** {row['Description']}")
+                        st.markdown(f"**Category:** {row['Category']}")
+                        if row.get("Species"): st.markdown(f"**Species:** {row['Species']}")
+                        if row.get("Country"): st.markdown(f"**Country:** {row['Country']}")
+                        if row.get("Source Link"):
+                            st.markdown(f"[🔗 Source]({row['Source Link']})", unsafe_allow_html=True)
+                        st.caption(f"Submitted on {row['Created At']} by *{row['Created By']}*")
 
-                        # Linha do tempo pública
+                        # NOVO: Linha do tempo pública
                         if not df_updates.empty and "Alert ID" in df_updates.columns:
                             updates = df_updates[df_updates["Alert ID"] == row["Alert ID"]].sort_values("Timestamp")
                             if not updates.empty:
