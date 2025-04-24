@@ -154,6 +154,21 @@ def display_public_alerts_section(sheet_id):
                             unsafe_allow_html=True
                         )
 
+                        # 🗑️ Botão de remoção (se for o criador)
+                        user_email = st.session_state.get("user_email", "").strip().lower()
+                        creator = row["Created By"].strip().lower()
+                        if creator == user_email:
+                            if st.button(f"🗑️ Remove alert from public board", key=f"delete_{row['Alert ID']}"):
+                                try:
+                                    sheet = sheets.worksheet("Alerts")
+                                    cell = sheet.find(str(row["Alert ID"]))
+                                    public_col = df_alerts.columns.get_loc("Public") + 1  # gspread é 1-based
+                                    sheet.update_cell(cell.row, public_col, "FALSE")
+                                    st.success("Alert removed from public board (still stored in the system).")
+                                    st.experimental_rerun()
+                                except Exception as e:
+                                    st.error(f"❌ Failed to update visibility: {e}")
+
                         # Timeline (if any)
                         if not df_updates.empty and "Alert ID" in df_updates.columns:
                             updates = df_updates[df_updates["Alert ID"] == row["Alert ID"]].sort_values("Timestamp")
