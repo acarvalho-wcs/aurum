@@ -105,28 +105,23 @@ def display_public_alerts_section(sheet_id):
         try:
             df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
 
-            # Verifica se o DataFrame tem dados e a coluna 'Public'
             if df_alerts.empty or "Public" not in df_alerts.columns:
                 st.info("No public alerts available.")
                 return
 
-            # Filtro: apenas alertas marcados como públicos
             df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
 
             if df_alerts.empty:
                 st.info("No public alerts available.")
                 return
 
-            # Ordena por data de criação
             df_alerts = df_alerts.sort_values("Created At", ascending=False)
 
-            # Tenta carregar updates para exibir linha do tempo
             try:
                 df_updates = pd.DataFrame(sheets.worksheet("Alert Updates").get_all_records())
             except Exception:
                 df_updates = pd.DataFrame()
 
-            # Divide em até 6 colunas (3 por linha)
             alert_cols = st.columns(3)
             for idx, (_, row) in enumerate(df_alerts.iterrows()):
                 col = alert_cols[idx % 3]
@@ -134,13 +129,25 @@ def display_public_alerts_section(sheet_id):
                     with st.expander(f"🚨 {row['Title']} ({row['Risk Level']})", expanded=False):
                         st.markdown(f"**Description:** {row['Description']}")
                         st.markdown(f"**Category:** {row['Category']}")
-                        if row.get("Species"): st.markdown(f"**Species:** {row['Species']}")
-                        if row.get("Country"): st.markdown(f"**Country:** {row['Country']}")
+                        if row.get("Species"):
+                            st.markdown(f"**Species:** {row['Species']}")
+                        if row.get("Country"):
+                            st.markdown(f"**Country:** {row['Country']}")
                         if row.get("Source Link"):
                             st.markdown(f"[🔗 Source]({row['Source Link']})", unsafe_allow_html=True)
                         st.caption(f"Submitted on {row['Created At']} by *{row['Created By']}*")
 
-                        # NOVO: Linha do tempo pública
+                        # ✅ English institutional footer
+                        st.markdown(
+                            """
+                            <div style='font-size: 12px; color: #666; margin-top: 6px;'>
+                                <em>This alert was published by verified users on <strong>AURUM</strong>, the intelligence system against wildlife trafficking.</em>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                        # Timeline (if any)
                         if not df_updates.empty and "Alert ID" in df_updates.columns:
                             updates = df_updates[df_updates["Alert ID"] == row["Alert ID"]].sort_values("Timestamp")
                             if not updates.empty:
