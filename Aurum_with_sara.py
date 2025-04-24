@@ -167,7 +167,7 @@ def display_public_alerts_section(sheet_id):
                                     public_col = df_alerts.columns.get_loc("Public") + 1  # gspread é 1-based
                                     sheet.update_cell(cell.row, public_col, "FALSE")
                                     st.success("Alert removed from public board (still stored in the system).")
-                                    st.experimental_rerun()
+                                    st.rerun()
                                 except Exception as e:
                                     st.error(f"❌ Failed to update visibility: {e}")
 
