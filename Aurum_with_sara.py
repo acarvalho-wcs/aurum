@@ -133,11 +133,17 @@ def display_public_alerts_section(sheet_id):
                             st.markdown(f"**Species:** {row['Species']}")
                         if row.get("Country"):
                             st.markdown(f"**Country:** {row['Country']}")
+
+                        # ✅ Link visível
                         if row.get("Source Link"):
-                            st.markdown(f"[🔗 Source]({row['Source Link']})", unsafe_allow_html=True)
+                            st.markdown(
+                                f"🔗 **Source:** [{row['Source Link']}]({row['Source Link']})",
+                                unsafe_allow_html=True
+                            )
+
                         st.caption(f"Submitted on {row['Created At']} by *{row['Created By']}*")
 
-                        # ✅ English institutional footer
+                        # ✅ Rodapé institucional (em inglês)
                         st.markdown(
                             """
                             <div style='font-size: 12px; color: #666; margin-top: 6px;'>
