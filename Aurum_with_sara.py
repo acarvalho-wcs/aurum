@@ -127,6 +127,15 @@ def display_public_alerts_section(sheet_id):
                 col = alert_cols[idx % 3]
                 with col:
                     with st.expander(f"🚨 {row['Title']} ({row['Risk Level']})", expanded=False):
+                        # Título destacado dentro do alerta
+                        st.markdown(
+                            f"""
+                            <div style='font-weight: bold; font-size: 16px; margin-bottom: 8px;'>
+                                🚨 {row['Title']} ({row['Risk Level']})
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
                         st.markdown(f"**Description:** {row['Description']}")
                         st.markdown(f"**Category:** {row['Category']}")
                         if row.get("Species"):
