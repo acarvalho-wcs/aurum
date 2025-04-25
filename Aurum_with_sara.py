@@ -1286,12 +1286,6 @@ if st.session_state.get("is_admin"):
                     except Exception as e:
                         st.error(f"❌ Failed to approve user: {e}")
 
-# --- FORMULÁRIO ---
-def get_worksheet(sheet_name="Aurum_data"):
-    gc = gspread.authorize(credentials)
-    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-    return sh.worksheet(sheet_name)
-
 # --- Função para carregar dados de qualquer aba ---
 def load_sheet_data(sheet_name, sheets):
     try:
