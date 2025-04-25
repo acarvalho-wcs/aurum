@@ -80,6 +80,11 @@ users_ws = sheets.worksheet(USERS_SHEET)
 requests_ws = sheets.worksheet(REQUESTS_SHEET)
 users_df = pd.DataFrame(users_ws.get_all_records())
 
+# --- FUNÇÃO PARA ACESSAR A ABA 'Aurum_data' (My Cases) ---
+@st.cache_data(show_spinner=False)
+def get_worksheet(sheet_name="Aurum_data"):
+    return sheets.worksheet(sheet_name)
+
 # --- Função para acessar worksheet de dados principais ---
 def get_worksheet(name="Aurum_data"):
     return sheets.worksheet(name)
