@@ -85,10 +85,6 @@ users_df = pd.DataFrame(users_ws.get_all_records())
 def get_worksheet(sheet_name="Aurum_data"):
     return sheets.worksheet(sheet_name)
 
-# --- Função para acessar worksheet de dados principais ---
-def get_worksheet(name="Aurum_data"):
-    return sheets.worksheet(name)
-
 # --- Mensagem inicial caso nenhum arquivo tenha sido enviado e usuário não esteja logado ---
 if uploaded_file is None:
     st.markdown("""
