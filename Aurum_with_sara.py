@@ -65,11 +65,17 @@ SHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
 USERS_SHEET = "Users"
 REQUESTS_SHEET = "Access Requests"
 
-scope = ["https://www.googleapis.com/auth/spreadsheets"]
-credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-client = gspread.authorize(credentials)
-sheets = client.open_by_key(SHEET_ID)
+@st.cache_resource
+def get_sheet_connection():
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    credentials = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"], scopes=scope
+    )
+    client = gspread.authorize(credentials)
+    return client.open_by_key(SHEET_ID)
 
+# Use a função para obter a conexão
+sheets = get_sheet_connection()
 users_ws = sheets.worksheet(USERS_SHEET)
 requests_ws = sheets.worksheet(REQUESTS_SHEET)
 users_df = pd.DataFrame(users_ws.get_all_records())
