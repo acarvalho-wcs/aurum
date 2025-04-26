@@ -65,25 +65,18 @@ SHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
 USERS_SHEET = "Users"
 REQUESTS_SHEET = "Access Requests"
 
-@st.cache_resource
-def get_sheet_connection():
-    scope = ["https://www.googleapis.com/auth/spreadsheets"]
-    credentials = Credentials.from_service_account_info(
-        st.secrets["gcp_service_account"], scopes=scope
-    )
-    client = gspread.authorize(credentials)
-    return client.open_by_key(SHEET_ID)
+scope = ["https://www.googleapis.com/auth/spreadsheets"]
+credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+client = gspread.authorize(credentials)
+sheets = client.open_by_key(SHEET_ID)
 
-# Use a função para obter a conexão
-sheets = get_sheet_connection()
 users_ws = sheets.worksheet(USERS_SHEET)
 requests_ws = sheets.worksheet(REQUESTS_SHEET)
 users_df = pd.DataFrame(users_ws.get_all_records())
 
-# --- FUNÇÃO PARA ACESSAR A ABA 'Aurum_data' (My Cases) ---
-@st.cache_data(show_spinner=False)
-def get_worksheet(sheet_name="Aurum_data"):
-    return sheets.worksheet(sheet_name)
+# --- Função para acessar worksheet de dados principais ---
+def get_worksheet(name="Aurum_data"):
+    return sheets.worksheet(name)
 
 # --- Mensagem inicial caso nenhum arquivo tenha sido enviado e usuário não esteja logado ---
 if uploaded_file is None:
@@ -1285,6 +1278,12 @@ if st.session_state.get("is_admin"):
                             st.info("🔐 The user is now authorized to log into Aurum.")
                     except Exception as e:
                         st.error(f"❌ Failed to approve user: {e}")
+
+# --- FORMULÁRIO ---
+def get_worksheet(sheet_name="Aurum_data"):
+    gc = gspread.authorize(credentials)
+    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
+    return sh.worksheet(sheet_name)
 
 # --- Função para carregar dados de qualquer aba ---
 def load_sheet_data(sheet_name, sheets):
