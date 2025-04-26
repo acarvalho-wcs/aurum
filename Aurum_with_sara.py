@@ -1234,7 +1234,6 @@ if st.session_state["show_sidebar_request"]:
                 st.sidebar.success("✅ Request submitted!")
                 st.session_state["show_sidebar_request"] = False
 
-# --- PAINEL ADMINISTRATIVO ---
 if st.session_state.get("is_admin"):
     st.markdown("## 🛡️ Admin Panel - Approve Access Requests")
     request_df = pd.DataFrame(requests_ws.get_all_records())
@@ -1252,13 +1251,16 @@ if st.session_state.get("is_admin"):
                     st.warning("Username and password are required.")
                 else:
                     try:
-                        # Buscar índice da linha correspondente
+                        # Buscar linha correspondente
                         user_row = request_df[request_df["Username"] == new_user]
                         if user_row.empty:
                             st.warning("User not found in access requests.")
                         else:
                             row_index = user_row.index[0]
                             is_admin_str = "TRUE" if is_admin else "FALSE"
+
+                            # Pega o E-mail associado do Access Requests
+                            email = user_row.iloc[0]["E-mail"].strip()
 
                             # Atualizar Access Requests
                             requests_ws.update_cell(row_index + 2, request_df.columns.get_loc("Approved") + 1, "TRUE")
@@ -1270,6 +1272,7 @@ if st.session_state.get("is_admin"):
                                 users_ws.append_row([
                                     new_user,
                                     new_password,
+                                    email,
                                     is_admin_str,
                                     "TRUE"
                                 ])
