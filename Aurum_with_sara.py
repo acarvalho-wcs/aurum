@@ -1110,12 +1110,15 @@ if export_html and df_selected is not None:
         html_sections.append("<h2>Trend Analysis</h2>")
         html_sections.append(f"<p><strong>TCS:</strong> {tcs:.2f}</p>")
 
-        # Salvar figura
-        trend_buf = BytesIO()
-        fig.savefig(trend_buf, format="png", bbox_inches="tight")
-        trend_buf.seek(0)
-        trend_base64 = base64.b64encode(trend_buf.read()).decode("utf-8")
-        html_sections.append(f'<img src="data:image/png;base64,{trend_base64}" width="700">')
+        # Salvar figura se existir
+        if 'fig' in locals() and hasattr(fig, "savefig"):
+            trend_buf = BytesIO()
+            fig.savefig(trend_buf, format="png", bbox_inches="tight")
+            trend_buf.seek(0)
+            trend_base64 = base64.b64encode(trend_buf.read()).decode("utf-8")
+            html_sections.append(f'<img src="data:image/png;base64,{trend_base64}" width="700">')
+        else:
+            html_sections.append("<p><i>No trend figure available.</i></p>")
 
     # Coocorrência
     if show_cooc and co_results:
