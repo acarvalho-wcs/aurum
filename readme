@@ -1,12 +1,101 @@
-# 🦜 Aurum – Wildlife Crime Analysis Tool
+Aurum: Criminal Intelligence in Wildlife Trafficking
+Aurum is a modular and interactive platform for criminal intelligence in wildlife trafficking, developed by the Wildlife Conservation Society (WCS) – Brazil.
 
-**Aurum** is an open analytical tool to detect signs of organized crime in wildlife trafficking datasets.
+It empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly web interface built on Streamlit.
 
-It uses statistical methods and unsupervised learning to analyze patterns like:
+Key Features
+Case Data Upload
+Upload your own wildlife trafficking data (.xlsx) to start analyzing immediately. A ready-to-use template is provided.
 
-- 📈 Temporal Trends (TCS) (running)
-- 🧬 Species Co-occurrence  (under construction)
-- 🚨 Anomaly Detection (under construction)
-- 🕸️ Network Connectivity  (under construction)
-- 🧮 Organized Crime Score (OCS)  (under construction)
-- 🧠 Wildlife Crime Staging (SARA Model)
+Trend Analysis
+Explore trends in seizure patterns over time, using Segmented Regression (TCS) and CUSUM to detect significant changes.
+
+Species Co-occurrence
+Identify statistically significant co-trafficking relationships between species using Chi-square tests.
+
+Anomaly Detection
+Detect atypical or high-impact cases through multiple methods:
+Isolation Forest
+Local Outlier Factor (LOF)
+DBSCAN Clustering
+Z-Score
+Mahalanobis Distance
+
+Criminal Network Analysis
+Visualize networks connecting trafficking cases based on shared attributes such as species and offender countries.
+
+Interactive Dashboards
+Build and customize visualizations dynamically: bar charts, scatter plots, pie charts, line graphs, and world maps.
+
+Public Alert Board
+View, submit, and update public alerts on wildlife trafficking risks, visible to all users.
+
+Multi-user System
+Includes login, account requests, admin approval, user access control, and case submission/editing functionalities.
+
+Export Options
+Easily download cleaned datasets (.xlsx) and full analysis reports (.html).
+
+Built-in Feedback System
+Users can submit suggestions and comments directly through the platform.
+
+How It Works
+Launch the app (via Streamlit).
+Upload your data (.xlsx) or log in to access multi-user tools.
+Select species or fields to analyze.
+Choose modules:
+Trend analysis
+Species co-occurrence
+Anomaly detection
+Network analysis
+Export results in .xlsx or .html formats.
+Submit cases and alerts if you are a registered user.
+
+🛠️ Technologies Used
+Streamlit — Frontend and interaction
+Google Sheets API + Gspread — Data backend and user management
+Pandas & NumPy — Data processing
+Plotly & Matplotlib — Interactive and static visualizations
+Scikit-learn — Machine learning for anomaly detection
+Statsmodels — Statistical trend analysis
+NetworkX — Criminal network modeling
+Google OAuth2 — Secure connection to spreadsheets
+PIL & Base64 — Image handling and logos
+PyCountry — Country standardization
+
+📈 Example Outputs
+Temporal trend plots with breakpoints.
+Species co-occurrence tables with chi² values and p-values.
+Anomaly tables highlighting suspicious cases.
+Global maps of seizure events.
+Case connectivity networks with centrality metrics.
+Public alert cards with dynamic update timelines.
+
+📋 Requirements
+Python 3.8+
+Streamlit
+Pandas
+Gspread
+Scikit-learn
+Statsmodels
+Plotly
+NetworkX
+PIL (Pillow)
+PyCountry
+Google OAuth2 credentials (service account)
+
+Important: A properly configured secrets.toml file is needed to connect to Google Sheets.
+
+Why Aurum?
+Wildlife trafficking is a highly dynamic and organized crime. Aurum bridges the gap between conservation datasets and investigative workflows, allowing fast detection of patterns, risks, and anomalies.
+
+It offers field-ready, scalable, and intelligence-driven solutions for conservation practitioners, law enforcement agencies, and researchers.
+
+How to Cite
+Carvalho, A. F. (2025). Aurum: A Platform for Criminal Intelligence in Wildlife Trafficking. Wildlife Conservation Society.
+
+Contact
+For questions, collaboration opportunities, or suggestions, please contact:
+Developer: Antônio F. Carvalho
+Organization: Wildlife Conservation Society (WCS) – Brazil
+Email: acarvalho@wcs.org
