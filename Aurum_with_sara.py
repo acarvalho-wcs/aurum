@@ -96,7 +96,7 @@ if uploaded_file is None:
 # --- ALERTAS PÚBLICOS (visível para todos, inclusive sem login) ---
 def display_public_alerts_section(sheet_id):
     with st.container():
-        st.markdown("## Alert Board")
+        st.markdown("## 🌍 Alert Board")
         st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
         st.markdown("### Wildlife Trafficking Alerts")
 
@@ -130,61 +130,61 @@ def display_public_alerts_section(sheet_id):
             for idx, (_, row) in enumerate(df_alerts.iterrows()):
                 col = alert_cols[idx % 3]
                 with col:
-                    with st.container():
-                        st.markdown(f"""
-                        <div style="
-                            background-color: #ffffff;
-                            padding: 1.5rem;
-                            border-radius: 12px;
-                            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                            margin-bottom: 0.5rem;
-                            height: auto;
-                        ">
-                            <h4 style="margin-top: 0;">{row.get('Title', 'No Title')}</h4>
-                            <p style="color: #666; font-size: 0.9rem;">{row.get('Description', '')}</p>
-                            <p><b>Category:</b> {row.get('Category', 'N/A')}</p>
-                            {f"<p><b>Species:</b> {row['Species']}</p>" if row.get("Species") else ""}
-                            {f"<p><b>Country:</b> {row['Country']}</p>" if row.get("Country") else ""}
-                            {f"<p><b>Source:</b> <a href='{row['Source Link']}' target='_blank'>Link</a></p>" if row.get("Source Link") else ""}
-                            <p style="font-size: 0.8rem; color: #888;">Submitted on {row.get('Created At', '')} by <i>{row.get('Display As', row.get('Created By', 'Unknown'))}</i></p>
-                        </div>
-                        """, unsafe_allow_html=True)
+                    with st.expander(f"**🚨 {row['Title']} ({row['Risk Level']})**", expanded=False):
+                        st.markdown(f"**Description:** {row['Description']}")
+                        st.markdown(f"**Category:** {row['Category']}")
+                        if row.get("Species"):
+                            st.markdown(f"**Species:** {row['Species']}")
+                        if row.get("Country"):
+                            st.markdown(f"**Country:** {row['Country']}")
 
-                    # Timeline de atualizações fora do quadro
-                    if not df_updates.empty and "Alert ID" in df_updates.columns:
-                        updates = df_updates[df_updates["Alert ID"] == row["Alert ID"]].sort_values("Timestamp")
-                        if not updates.empty:
-                            with st.expander("View Updates Timeline", expanded=False):
+                        # ✅ Link visível (sem duplicacao)
+                        if row.get("Source Link"):
+                            link = row['Source Link']
+                            st.markdown(
+                                f"🔗 **Source:** <a href='{link}' target='_blank'>{link}</a>",
+                                unsafe_allow_html=True
+                            )
+
+                        # Exibe o nome visível (pode ser Anonymous)
+                        display_name = row.get("Display As", row.get("Created By", "Unknown"))
+                        st.caption(f"Submitted on {row['Created At']} by *{display_name}*")
+
+                        # ✅ Rodapé institucional
+                        st.markdown(
+                            """
+                            <div style='font-size: 12px; color: #666; margin-top: 6px;'>
+                                <em>This alert was published by verified users on <strong>AURUM</strong>, the intelligence system against wildlife trafficking.</em>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                        # 🗑️ Botão de remoção (se for o criador real)
+                        user_email = st.session_state.get("user_email", "").strip().lower()
+                        creator = row.get("Created By", "").strip().lower()
+                        if creator == user_email:
+                            if st.button(f"🗑️ Remove alert from public board", key=f"delete_{row['Alert ID']}"):
+                                try:
+                                    sheet = sheets.worksheet("Alerts")
+                                    cell = sheet.find(str(row["Alert ID"]))
+                                    public_col = df_alerts.columns.get_loc("Public") + 1  # gspread é 1-based
+                                    sheet.update_cell(cell.row, public_col, "FALSE")
+                                    st.success("Alert removed from public board (still stored in the system).")
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"❌ Failed to update visibility: {e}")
+
+                        # Timeline (if any)
+                        if not df_updates.empty and "Alert ID" in df_updates.columns:
+                            updates = df_updates[df_updates["Alert ID"] == row["Alert ID"]].sort_values("Timestamp")
+                            if not updates.empty:
+                                st.markdown("**Update Timeline**")
                                 for _, upd in updates.iterrows():
-                                    st.markdown(f"""
-                                    <div style="display: flex; align-items: flex-start; margin-bottom: 0.8rem;">
-                                        <div style="margin-right: 10px; margin-top: 6px;">
-                                            <div style="width: 10px; height: 10px; background-color: #3498db; border-radius: 50%;"></div>
-                                        </div>
-                                        <div>
-                                            <strong>{upd['Timestamp']}</strong> — <i>{upd['User']}</i><br>
-                                            <span style="font-size: 0.9em; color: #666;">{upd['Update Text']}</span>
-                                        </div>
-                                    </div>
-                                    """, unsafe_allow_html=True)
-
-                    # Botão de remoção (se for o criador real)
-                    user_email = st.session_state.get("user_email", "").strip().lower()
-                    creator = row.get("Created By", "").strip().lower()
-                    if creator == user_email:
-                        if st.button(f"Remove alert from public board", key=f"delete_{row['Alert ID']}"):
-                            try:
-                                sheet = sheets.worksheet("Alerts")
-                                cell = sheet.find(str(row["Alert ID"]))
-                                public_col = df_alerts.columns.get_loc("Public") + 1  # gspread é 1-based
-                                sheet.update_cell(cell.row, public_col, "FALSE")
-                                st.success("Alert removed from public board (still stored in the system).")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Failed to update visibility: {e}")
+                                    st.markdown(f"🕒 **{upd['Timestamp']}** – *{upd['User']}*: {upd['Update Text']}")
 
         except Exception as e:
-            st.error(f"Failed to load public alerts: {e}")
+            st.error(f"❌ Failed to load public alerts: {e}")
 
 # Executa antes do login
 display_public_alerts_section(SHEET_ID)
