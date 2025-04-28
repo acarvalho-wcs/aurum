@@ -1399,19 +1399,20 @@ def display_alert_update_timeline(sheet_id):
         else:
             df_updates.columns = [col.strip() for col in df_updates.columns]
 
-        user = st.session_state["user"]
+        user = st.session_state.get("user")
+        user_email = st.session_state.get("user_email")
 
-        # Alertas criados pelo usuário
-        created_alerts = df_alerts[df_alerts["Created By"] == user]
+        # Alertas criados pelo usuário (usando o e-mail como referência)
+        created_alerts = df_alerts[df_alerts["Created By"] == user_email]
 
-        # Alertas com updates do usuário ou de forma anônima
+        # Alertas que o usuário atualizou (usando username nos updates)
         relevant_updates = df_updates[
             (df_updates["User"] == user) | (df_updates["User"] == "Anonymous")
         ]
         updated_alert_ids = relevant_updates["Alert ID"].unique()
         updated_alerts = df_alerts[df_alerts["Alert ID"].isin(updated_alert_ids)]
 
-        # Junta ambos
+        # Junta alertas criados e alertas atualizados
         df_user_alerts = pd.concat([created_alerts, updated_alerts]).drop_duplicates(subset="Alert ID")
 
         if df_user_alerts.empty:
