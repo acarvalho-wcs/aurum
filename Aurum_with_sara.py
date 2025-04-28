@@ -1458,11 +1458,12 @@ def display_alert_update_timeline(sheet_id):
                                         update_ws.append_row(["Alert ID", "Timestamp", "User", "Update Text"])
 
                                 update_ws.append_row(update_row)
+                                st.success("✅ Update added to alert!")
 
                                 # 🔥 Limpa o campo de texto depois de submeter
-                                st.session_state[update_text_key] = ""
-
-                                st.success("✅ Update added to alert!")
+                                if update_text_key in st.session_state:
+                                    del st.session_state[update_text_key]
+                                
                                 st.rerun()
                         except Exception as e:
                                 st.error(f"❌ Failed to add update: {e}")
