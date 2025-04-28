@@ -1394,7 +1394,10 @@ def display_alert_update_timeline(sheet_id):
         df_alerts.columns = [col.strip() for col in df_alerts.columns]
 
         df_updates = pd.DataFrame(sheets.worksheet("Alert Updates").get_all_records())
-        df_updates.columns = [col.strip() for col in df_updates.columns]
+        if df_updates.empty:
+            df_updates = pd.DataFrame(columns=["Alert ID", "Timestamp", "User", "Update Text"])
+        else:
+            df_updates.columns = [col.strip() for col in df_updates.columns]
 
         user = st.session_state["user"]
 
