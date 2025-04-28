@@ -1419,9 +1419,20 @@ def display_alert_update_timeline(sheet_id):
             st.info("You haven't submitted or updated any alerts yet.")
             return
 
-        selected_title = st.selectbox("Select an alert to update:", df_user_alerts["Title"].tolist())
+        # 🔵 Fixar seleção do alerta no session_state
+        if "selected_alert_id" not in st.session_state:
+            st.session_state["selected_alert_id"] = None
+
+        selected_title = st.selectbox(
+            "Select an alert to update:",
+            df_user_alerts["Title"].tolist()
+        )
+
         selected_row = df_user_alerts[df_user_alerts["Title"] == selected_title].iloc[0]
         alert_id = selected_row["Alert ID"]
+
+        # 🔵 Salva o alerta selecionado fixo
+        st.session_state["selected_alert_id"] = alert_id
 
         timeline = df_updates[df_updates["Alert ID"] == alert_id].sort_values("Timestamp")
 
@@ -1464,7 +1475,7 @@ def display_alert_update_timeline(sheet_id):
                         update_ws.append_row(update_row)
                         st.success("✅ Update added to alert!")
 
-                        # 🔥 Exatamente como nos novos alertas
+                        # 🔥 Apaga o campo de texto depois de submeter
                         for k in field_keys.values():
                             if k in st.session_state:
                                 del st.session_state[k]
