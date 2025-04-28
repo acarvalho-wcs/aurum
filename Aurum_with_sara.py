@@ -1377,8 +1377,8 @@ def display_alert_submission_form(sheet_id):
                 st.balloons()
 
                 for k in field_keys.values():
-                    if k in st.session_state:
-                        del st.session_state[k]
+                    st.session_state[k] = ''
+
                 st.rerun()
             except Exception as e:
                 st.error(f"❌ Failed to submit alert: {e}")
