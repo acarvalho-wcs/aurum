@@ -1440,33 +1440,39 @@ def display_alert_update_timeline(sheet_id):
         update_user = user if update_author_choice == "Show my username" else "Anonymous"
 
         update_text_key = f"update_text_{alert_id}"
+        field_keys = {"update_text": update_text_key}
 
         with st.form(f"update_form_{alert_id}"):
-                st.markdown("**Add a new update to this alert:**")
-                new_update = st.text_area("Update Description", key=update_text_key)
-                submitted = st.form_submit_button("➕ Add Update")
+            st.markdown("**Add a new update to this alert:**")
+            new_update = st.text_area("Update Description", key=update_text_key)
+            submitted = st.form_submit_button("➕ Add Update")
 
-                if submitted and new_update.strip():
-                        timestamp = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
-                        update_row = [alert_id, timestamp, update_user, new_update.strip()]
+            if submitted:
+                if not new_update.strip():
+                    st.warning("Update description is required.")
+                else:
+                    timestamp = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
+                    update_row = [alert_id, timestamp, update_user, new_update.strip()]
 
+                    try:
                         try:
-                                try:
-                                        update_ws = sheets.worksheet("Alert Updates")
-                                except gspread.exceptions.WorksheetNotFound:
-                                        update_ws = sheets.add_worksheet(title="Alert Updates", rows="1000", cols="4")
-                                        update_ws.append_row(["Alert ID", "Timestamp", "User", "Update Text"])
+                            update_ws = sheets.worksheet("Alert Updates")
+                        except gspread.exceptions.WorksheetNotFound:
+                            update_ws = sheets.add_worksheet(title="Alert Updates", rows="1000", cols="4")
+                            update_ws.append_row(["Alert ID", "Timestamp", "User", "Update Text"])
 
-                                update_ws.append_row(update_row)
-                                st.success("✅ Update added to alert!")
+                        update_ws.append_row(update_row)
+                        st.success("✅ Update added to alert!")
 
-                                # 🔥 Limpa o campo de texto depois de submeter
-                                if update_text_key in st.session_state:
-                                    del st.session_state[update_text_key]
-                                
-                                st.rerun()
-                        except Exception as e:
-                                st.error(f"❌ Failed to add update: {e}")
+                        # 🔥 Exatamente como nos novos alertas
+                        for k in field_keys.values():
+                            if k in st.session_state:
+                                del st.session_state[k]
+
+                        st.rerun()
+
+                    except Exception as e:
+                        st.error(f"❌ Failed to add update: {e}")
 
     except Exception as e:
         st.error(f"❌ Could not load alerts or updates: {e}")
