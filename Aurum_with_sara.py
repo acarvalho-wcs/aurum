@@ -994,8 +994,13 @@ if uploaded_file is not None:
                         text=node_text,
                         marker=dict(
                             showscale=True,
-                            colorscale='YlOrRd',  # gradiente amarelo-alaranjado
-                            reversescale=True,    # começa pelo azul escuro
+                            colorscale=[
+                                [0.0, "#08306b"],
+                                [0.25, "#2171b5"],
+                                [0.5, "#6baed6"],
+                                [0.75, "#fdd0a2"],
+                                [1.0, "#f16913"]
+                            ],
                             color=node_color,
                             size=node_size,
                             colorbar=dict(
