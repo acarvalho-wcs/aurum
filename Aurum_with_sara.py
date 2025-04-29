@@ -936,11 +936,9 @@ if uploaded_file is not None:
 
                 G = nx.Graph()
 
-                # Create nodes
                 for case_id in case_feature_sets.index:
                     G.add_node(case_id)
 
-                # Create edges between cases that share features
                 case_ids = list(case_feature_sets.index)
                 for i in range(len(case_ids)):
                     for j in range(i + 1, len(case_ids)):
@@ -951,7 +949,6 @@ if uploaded_file is not None:
                 if G.number_of_edges() == 0:
                     st.info("No connections were found between cases using the selected features.")
                 else:
-                    # --- Compute metrics ---
                     degree_centrality = nx.degree_centrality(G)
                     betweenness_centrality = nx.betweenness_centrality(G)
                     closeness_centrality = nx.closeness_centrality(G)
@@ -960,49 +957,34 @@ if uploaded_file is not None:
                     except nx.NetworkXError:
                         eigenvector_centrality = {n: 0 for n in G.nodes()}
 
-                    # Detect communities
                     communities = list(greedy_modularity_communities(G))
-                    community_map = {}
-                    for i, community in enumerate(communities):
-                        for node in community:
-                            community_map[node] = i
+                    community_map = {node: i for i, comm in enumerate(communities) for node in comm}
 
-                    # Layout
-                    pos = nx.spring_layout(G, seed=42)
+                    pos = nx.kamada_kawai_layout(G)
 
-                    # Edge traces
-                    edge_x = []
-                    edge_y = []
-                    edge_weights = []
-                    for u, v, data in G.edges(data=True):
+                    edge_x, edge_y = [], []
+                    for u, v in G.edges():
                         x0, y0 = pos[u]
                         x1, y1 = pos[v]
                         edge_x.extend([x0, x1, None])
                         edge_y.extend([y0, y1, None])
-                        edge_weights.append(data["weight"])
 
                     edge_trace = go.Scatter(
                         x=edge_x, y=edge_y,
-                        line=dict(width=2, color='#888'),
-                        hoverinfo='text',
-                        mode='lines',
-                        text=[f"Shared features: {G[u][v]['weight']}" for u, v in G.edges()]
+                        line=dict(width=1.5, color='#888'),
+                        hoverinfo='none',
+                        mode='lines'
                     )
 
-                    # Node traces
-                    node_x = []
-                    node_y = []
-                    node_text = []
-                    node_color = []
-                    node_size = []
+                    node_x, node_y, node_color, node_size, node_text = [], [], [], [], []
                     for node in G.nodes():
                         x, y = pos[node]
-                        node_x.append(x)
-                        node_y.append(y)
                         deg = G.degree[node]
                         com = community_map.get(node, 0)
+                        node_x.append(x)
+                        node_y.append(y)
                         node_color.append(com)
-                        node_size.append(8 + 2*deg)
+                        node_size.append(12 + 2*deg)
                         node_text.append(f"Case {node}<br>Degree: {deg}<br>Community: {com}")
 
                     node_trace = go.Scatter(
@@ -1013,7 +995,7 @@ if uploaded_file is not None:
                         hoverinfo='text',
                         marker=dict(
                             showscale=True,
-                            colorscale='Viridis',
+                            colorscale='Rainbow',
                             color=node_color,
                             size=node_size,
                             colorbar=dict(
@@ -1044,7 +1026,11 @@ if uploaded_file is not None:
                     )
                     st.plotly_chart(fig, use_container_width=True)
 
-                    # --- Network Metrics ---
+                    st.markdown("### Community Summary")
+                    st.markdown(f"**Total communities detected:** `{len(communities)}`")
+                    for i, comm in enumerate(communities):
+                        st.markdown(f"- Community `{i}`: {len(comm)} cases")
+
                     st.markdown("### Network Metrics")
                     num_nodes = G.number_of_nodes()
                     num_edges = G.number_of_edges()
@@ -1071,8 +1057,7 @@ if uploaded_file is not None:
                         st.write(f"- **Average shortest path length:** `{avg_shortest_path:.2f}`")
                     st.write(f"- **Modularity (community structure):** `{modularity:.3f}`")
 
-                    # --- Top Nodes by Centralities ---
-                    st.markdown("### Top Cases by Centrality Measures")
+                    st.markdown("### Top Central Cases")
 
                     def show_top(dictionary, title):
                         top_items = sorted(dictionary.items(), key=lambda x: x[1], reverse=True)[:5]
@@ -1086,25 +1071,15 @@ if uploaded_file is not None:
 
                     with st.expander("ℹ️ Learn more about this analysis"):
                         st.markdown("""
-                        ### About Network Analysis
+                        This network shows how cases relate to one another based on shared features.
 
-                        - **Each node** represents a wildlife trafficking case.
-                        - **Edges** represent shared attributes between cases.
-                        - **Node size** reflects degree (number of connections).
-                        - **Node color** reflects detected community.
-                        - **Edge width** reflects connection strength.
+                        - Nodes = individual cases.
+                        - Edges = shared attributes (species, offender country, etc).
+                        - Node color = detected community.
+                        - Node size = degree (connections).
+                        - Edge width = connection strength (shared features).
 
-                        **Key metrics:**
-                        - **Degree**: How many connections a case has.
-                        - **Betweenness**: Cases that act as bridges between clusters.
-                        - **Eigenvector**: Cases connected to other important cases.
-                        - **Modularity**: Measures strength of community structure.
-                        - **Diameter**: Longest shortest path in the network.
-
-                        This analysis can reveal:
-                        - Potential organized groups operating repeatedly.
-                        - Strategic connections facilitating trafficking routes.
-                        - Outlier cases that bridge different networks.
+                        Use this to detect clusters, intermediaries, and repeating patterns.
                         """)
             else:
                 st.info("Please select at least one feature to define connections between cases.")
