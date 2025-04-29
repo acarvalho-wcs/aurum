@@ -85,7 +85,7 @@ def get_worksheet(name="Aurum_data"):
 # --- Mensagem inicial caso nenhum arquivo tenha sido enviado e usuário não esteja logado ---
 if uploaded_file is None:
     st.markdown("""
-    **Aurum** is a criminal intelligence platform developed to support the monitoring and investigation of **wildlife trafficking**.
+    **Aurum** is a criminal intelligence platform developed to support the monitoring and investigation of **illegal wildlife trade (IWT)**.
     By integrating advanced statistical methods and interactive visualizations, Aurum enables researchers, enforcement agencies, and conservation organizations to identify operational patterns and support data-driven responses to illegal wildlife trade.
 
     **Upload your XLSX data file in the sidebar to begin.**  
