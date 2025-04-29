@@ -7,7 +7,7 @@ import unicodedata
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import numpy as np
-import network as nx
+import networkx as nx
 import plotly.graph_objects as go
 from networkx.algorithms.community import greedy_modularity_communities
 from io import BytesIO
