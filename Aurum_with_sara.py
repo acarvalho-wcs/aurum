@@ -960,6 +960,20 @@ if uploaded_file is not None:
                     communities = list(greedy_modularity_communities(G))
                     community_map = {node: i for i, comm in enumerate(communities) for node in comm}
 
+                    st.markdown("### 🎨 Community Color Customization")
+                    community_ids = sorted(set(community_map.values()))
+                    color_map = {}
+
+                    with st.expander("Customize community colors"):
+                        for cid in community_ids:
+                            default_color = "#1f77b4" if cid == 0 else "#ff7f0e"
+                            color = st.color_picker(
+                                f"Color for Community {cid}",
+                                value=default_color,
+                                key=f"comm_color_{cid}"
+                            )
+                            color_map[cid] = color
+
                     pos = nx.kamada_kawai_layout(G)
 
                     edge_x, edge_y = [], []
@@ -976,14 +990,14 @@ if uploaded_file is not None:
                         mode='lines'
                     )
 
-                    node_x, node_y, node_color, node_size, node_text = [], [], [], [], []
+                    node_x, node_y, node_color_rgb, node_size, node_text = [], [], [], [], []
                     for node in G.nodes():
                         x, y = pos[node]
                         deg = G.degree[node]
                         com = community_map.get(node, 0)
                         node_x.append(x)
                         node_y.append(y)
-                        node_color.append(com)
+                        node_color_rgb.append(color_map.get(com, "#999999"))
                         node_size.append(8 + deg * 1.2)
                         node_text.append(f"Case {node}<br>Degree: {deg}<br>Community: {com}")
 
@@ -993,21 +1007,8 @@ if uploaded_file is not None:
                         hoverinfo='text',
                         text=node_text,
                         marker=dict(
-                            showscale=True,
-                            colorscale=[
-                                [0.0, "#08306b"],
-                                [0.25, "#2171b5"],
-                                [0.5, "#6baed6"],
-                                [0.75, "#fdd0a2"],
-                                [1.0, "#f16913"]
-                            ],
-                            color=node_color,
+                            color=node_color_rgb,
                             size=node_size,
-                            colorbar=dict(
-                                title="Community",
-                                thickness=15,
-                                x=1.05
-                            ),
                             line_width=0.8
                         )
                     )
@@ -1021,7 +1022,7 @@ if uploaded_file is not None:
                             margin=dict(b=20, l=5, r=5, t=40),
                             annotations=[
                                 dict(
-                                    text="Node size = degree. Node color = community.",
+                                    text="Node size = degree. Node color = community (customizable).",
                                     showarrow=False,
                                     xref="paper", yref="paper",
                                     x=0.005, y=-0.002
