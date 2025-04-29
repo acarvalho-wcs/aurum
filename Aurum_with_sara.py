@@ -1032,12 +1032,14 @@ if uploaded_file is not None:
                         st.markdown(f"- Community `{i}`: {len(comm)} cases")
 
                     st.markdown("### Network Metrics")
+
                     num_nodes = G.number_of_nodes()
                     num_edges = G.number_of_edges()
                     density = nx.density(G)
                     components = nx.number_connected_components(G)
                     degrees = dict(G.degree())
                     avg_degree = sum(degrees.values()) / num_nodes if num_nodes else 0
+
                     try:
                         diameter = nx.diameter(G)
                         avg_shortest_path = nx.average_shortest_path_length(G)
@@ -1047,15 +1049,17 @@ if uploaded_file is not None:
 
                     modularity = nx.algorithms.community.quality.modularity(G, communities)
 
-                    st.write(f"- **Nodes:** {num_nodes}")
-                    st.write(f"- **Edges:** {num_edges}")
-                    st.write(f"- **Density:** `{density:.3f}`")
-                    st.write(f"- **Connected components:** {components}")
-                    st.write(f"- **Average degree:** `{avg_degree:.2f}`")
-                    if diameter is not None:
-                        st.write(f"- **Network diameter:** `{diameter}`")
-                        st.write(f"- **Average shortest path length:** `{avg_shortest_path:.2f}`")
-                    st.write(f"- **Modularity (community structure):** `{modularity:.3f}`")
+                    col1, col2, col3, col4 = st.columns(4)
+                    col1.metric("Nodes", num_nodes)
+                    col2.metric("Edges", num_edges)
+                    col3.metric("Density", f"{density:.3f}")
+                    col4.metric("Components", components)
+
+                    col5, col6, col7, col8 = st.columns(4)
+                    col5.metric("Avg. Degree", f"{avg_degree:.2f}")
+                    col6.metric("Diameter", diameter if diameter is not None else "–")
+                    col7.metric("Avg. Path", f"{avg_shortest_path:.2f}" if avg_shortest_path else "–")
+                    col8.metric("Modularity", f"{modularity:.3f}")
 
                     st.markdown("### Top Central Cases")
 
