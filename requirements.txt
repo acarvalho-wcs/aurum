@@ -4,8 +4,8 @@ numpy
 matplotlib
 scikit-learn
 statsmodels
-plotly
-networkx
+plotly>=5.0
+networkx>=2.8
 openpyxl
 streamlit
 openai>=1.0.0
