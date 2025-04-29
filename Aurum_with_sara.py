@@ -52,8 +52,8 @@ The platform enables the upload and processing of case-level data and provides a
 **Aurum** bridges conservation data and investigative workflows, offering a scalable and field-ready platform for intelligence-led responses to wildlife crime.
 """)
 
-st.sidebar.markdown("## 📂 Upload Data")
-uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx).**", type=["xlsx"])
+st.sidebar.markdown("## 📂 Upload Wildlife Trafficking Data")
+uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx) containing wildlife trafficking data.**", type=["xlsx"])
 
 st.sidebar.markdown("**Download Template**")
 with open("Aurum_template.xlsx", "rb") as f:
