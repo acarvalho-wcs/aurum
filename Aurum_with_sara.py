@@ -1211,11 +1211,14 @@ else:
 if "show_sidebar_request" not in st.session_state:
     st.session_state["show_sidebar_request"] = False
 
-# Botão na sidebar
-if st.sidebar.button("📩 Request Access"):
-    st.session_state["show_sidebar_request"] = True
+# Botão fixo na sidebar
+request_toggle = st.sidebar.button("📩 Request Access")
 
-# Exibe o formulário de solicitação na sidebar se o botão foi clicado
+# Alterna a visibilidade do formulário
+if request_toggle:
+    st.session_state["show_sidebar_request"] = not st.session_state["show_sidebar_request"]
+
+# Exibe o formulário de request access se ativado
 if st.session_state["show_sidebar_request"]:
     with st.sidebar.form("sidebar_request_form"):
         new_username = st.text_input("Choose a username", key="sidebar_user")
@@ -1240,6 +1243,7 @@ if st.session_state["show_sidebar_request"]:
                 ])
                 st.sidebar.success("✅ Request submitted!")
                 st.session_state["show_sidebar_request"] = False
+                st.rerun()  # Atualiza visualmente após envio
 
 if st.session_state.get("is_admin"):
     st.markdown("## 🛡️ Admin Panel - Approve Access Requests")
