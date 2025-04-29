@@ -1075,16 +1075,36 @@ if uploaded_file is not None:
                     
                     with st.expander("ℹ️ Learn more about this analysis"):
                         st.markdown("""
-                        This network shows how cases relate to one another based on shared features.
+                        ### About Case Network Analysis
 
-                        - Nodes = individual cases.
-                        - Edges = shared attributes (species, offender country, etc).
-                        - Node color = detected community.
-                        - Node size = degree (connections).
-                        - Edge width = connection strength (shared features).
+                        This section visualizes a network of wildlife trafficking cases based on **shared attributes** such as species, offender countries, or other selected variables.
 
-                        Use this to detect clusters, intermediaries, and repeating patterns.
+                        - **Each node represents a unique case** (`Case #`).
+                        - **An edge connects two cases that share one or more selected attributes**, such as:
+                            - The same species involved,
+                            - The same offender country,
+                            - Or any other field selected in the sidebar (e.g., seizure location, transport method).
+                        - **Node size** reflects the number of connections a case has (degree centrality).
+                        - **Node color** reflects its **community**, detected automatically using modularity-based clustering.
+                        - **Edge thickness** reflects the **strength of similarity**, i.e., how many attributes two cases have in common.
+
+                        This type of network allows you to:
+
+                        - **Identify clusters** of related cases, which may indicate organized groups or repeated patterns.
+                        - **Spot intermediaries or bridges** — cases that connect otherwise distant groups (high betweenness centrality).
+                        - **Detect influential hubs** — cases linked to others that are also highly connected (eigenvector centrality).
+                        - **Assess the structure of trafficking dynamics**, including how centralized or fragmented the case network is.
+
+                        You can select which attributes to include in the sidebar to dynamically reshape the network based on your analytical needs.
+
+                        ---
+                        **Example:**  
+                        If two cases both involve *Panthera onca* and originate from Brazil, they will be connected.  
+                        If a third case only shares the species but not the country, the connection will still be drawn, but with lower weight.
+
+                        For deeper interpretation, use the metrics above and explore the top-ranking cases by different centralities.
                         """)
+
             else:
                 st.info("Please select at least one feature to define connections between cases.")
                     
