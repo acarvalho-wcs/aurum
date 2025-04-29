@@ -971,7 +971,7 @@ if uploaded_file is not None:
 
                     edge_trace = go.Scatter(
                         x=edge_x, y=edge_y,
-                        line=dict(width=1.5, color='#888'),
+                        line=dict(width=1.2, color='#CCCCCC'),
                         hoverinfo='none',
                         mode='lines'
                     )
@@ -984,18 +984,18 @@ if uploaded_file is not None:
                         node_x.append(x)
                         node_y.append(y)
                         node_color.append(com)
-                        node_size.append(12 + 2*deg)
+                        node_size.append(8 + deg * 1.2)
                         node_text.append(f"Case {node}<br>Degree: {deg}<br>Community: {com}")
 
                     node_trace = go.Scatter(
                         x=node_x, y=node_y,
-                        mode='markers+text',
-                        text=node_text,
-                        textposition='top center',
+                        mode='markers',
                         hoverinfo='text',
+                        text=node_text,
                         marker=dict(
                             showscale=True,
-                            colorscale='Rainbow',
+                            colorscale='YlOrRd',  # gradiente amarelo-alaranjado
+                            reversescale=True,    # começa pelo azul escuro
                             color=node_color,
                             size=node_size,
                             colorbar=dict(
@@ -1003,7 +1003,7 @@ if uploaded_file is not None:
                                 thickness=15,
                                 x=1.05
                             ),
-                            line_width=1
+                            line_width=0.8
                         )
                     )
 
