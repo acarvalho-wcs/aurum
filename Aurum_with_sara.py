@@ -912,152 +912,199 @@ if uploaded_file is not None:
                     top_outliers = vote_df.sort_values(by="Outlier Votes", ascending=False).head(10)
                     st.dataframe(top_outliers.set_index("Case #"))
 
-            show_network = st.sidebar.checkbox("Network Analysis", value=False)
-            if show_network:
-                st.markdown("## Network Analysis")
+            st.markdown("## Network Analysis")
 
-                import networkx as nx
-                import plotly.graph_objects as go
+            st.markdown("This network connects cases that share attributes like species, offender country, or others you select.")
 
-                st.markdown("This network connects cases that share attributes like species or offender country.")
+            default_features = ["Species", "Country of offenders"]
+            network_features = st.multiselect(
+                "Select features to compare across cases:", 
+                options=[col for col in df_selected.columns if col != "Case #"],
+                default=default_features
+            )
 
-                default_features = ["Species", "Country of offenders"]
-                network_features = st.multiselect(
-                    "Select features to compare across cases:", 
-                    options=[col for col in df_selected.columns if col != "Case #"],
-                    default=default_features
+            if network_features:
+                case_feature_sets = (
+                    df_selected
+                    .groupby("Case #")[network_features]
+                    .agg(lambda x: set(x.dropna()))
+                    .apply(lambda row: set().union(*row), axis=1)
                 )
 
-                if network_features:
-                    # Prepare feature sets for each Case #
-                    case_feature_sets = (
-                        df_selected
-                        .groupby("Case #")[network_features]
-                        .agg(lambda x: set(x.dropna()))
-                        .apply(lambda row: set().union(*row), axis=1)
+                G = nx.Graph()
+
+                # Create nodes
+                for case_id in case_feature_sets.index:
+                    G.add_node(case_id)
+
+                # Create edges between cases that share features
+                case_ids = list(case_feature_sets.index)
+                for i in range(len(case_ids)):
+                    for j in range(i + 1, len(case_ids)):
+                        shared = case_feature_sets[case_ids[i]].intersection(case_feature_sets[case_ids[j]])
+                        if shared:
+                            G.add_edge(case_ids[i], case_ids[j], weight=len(shared))
+
+                if G.number_of_edges() == 0:
+                    st.info("No connections were found between cases using the selected features.")
+                else:
+                    # --- Compute metrics ---
+                    degree_centrality = nx.degree_centrality(G)
+                    betweenness_centrality = nx.betweenness_centrality(G)
+                    closeness_centrality = nx.closeness_centrality(G)
+                    try:
+                        eigenvector_centrality = nx.eigenvector_centrality(G)
+                    except nx.NetworkXError:
+                        eigenvector_centrality = {n: 0 for n in G.nodes()}
+
+                    # Detect communities
+                    communities = list(greedy_modularity_communities(G))
+                    community_map = {}
+                    for i, community in enumerate(communities):
+                        for node in community:
+                            community_map[node] = i
+
+                    # Layout
+                    pos = nx.spring_layout(G, seed=42)
+
+                    # Edge traces
+                    edge_x = []
+                    edge_y = []
+                    edge_weights = []
+                    for u, v, data in G.edges(data=True):
+                        x0, y0 = pos[u]
+                        x1, y1 = pos[v]
+                        edge_x.extend([x0, x1, None])
+                        edge_y.extend([y0, y1, None])
+                        edge_weights.append(data["weight"])
+
+                    edge_trace = go.Scatter(
+                        x=edge_x, y=edge_y,
+                        line=dict(width=2, color='#888'),
+                        hoverinfo='text',
+                        mode='lines',
+                        text=[f"Shared features: {G[u][v]['weight']}" for u, v in G.edges()]
                     )
 
-                    G = nx.Graph()
+                    # Node traces
+                    node_x = []
+                    node_y = []
+                    node_text = []
+                    node_color = []
+                    node_size = []
+                    for node in G.nodes():
+                        x, y = pos[node]
+                        node_x.append(x)
+                        node_y.append(y)
+                        deg = G.degree[node]
+                        com = community_map.get(node, 0)
+                        node_color.append(com)
+                        node_size.append(8 + 2*deg)
+                        node_text.append(f"Case {node}<br>Degree: {deg}<br>Community: {com}")
 
-                    # Create nodes
-                    for case_id in case_feature_sets.index:
-                        G.add_node(case_id)
-
-                    # Create edges between cases that share features
-                    case_ids = list(case_feature_sets.index)
-                    for i in range(len(case_ids)):
-                        for j in range(i + 1, len(case_ids)):
-                            shared = case_feature_sets[case_ids[i]].intersection(case_feature_sets[case_ids[j]])
-                            if shared:
-                                G.add_edge(case_ids[i], case_ids[j], weight=len(shared))
-
-                    if G.number_of_edges() == 0:
-                        st.info("No connections were found between cases using the selected features.")
-                    else:
-                        pos = nx.spring_layout(G, seed=42)
-
-                        edge_x = []
-                        edge_y = []
-                        for edge in G.edges():
-                            x0, y0 = pos[edge[0]]
-                            x1, y1 = pos[edge[1]]
-                            edge_x.extend([x0, x1, None])
-                            edge_y.extend([y0, y1, None])
-
-                        edge_trace = go.Scatter(
-                            x=edge_x, y=edge_y,
-                            line=dict(width=1, color='#888'),
-                            hoverinfo='text',
-                            mode='lines',
-                            text=[f"Shared features: {G[u][v]['weight']}" for u, v in G.edges()]
+                    node_trace = go.Scatter(
+                        x=node_x, y=node_y,
+                        mode='markers+text',
+                        text=node_text,
+                        textposition='top center',
+                        hoverinfo='text',
+                        marker=dict(
+                            showscale=True,
+                            colorscale='Viridis',
+                            color=node_color,
+                            size=node_size,
+                            colorbar=dict(
+                                title="Community",
+                                thickness=15,
+                                x=1.05
+                            ),
+                            line_width=1
                         )
+                    )
 
-                        node_x = []
-                        node_y = []
-                        node_text = []
-                        for node in G.nodes():
-                            x, y = pos[node]
-                            node_x.append(x)
-                            node_y.append(y)
-                            degree = G.degree[node]
-                            node_text.append(f"Case #: {node} ({degree} connections)")
-
-                        node_trace = go.Scatter(
-                            x=node_x, y=node_y,
-                            mode='markers+text',
-                            text=node_text,
-                            textposition='top center',
-                            hoverinfo='text',
-                            marker=dict(
-                                showscale=False,
-                                color='lightblue',
-                                size=[4 + 0.5*G.degree[node] for node in G.nodes()],
-                                line_width=1
-                            )
+                    fig = go.Figure(
+                        data=[edge_trace, node_trace],
+                        layout=go.Layout(
+                            title='Case Connectivity Network',
+                            showlegend=False,
+                            hovermode='closest',
+                            margin=dict(b=20, l=5, r=5, t=40),
+                            annotations=[
+                                dict(
+                                    text="Node size = degree. Node color = community.",
+                                    showarrow=False,
+                                    xref="paper", yref="paper",
+                                    x=0.005, y=-0.002
+                                )
+                            ]
                         )
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
 
-                        fig = go.Figure(
-                            data=[edge_trace, node_trace],
-                            layout=go.Layout(
-                                title='Case Connectivity Network',
-                                showlegend=False,
-                                hovermode='closest',
-                                margin=dict(b=20, l=5, r=5, t=40)
-                            )
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
+                    # --- Network Metrics ---
+                    st.markdown("### Network Metrics")
+                    num_nodes = G.number_of_nodes()
+                    num_edges = G.number_of_edges()
+                    density = nx.density(G)
+                    components = nx.number_connected_components(G)
+                    degrees = dict(G.degree())
+                    avg_degree = sum(degrees.values()) / num_nodes if num_nodes else 0
+                    try:
+                        diameter = nx.diameter(G)
+                        avg_shortest_path = nx.average_shortest_path_length(G)
+                    except nx.NetworkXError:
+                        diameter = None
+                        avg_shortest_path = None
 
-                        st.markdown("### Network Metrics")
+                    modularity = nx.algorithms.community.quality.modularity(G, communities)
 
-                        num_nodes = G.number_of_nodes()
-                        num_edges = G.number_of_edges()
-                        density = nx.density(G)
-                        components = nx.number_connected_components(G)
-                        degrees = dict(G.degree())
-                        avg_degree = sum(degrees.values()) / num_nodes if num_nodes else 0
-                        top_central = sorted(degrees.items(), key=lambda x: x[1], reverse=True)[:5]
+                    st.write(f"- **Nodes:** {num_nodes}")
+                    st.write(f"- **Edges:** {num_edges}")
+                    st.write(f"- **Density:** `{density:.3f}`")
+                    st.write(f"- **Connected components:** {components}")
+                    st.write(f"- **Average degree:** `{avg_degree:.2f}`")
+                    if diameter is not None:
+                        st.write(f"- **Network diameter:** `{diameter}`")
+                        st.write(f"- **Average shortest path length:** `{avg_shortest_path:.2f}`")
+                    st.write(f"- **Modularity (community structure):** `{modularity:.3f}`")
 
-                        st.write(f"- **Nodes:** {num_nodes}")
-                        st.write(f"- **Edges:** {num_edges}")
-                        st.write(f"- **Density:** `{density:.3f}`")
-                        st.write(f"- **Connected components:** {components}")
-                        st.write(f"- **Average degree:** `{avg_degree:.2f}`")
+                    # --- Top Nodes by Centralities ---
+                    st.markdown("### Top Cases by Centrality Measures")
 
-                        st.markdown("**Top central cases by degree:**")
-                        for case_id, degree in top_central:
-                            st.markdown(f"- Case `{case_id}`: {degree} connections")
-                        
-                        with st.expander("ℹ️ Learn more about this analysis"):
-                            st.markdown("""
-                            ### About Case Network Analysis
+                    def show_top(dictionary, title):
+                        top_items = sorted(dictionary.items(), key=lambda x: x[1], reverse=True)[:5]
+                        st.markdown(f"**{title}:**")
+                        for case, value in top_items:
+                            st.markdown(f"- Case `{case}`: `{value:.3f}`")
 
-                            This section visualizes a network of wildlife trafficking cases based on shared attributes such as species, offender countries, or other relevant fields.
+                    show_top(degree_centrality, "Top Degree Centrality")
+                    show_top(betweenness_centrality, "Top Betweenness Centrality")
+                    show_top(eigenvector_centrality, "Top Eigenvector Centrality")
 
-                            - **Each node in the network represents a unique case** (`Case #`).
-                            - **An edge between two cases indicates that they share one or more selected attributes**, such as:
-                                - The same species involved,
-                                - The same offender country,
-                                - Other user-selected fields (e.g., seizure location, transport method).
+                    with st.expander("ℹ️ Learn more about this analysis"):
+                        st.markdown("""
+                        ### About Network Analysis
 
-                            - The more attributes two cases have in common, the **stronger their connection** (i.e., higher edge weight).
-                            - **Edge weight** represents the number of shared elements between the two cases, and is displayed interactively when hovering over connections.
+                        - **Each node** represents a wildlife trafficking case.
+                        - **Edges** represent shared attributes between cases.
+                        - **Node size** reflects degree (number of connections).
+                        - **Node color** reflects detected community.
+                        - **Edge width** reflects connection strength.
 
-                            - This type of network helps to:
-                                - **Identify clusters of related cases**, which may signal recurrent patterns, shared trafficking routes, or organizational links.
-                                - **Visualize potential case consolidation** (e.g., repeated behavior by the same actors or coordinated multi-species trafficking).
-                                - Reveal connections that may not be obvious in tabular data.
+                        **Key metrics:**
+                        - **Degree**: How many connections a case has.
+                        - **Betweenness**: Cases that act as bridges between clusters.
+                        - **Eigenvector**: Cases connected to other important cases.
+                        - **Modularity**: Measures strength of community structure.
+                        - **Diameter**: Longest shortest path in the network.
 
-                            - Node size reflects the number of connections (degree), helping to identify central or highly connected cases.
-                            - The analysis is dynamic: users can choose which attributes to include, allowing flexible exploration of the data.
-
-                            - For example:
-                                - If two cases both involve *Panthera onca* and occurred with offenders from Brazil, a connection is drawn.
-                                - If a third case shares only the species but not the country, it will also connect, but with a lower weight.
-
-                            - For more information on network methods in wildlife trafficking analysis, refer to the ReadMe file and Carvalho (2025).
-                            """)
-                else:
-                    st.info("Please select at least one feature to define connections between cases.")
+                        This analysis can reveal:
+                        - Potential organized groups operating repeatedly.
+                        - Strategic connections facilitating trafficking routes.
+                        - Outlier cases that bridge different networks.
+                        """)
+            else:
+                st.info("Please select at least one feature to define connections between cases.")
                     
         else:
             st.warning("⚠️ Please select at least one species to explore the data.")
