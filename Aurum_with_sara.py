@@ -1065,10 +1065,13 @@ if uploaded_file is not None:
                         for case, value in top_items:
                             st.markdown(f"- Case `{case}`: `{value:.3f}`")
 
-                    show_top(degree_centrality, "Top Degree Centrality")
-                    show_top(betweenness_centrality, "Top Betweenness Centrality")
-                    show_top(eigenvector_centrality, "Top Eigenvector Centrality")
-                    show_top(closeness_centrality, "Top Closeness Centrality")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        show_top(degree_centrality, "Top Degree Centrality")
+                        show_top(closeness_centrality, "Top Closeness Centrality")
+                    with col2:
+                        show_top(betweenness_centrality, "Top Betweenness Centrality")
+                        show_top(eigenvector_centrality, "Top Eigenvector Centrality")
                     
                     with st.expander("ℹ️ Learn more about this analysis"):
                         st.markdown("""
