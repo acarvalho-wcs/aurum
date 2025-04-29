@@ -960,7 +960,7 @@ if uploaded_file is not None:
                     communities = list(greedy_modularity_communities(G))
                     community_map = {node: i for i, comm in enumerate(communities) for node in comm}
 
-                    st.markdown("### 🎨 Community Color Customization")
+                    st.markdown("### Community Color Customization")
                     community_ids = sorted(set(community_map.values()))
                     color_map = {}
 
