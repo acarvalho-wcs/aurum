@@ -35,8 +35,20 @@ logo = Image.open("logo.png")
 st.sidebar.image("logo.png", use_container_width=True)
 st.sidebar.markdown("## Welcome to Aurum")
 st.sidebar.markdown("Log in below to unlock multi-user tools.")
-show_about = st.sidebar.button("**About Aurum**")
-if show_about:
+# --- SOBRE O AURUM (ABOUT) ---
+# Inicializa estado
+if "show_sidebar_about" not in st.session_state:
+    st.session_state["show_sidebar_about"] = False
+
+# Botão fixo na sidebar
+about_toggle = st.sidebar.button("**About Aurum**")
+
+# Alterna a visibilidade da seção
+if about_toggle:
+    st.session_state["show_sidebar_about"] = not st.session_state["show_sidebar_about"]
+
+# Exibe o conteúdo "About Aurum" se ativado
+if st.session_state["show_sidebar_about"]:
     st.markdown("## About Aurum")
     st.markdown("""
 **Aurum** is a modular and interactive platform for **criminal intelligence in wildlife trafficking**. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly interface.
@@ -50,7 +62,7 @@ The platform enables the upload and processing of case-level data and provides a
 - **Interactive Visualization**: Build customized plots and dashboards based on selected variables to support real-time analysis and reporting.
 
 **Aurum** bridges conservation data and investigative workflows, offering a scalable and field-ready platform for intelligence-led responses to wildlife crime.
-""")
+    """)
 
 st.sidebar.markdown("## 📂 Upload IWT Data")
 uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx) containing wildlife trafficking data.**", type=["xlsx"])
