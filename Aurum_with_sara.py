@@ -1068,7 +1068,8 @@ if uploaded_file is not None:
                     show_top(degree_centrality, "Top Degree Centrality")
                     show_top(betweenness_centrality, "Top Betweenness Centrality")
                     show_top(eigenvector_centrality, "Top Eigenvector Centrality")
-
+                    show_top(closeness_centrality, "Top Closeness Centrality")
+                    
                     with st.expander("ℹ️ Learn more about this analysis"):
                         st.markdown("""
                         This network shows how cases relate to one another based on shared features.
