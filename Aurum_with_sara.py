@@ -1113,9 +1113,8 @@ if uploaded_file is not None:
                                 For deeper interpretation, use the metrics above and explore the top-ranking cases by different centralities.
                             """)
 
-
-            else:
-                st.info("Please select at least one feature to define connections between cases.")
+                else:
+                    st.info("Please select at least one feature to define connections between cases.")
                     
         else:
             st.warning("⚠️ Please select at least one species to explore the data.")
