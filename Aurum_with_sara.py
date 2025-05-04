@@ -202,7 +202,8 @@ def display_public_alerts_section(sheet_id):
             st.error(f"❌ Failed to load public alerts: {e}")
 
 # Executa antes do login
-display_public_alerts_section(SHEET_ID)
+if "user" in st.session_state:
+    display_public_alerts_section(SHEET_ID)
 
 # --- DASHBOARD RESUMO INICIAL (sem login, baseado no Google Sheets) ---
 if uploaded_file is None and not st.session_state.get("user"):
