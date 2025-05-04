@@ -44,20 +44,15 @@ st.sidebar.markdown("Log in below to unlock multi-user tools.")
 if "show_sidebar_about" not in st.session_state:
     st.session_state["show_sidebar_about"] = False
 
-# Botão fixo na sidebar com estilo moderno
-about_toggle = button(
-    key="about_aurum_btn",
-    label="About Aurum",
-    icon="info",
-    variant="secondary"
-)
+# Botão fixo na sidebar
+about_toggle = st.sidebar.button("**About Aurum**")
 
 # Alterna a visibilidade da seção
 if about_toggle:
-    st.session_state["show_sidebar_about"] = not st.session_state.get("show_sidebar_about", False)
+    st.session_state["show_sidebar_about"] = not st.session_state["show_sidebar_about"]
 
 # Exibe o conteúdo "About Aurum" se ativado
-if st.session_state.get("show_sidebar_about"):
+if st.session_state["show_sidebar_about"]:
     st.markdown("## About Aurum")
     st.markdown("""
 **Aurum** is a modular and interactive platform for **criminal intelligence in wildlife trafficking**. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly interface.
