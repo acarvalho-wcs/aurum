@@ -206,7 +206,7 @@ if "user" in st.session_state:
     display_public_alerts_section(SHEET_ID)
 
 # --- DASHBOARD RESUMO INICIAL (sem login, baseado no Google Sheets) ---
-if uploaded_file is None and not st.session_state.get("user"):
+if uploaded_file is None and st.session_state.get("user"):
     try:
         worksheet = get_worksheet()
         records = worksheet.get_all_records()
