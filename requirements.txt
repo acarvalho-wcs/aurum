@@ -22,3 +22,4 @@ torch
 beautifulsoup4
 requests
 pycountry
+streamlit-shadcn-ui>=0.1.4
