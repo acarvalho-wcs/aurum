@@ -22,7 +22,6 @@ import os
 from uuid import uuid4
 from datetime import datetime
 import pytz
-from streamlit_shadcn_ui import button, tabs
 brt = pytz.timezone("America/Sao_Paulo")
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
