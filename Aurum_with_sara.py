@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import networkx as nx
 import plotly.graph_objects as go
+import plotly.express as px
 from networkx.algorithms.community import greedy_modularity_communities
 from io import BytesIO
 import base64
@@ -526,17 +527,29 @@ if uploaded_file is not None:
                 y_axis = st.sidebar.selectbox("Y-axis:", df_selected.columns, index=1)
 
                 import plotly.express as px
+
+                # Detecta as espécies e permite seleção de cor personalizada
+                if "Species" in df_selected.columns:
+                    unique_species = df_selected["Species"].dropna().unique()
+                    species_colors = {}
+
+                    st.markdown("### Species Color Customization")
+                    with st.expander("Customize species colors"):
+                        for sp in unique_species:
+                            default_color = "#1f77b4" if "Lear" in sp else "#ff7f0e"
+                            species_colors[sp] = st.color_picker(f"Color for {sp}", value=default_color, key=f"color_{sp}")
+
                 st.markdown("### Custom Chart")
                 if chart_type == "Bar":
-                    fig = px.bar(df_selected, x=x_axis, y=y_axis, color='Species')
+                    fig = px.bar(df_selected, x=x_axis, y=y_axis, color="Species", color_discrete_map=species_colors)
                 elif chart_type == "Line":
-                    fig = px.line(df_selected, x=x_axis, y=y_axis, color='Species')
+                    fig = px.line(df_selected, x=x_axis, y=y_axis, color="Species", color_discrete_map=species_colors)
                 elif chart_type == "Scatter":
-                    fig = px.scatter(df_selected, x=x_axis, y=y_axis, color='Species')
+                    fig = px.scatter(df_selected, x=x_axis, y=y_axis, color="Species", color_discrete_map=species_colors)
                 elif chart_type == "Pie":
                     fig = px.pie(df_selected, names=x_axis, values=y_axis)
-                st.plotly_chart(fig)
 
+                st.plotly_chart(fig, use_container_width=True)
             
             show_trend = st.sidebar.checkbox("Trend Analysis", value=False)
             if show_trend:
