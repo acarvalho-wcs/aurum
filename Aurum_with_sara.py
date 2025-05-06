@@ -1151,7 +1151,6 @@ if uploaded_file is not None:
                         import folium
                         from folium.plugins import HeatMap
                         from shapely.geometry import Point
-                        import imageio
                         import tempfile
                         import base64
                         import os
@@ -1161,7 +1160,7 @@ if uploaded_file is not None:
                         selected_species = st.sidebar.multiselect("Filter by species:", species_list, default=species_list)
                         df_geo = df_geo[df_geo['Species'].isin(selected_species)]
 
-                        temporal_mode = st.sidebar.radio("Select temporal mode:", ["Year Range", "Single Year", "Animated KDE"])
+                        temporal_mode = st.sidebar.radio("Select temporal mode:", ["Year Range", "Single Year"])
 
                         if 'Year' in df_geo.columns:
                             min_year = int(df_geo['Year'].min())
@@ -1184,53 +1183,6 @@ if uploaded_file is not None:
                                 selected_year = st.sidebar.select_slider("Choose a year to display KDE:", options=unique_years)
                                 df_geo = df_geo[df_geo['Year'] == selected_year]
                                 st.markdown(f"📆 Displaying KDE for **{selected_year}**")
-
-                        if temporal_mode == "Animated KDE":
-                            st.markdown("### 🧬 Temporal Evolution (Animated KDE)")
-                            if st.button("Generate KDE animation by year"):
-                                tmp_dir = tempfile.gettempdir()
-                                fig, ax = plt.subplots(figsize=(8, 8))
-                                years = sorted(df_geo['Year'].unique())
-                                images = []
-
-                                for year in years:
-                                    year_df = df_geo[df_geo['Year'] == year]
-                                    if len(year_df) < 2:
-                                        continue
-
-                                    gdf_year = gpd.GeoDataFrame(
-                                        year_df,
-                                        geometry=gpd.points_from_xy(year_df['Longitude'], year_df['Latitude']),
-                                        crs="EPSG:4326"
-                                    ).to_crs(epsg=3857)
-
-                                    coords = np.vstack([gdf_year.geometry.x, gdf_year.geometry.y]).T
-                                    kde = KernelDensity(bandwidth=50000, kernel='gaussian')
-                                    kde.fit(coords)
-
-                                    xmin, ymin, xmax, ymax = gdf_year.total_bounds
-                                    xx, yy = np.mgrid[xmin:xmax:300j, ymin:ymax:300j]
-                                    grid_coords = np.vstack([xx.ravel(), yy.ravel()]).T
-                                    zz = np.exp(kde.score_samples(grid_coords)).reshape(xx.shape)
-
-                                    ax.clear()
-                                    ax.imshow(zz, origin='lower', cmap='Reds', extent=[xmin, xmax, ymin, ymax], alpha=0.6)
-                                    gdf_year.plot(ax=ax, markersize=5, color='blue', alpha=0.5)
-                                    ax.set_title(f"KDE - {year}")
-                                    ax.set_xlim(xmin, xmax)
-                                    ax.set_ylim(ymin, ymax)
-                                    ax.axis('off')
-                                    ctx.add_basemap(ax, crs=gdf_year.crs.to_string())
-
-                                    tmp_path = os.path.join(tmp_dir, f'kde_{year}.png')
-                                    fig.savefig(tmp_path)
-                                    images.append(imageio.v2.imread(tmp_path))
-
-                                gif_path = os.path.join(tmp_dir, "kde_animation.gif")
-                                imageio.mimsave(gif_path, images, duration=1.2)
-                                st.image(gif_path, caption="Animated KDE over time")
-                                with open(gif_path, "rb") as f:
-                                    st.download_button("💾 Download animation (.gif)", f, "aurum_kde_animation.gif", mime="image/gif")
 
                         # Cálculo KDE principal
                         gdf = gpd.GeoDataFrame(
@@ -1276,12 +1228,6 @@ if uploaded_file is not None:
                                 file_name="aurum_kde_map.html",
                                 mime="text/html"
                             )
-
-                            with open(full_map_path, "r", encoding="utf-8") as f:
-                                html_content = f.read()
-                                b64 = base64.b64encode(html_content.encode()).decode()
-                                href = f'data:text/html;base64,{b64}'
-                                st.markdown(f'<a href="{href}" target="_blank" rel="noopener noreferrer" class="stButton">🔍 Ver em tela cheia</a>', unsafe_allow_html=True)
 
                             with st.expander("ℹ️ Learn more about this analysis"):
                                 st.markdown("""
