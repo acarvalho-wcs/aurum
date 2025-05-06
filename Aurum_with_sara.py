@@ -1127,9 +1127,9 @@ if uploaded_file is not None:
                 else:
                     st.info("Please select at least one feature to define connections between cases.")
 
-            show_geo = st.sidebar.checkbox("Geo Analysis", value=False)
+            show_geo = st.sidebar.checkbox("Geospatial Analysis", value=False)
             if show_geo:
-                st.markdown("## Geo Analysis")
+                st.markdown("## Geospatial Analysis")
 
                 st.markdown("This section maps the spatial distribution of wildlife trafficking cases using kernel density estimation (KDE) and interactive heatmaps.")
 
