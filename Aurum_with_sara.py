@@ -28,10 +28,6 @@ brt = pytz.timezone("America/Sao_Paulo")
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Aurum Dashboard", layout="wide")
 st.title("Aurum - Criminal Intelligence in Wildlife Trafficking")
-st.warning(
-    "⚠️ Aurum uses the `gspread` library to access data from Google Sheets. "
-    "If a connection error occurs, please refresh the page and try again."
-)
 
 # Upload do arquivo
 from PIL import Image
