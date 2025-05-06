@@ -1179,7 +1179,11 @@ if uploaded_file is not None:
                             st.subheader("Interactive Heatmap")
 
                             gdf_wgs = gdf.to_crs(epsg=4326)
-                            m = folium.Map(location=[gdf_wgs['Latitude'].mean(), gdf_wgs['Longitude'].mean()], zoom_start=2)
+                            bounds = gdf_wgs.total_bounds  # [minx, miny, maxx, maxy]
+                            center_lat = (bounds[1] + bounds[3]) / 2
+                            center_lon = (bounds[0] + bounds[2]) / 2
+
+                            m = folium.Map(location=[center_lat, center_lon], zoom_start=4)
                             HeatMap(data=gdf_wgs[['Latitude', 'Longitude']].values, radius=25).add_to(m)
                             st.components.v1.html(m._repr_html_(), height=600)
 
