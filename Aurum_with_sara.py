@@ -1176,39 +1176,10 @@ if uploaded_file is not None:
                             grid_coords = np.vstack([xx.ravel(), yy.ravel()]).T
                             zz = np.exp(kde.score_samples(grid_coords)).reshape(xx.shape)
 
-                            st.subheader("🗺️ KDE Heatmap (Static)")
-
-                            fig, ax = plt.subplots(figsize=(10, 10))
-                            ax.set_title("Kernel Density Estimation of Trafficking Cases", fontsize=14)
-
-                            # KDE com alpha e limites corretos
-                            ax.imshow(
-                                zz,
-                                origin='lower',
-                                cmap='Reds',
-                                extent=[xmin, xmax, ymin, ymax],
-                                alpha=0.6
-                            )
-
-                            # Pontos dos casos
-                            gdf_proj.plot(ax=ax, markersize=5, color='blue', alpha=0.5)
-
-                            # Ajusta os limites para não cortar
-                            ax.set_xlim(xmin, xmax)
-                            ax.set_ylim(ymin, ymax)
-
-                            # Mapa de fundo
-                            ctx.add_basemap(ax, crs=gdf_proj.crs.to_string(), source=ctx.providers.OpenStreetMap.HOT)
-
-                            # Remove eixos
-                            ax.set_axis_off()
-
-                            st.pyplot(fig)
-                            
                             st.subheader("Interactive Heatmap")
 
                             gdf_wgs = gdf.to_crs(epsg=4326)
-                            m = folium.Map(location=[gdf_wgs['Latitude'].mean(), gdf_wgs['Longitude'].mean()], zoom_start=1)
+                            m = folium.Map(location=[gdf_wgs['Latitude'].mean(), gdf_wgs['Longitude'].mean()], zoom_start=2)
                             HeatMap(data=gdf_wgs[['Latitude', 'Longitude']].values, radius=25).add_to(m)
                             st.components.v1.html(m._repr_html_(), height=600)
 
