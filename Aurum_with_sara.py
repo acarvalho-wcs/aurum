@@ -1203,7 +1203,7 @@ if uploaded_file is not None:
                             st.download_button(
                                 label="Download interactive map (.html)",
                                 data=btn_data,
-                                file_name="aurum_mapa_interativo.html",
+                                file_name="aurum_kde_map.html",
                                 mime="text/html"
                             )
                             
