@@ -1162,28 +1162,40 @@ if uploaded_file is not None:
                             radius_val = st.slider("HeatMap radius (px)", 5, 50, 25)
 
                         st.markdown("### Temporal Filter")
-                        temporal_mode = st.radio("Select temporal mode:", ["Year Range", "Single Year"], index=0)
 
                         if 'Year' in df_geo.columns:
                             min_year = int(df_geo['Year'].min())
                             max_year = int(df_geo['Year'].max())
 
-                            if temporal_mode == "Year Range":
-                                selected_years = st.slider(
-                                    "Select year range:",
-                                    min_value=min_year,
-                                    max_value=max_year,
-                                    value=(min_year, max_year),
-                                    step=1
-                                )
-                                df_geo = df_geo[df_geo['Year'].between(selected_years[0], selected_years[1])]
-                                st.markdown(f"📆 Filtering cases from **{selected_years[0]}** to **{selected_years[1]}**")
+                            col1, col2 = st.columns([1, 3])
 
-                            elif temporal_mode == "Single Year":
-                                unique_years = sorted(df_geo['Year'].dropna().unique().tolist())
-                                selected_year = st.select_slider("Choose a year to display KDE:", options=unique_years)
-                                df_geo = df_geo[df_geo['Year'] == selected_year]
-                                st.markdown(f"📆 Displaying KDE for **{selected_year}**")
+                            with col1:
+                                temporal_mode = st.radio("Mode", ["Year Range", "Single Year"], index=0)
+
+                            with col2:
+                                if temporal_mode == "Year Range":
+                                    selected_years = st.slider(
+                                        "",  # ocultar label para visual compacto
+                                        min_value=min_year,
+                                        max_value=max_year,
+                                        value=(min_year, max_year),
+                                        step=1,
+                                        label_visibility="collapsed"
+                                    )
+                                    df_geo = df_geo[df_geo['Year'].between(selected_years[0], selected_years[1])]
+                                    st.markdown(f"📆 **{selected_years[0]}** to **{selected_years[1]}**")
+
+                                elif temporal_mode == "Single Year":
+                                    unique_years = sorted(df_geo['Year'].dropna().unique().tolist())
+                                    selected_year = st.select_slider(
+                                        "", 
+                                        options=unique_years,
+                                        value=max_year,
+                                        label_visibility="collapsed"
+                                    )
+                                    df_geo = df_geo[df_geo['Year'] == selected_year]
+                                    st.markdown(f"📆 Year: **{selected_year}**")
+
 
                         # Mapa Interativo
                         gdf = gpd.GeoDataFrame(
