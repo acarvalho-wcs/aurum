@@ -1201,31 +1201,32 @@ if uploaded_file is not None:
                             selected_species = st.multiselect("Filter by species:", species_list, default=species_list)
                             df_geo = df_geo[df_geo['Species'].isin(selected_species)]
 
-                            temporal_mode = st.radio("Select temporal mode:", ["Year Range", "Single Year"], index=0)
-
-                            if 'Year' in df_geo.columns:
-                                min_year = int(df_geo['Year'].min())
-                                max_year = int(df_geo['Year'].max())
-
-                                if temporal_mode == "Year Range":
-                                    selected_years = st.slider(
-                                        "Select year range:",
-                                        min_value=min_year,
-                                        max_value=max_year,
-                                        value=(min_year, max_year),
-                                        step=1
-                                    )
-                                    df_geo = df_geo[df_geo['Year'].between(selected_years[0], selected_years[1])]
-                                    st.markdown(f"📆 Filtering cases from **{selected_years[0]}** to **{selected_years[1]}**")
-
-                                elif temporal_mode == "Single Year":
-                                    unique_years = sorted(df_geo['Year'].dropna().unique().tolist())
-                                    selected_year = st.select_slider("Choose a year to display KDE:", options=unique_years)
-                                    df_geo = df_geo[df_geo['Year'] == selected_year]
-                                    st.markdown(f"📆 Displaying KDE for **{selected_year}**")
-
                         with col2:
                             radius_val = st.slider("HeatMap radius (px)", 5, 50, 25)
+
+                        st.markdown("### Temporal Filter")
+                        temporal_mode = st.radio("Select temporal mode:", ["Year Range", "Single Year"], index=0, horizontal=True)
+
+                        if 'Year' in df_geo.columns:
+                            min_year = int(df_geo['Year'].min())
+                            max_year = int(df_geo['Year'].max())
+
+                            if temporal_mode == "Year Range":
+                                selected_years = st.slider(
+                                    "Select year range:",
+                                    min_value=min_year,
+                                    max_value=max_year,
+                                    value=(min_year, max_year),
+                                    step=1
+                                )
+                                df_geo = df_geo[df_geo['Year'].between(selected_years[0], selected_years[1])]
+                                st.markdown(f"📆 Filtering cases from **{selected_years[0]}** to **{selected_years[1]}**")
+
+                            elif temporal_mode == "Single Year":
+                                unique_years = sorted(df_geo['Year'].dropna().unique().tolist())
+                                selected_year = st.select_slider("Choose a year to display KDE:", options=unique_years)
+                                df_geo = df_geo[df_geo['Year'] == selected_year]
+                                st.markdown(f"📆 Displaying KDE for **{selected_year}**")
 
                         # Gerar novo GeoDataFrame com filtros aplicados
                         gdf = gpd.GeoDataFrame(
@@ -1283,6 +1284,7 @@ if uploaded_file is not None:
                             file_name="aurum_kde_map.html",
                             mime="text/html"
                         )
+
 
                         with st.expander("ℹ️ Learn more about this analysis"):
                             st.markdown("""
