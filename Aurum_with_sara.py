@@ -59,11 +59,12 @@ if st.session_state["show_sidebar_about"]:
 
 The platform enables the upload and processing of case-level data and provides a suite of analytical tools, including:
 
+- **Interactive Visualization**: Build customized plots and dashboards based on selected variables to support real-time analysis and reporting.
 - **Trend Analysis**: Explore directional changes in seizure patterns using segmented regression (TCS) and detect significant deviations from historical averages with cumulative sum control charts (CUSUM).
 - **Species Co-occurrence**: Identify statistically significant co-trafficking relationships between species using chi-square tests and network-based visualizations.
 - **Anomaly Detection**: Detect atypical or high-impact cases using multiple outlier detection methods (Isolation Forest, LOF, DBSCAN, Mahalanobis distance, and Z-Score).
 - **Criminal Network Analysis**: Reveal connections between cases based on shared attributes such as species or offender countries to infer coordination and logistical convergence.
-- **Interactive Visualization**: Build customized plots and dashboards based on selected variables to support real-time analysis and reporting.
+- **Geospatial Analysis**: Map the spatial distribution of trafficking activity using Kernel Density Estimation (KDE) and interactive heatmaps. Analysts can filter by species and time periods to detect spatial hotspots, regional trends, and high-risk corridors.
 
 **Aurum** bridges conservation data and investigative workflows, offering a scalable and field-ready platform for intelligence-led responses to wildlife crime.
     """)
