@@ -1145,9 +1145,6 @@ if uploaded_file is not None:
                     else:
                         import geopandas as gpd
                         import numpy as np
-                        from sklearn.neighbors import KernelDensity
-                        import matplotlib.pyplot as plt
-                        import contextily as ctx
                         import folium
                         from folium.plugins import HeatMap
                         from shapely.geometry import Point
@@ -1184,68 +1181,61 @@ if uploaded_file is not None:
                                 df_geo = df_geo[df_geo['Year'] == selected_year]
                                 st.markdown(f"📆 Displaying KDE for **{selected_year}**")
 
-                        # Cálculo KDE principal
+                        # Mapa Interativo
                         gdf = gpd.GeoDataFrame(
                             df_geo,
                             geometry=gpd.points_from_xy(df_geo['Longitude'], df_geo['Latitude']),
                             crs="EPSG:4326"
                         )
-                        gdf_proj = gdf.to_crs(epsg=3857)
-                        coords = np.vstack([gdf_proj.geometry.x, gdf_proj.geometry.y]).T
 
-                        if len(coords) < 2:
-                            st.warning("At least two geolocated cases are needed to calculate KDE.")
-                        else:
-                            bandwidth_km = st.sidebar.slider("KDE bandwidth (km)", 10, 200, 50) * 1000
-                            kde = KernelDensity(bandwidth=bandwidth_km, kernel='gaussian')
-                            kde.fit(coords)
+                        gdf_wgs = gdf.to_crs(epsg=4326)
+                        bounds = gdf_wgs.total_bounds
+                        center_lat = (bounds[1] + bounds[3]) / 2
+                        center_lon = (bounds[0] + bounds[2]) / 2
 
-                            xmin, ymin, xmax, ymax = gdf_proj.total_bounds
-                            xx, yy = np.mgrid[xmin:xmax:500j, ymin:ymax:500j]
-                            grid_coords = np.vstack([xx.ravel(), yy.ravel()]).T
-                            zz = np.exp(kde.score_samples(grid_coords)).reshape(xx.shape)
+                        radius_val = st.sidebar.slider("HeatMap radius (px)", 5, 50, 25)
 
-                            st.subheader("Interactive Heatmap")
+                        m = folium.Map(location=[center_lat, center_lon], zoom_start=2)
+                        m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+                        HeatMap(data=gdf_wgs[['Latitude', 'Longitude']].values, radius=radius_val).add_to(m)
+                        st.components.v1.html(m._repr_html_(), height=600)
 
-                            gdf_wgs = gdf.to_crs(epsg=4326)
-                            bounds = gdf_wgs.total_bounds
-                            center_lat = (bounds[1] + bounds[3]) / 2
-                            center_lon = (bounds[0] + bounds[2]) / 2
+                        full_map_path = os.path.join(tempfile.gettempdir(), "aurum_map.html")
+                        m.save(full_map_path)
 
-                            m = folium.Map(location=[center_lat, center_lon], zoom_start=2)
-                            m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
-                            HeatMap(data=gdf_wgs[['Latitude', 'Longitude']].values, radius=25).add_to(m)
-                            st.components.v1.html(m._repr_html_(), height=600)
+                        with open(full_map_path, "rb") as f:
+                            btn_data = f.read()
+                        st.download_button(
+                            label="Download interactive map (.html)",
+                            data=btn_data,
+                            file_name="aurum_kde_map.html",
+                            mime="text/html"
+                        )
 
-                            full_map_path = os.path.join(tempfile.gettempdir(), "aurum_map.html")
-                            m.save(full_map_path)
+                        with open(full_map_path, "r", encoding="utf-8") as f:
+                            html_content = f.read()
+                            b64 = base64.b64encode(html_content.encode()).decode()
+                            href = f'data:text/html;base64,{b64}'
+                            st.markdown(f'<a href="{href}" target="_blank" rel="noopener noreferrer" class="stButton">🔍 Ver em tela cheia</a>', unsafe_allow_html=True)
 
-                            with open(full_map_path, "rb") as f:
-                                btn_data = f.read()
-                            st.download_button(
-                                label="Download interactive map (.html)",
-                                data=btn_data,
-                                file_name="aurum_kde_map.html",
-                                mime="text/html"
-                            )
+                        with st.expander("ℹ️ Learn more about this analysis"):
+                            st.markdown("""
+                                ### About Geospatial Analysis
 
-                            with st.expander("ℹ️ Learn more about this analysis"):
-                                st.markdown("""
-                                    ### About Geospatial Analysis
+                                This section uses **HeatMap visualization** to identify **spatial hotspots** of wildlife trafficking activity.
 
-                                    This section uses **Kernel Density Estimation (KDE)** to identify **spatial hotspots** of wildlife trafficking activity.
+                                - HeatMap is based on geographic coordinates of cases.
+                                - Radius controls the smoothing around each point (in pixels).
+                                - You can filter by species and time to explore dynamics interactively.
 
-                                    - **Red areas** on the map indicate regions with **higher concentration** of cases.
-                                    - KDE uses a smoothing technique to estimate the **probability density** of case locations.
-                                    - You can adjust the **bandwidth** (smoothing radius) to control how localized or spread the clusters appear.
-                                    - An **interactive heatmap** is also included to explore locations dynamically.
+                                ---
+                                **Use Cases:**
+                                - Detect trafficking corridors or hubs.
+                                - Compare species-specific patterns geographically.
+                                - Support decision-making for targeted enforcement or prevention.
 
-                                    ---
-                                    **Use Cases:**
-                                    - Detect trafficking corridors or hubs.
-                                    - Compare species-specific patterns geographically.
-                                    - Support decision-making for targeted enforcement or prevention.                                  
-                                """)
+                                **Note:** This map uses geographic coordinates (EPSG:4326) and is rendered using `folium`.
+                            """)
                                 
         else:
             st.warning("⚠️ Please select at least one species to explore the data.")
