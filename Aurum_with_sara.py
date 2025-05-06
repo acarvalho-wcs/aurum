@@ -1214,7 +1214,7 @@ if uploaded_file is not None:
                                 box-shadow: 2px 2px 6px rgba(0,0,0,0.3);">
                                 <b>HeatMap Intensity</b>
                                 <div style="height: 10px; width: 120px;
-                                    background: linear-gradient(to right, #ffffb2, #fd8d3c, #e31a1c);
+                                    background: linear-gradient(to right, blue, cyan, lime, yellow, orange, red);
                                     margin: 5px 0;"></div>
                                 <div style="display: flex; justify-content: space-between;">
                                     <span>Low</span>
