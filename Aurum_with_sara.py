@@ -1180,11 +1180,31 @@ if uploaded_file is not None:
 
                             fig, ax = plt.subplots(figsize=(10, 10))
                             ax.set_title("Kernel Density Estimation of Trafficking Cases", fontsize=14)
-                            ax.imshow(np.rot90(zz), cmap='Reds', extent=[xmin, xmax, ymin, ymax])
-                            gdf_proj.plot(ax=ax, markersize=5, color='blue', alpha=0.4)
-                            ctx.add_basemap(ax, crs=gdf_proj.crs.to_string())
+
+                            # KDE com alpha e limites corretos
+                            ax.imshow(
+                                zz,
+                                origin='lower',
+                                cmap='Reds',
+                                extent=[xmin, xmax, ymin, ymax],
+                                alpha=0.6
+                            )
+
+                            # Pontos dos casos
+                            gdf_proj.plot(ax=ax, markersize=5, color='blue', alpha=0.5)
+
+                            # Ajusta os limites para não cortar
+                            ax.set_xlim(xmin, xmax)
+                            ax.set_ylim(ymin, ymax)
+
+                            # Mapa de fundo
+                            ctx.add_basemap(ax, crs=gdf_proj.crs.to_string(), source=ctx.providers.OpenStreetMap.HOT)
+
+                            # Remove eixos
+                            ax.set_axis_off()
+
                             st.pyplot(fig)
-                        
+                            
                             st.subheader("Interactive Heatmap")
 
                             gdf_wgs = gdf.to_crs(epsg=4326)
