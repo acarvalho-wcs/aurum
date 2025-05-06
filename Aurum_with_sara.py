@@ -1176,7 +1176,7 @@ if uploaded_file is not None:
                             grid_coords = np.vstack([xx.ravel(), yy.ravel()]).T
                             zz = np.exp(kde.score_samples(grid_coords)).reshape(xx.shape)
 
-                           st.subheader("🗺️ KDE Heatmap (Static)")
+                            st.subheader("🗺️ KDE Heatmap (Static)")
 
                             fig, ax = plt.subplots(figsize=(10, 10))
                             ax.set_title("Kernel Density Estimation of Trafficking Cases", fontsize=14)
