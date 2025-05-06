@@ -1198,6 +1198,8 @@ if uploaded_file is not None:
                         m = folium.Map(location=[center_lat, center_lon], zoom_start=2)
                         m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
                         HeatMap(data=gdf_wgs[['Latitude', 'Longitude']].values, radius=radius_val).add_to(m)
+
+                        # Legenda avançada com gradiente contínuo
                         legend_html = '''
                             <div style="
                                 position: fixed;
@@ -1210,14 +1212,21 @@ if uploaded_file is not None:
                                 border-radius:5px;
                                 font-size:14px;
                                 box-shadow: 2px 2px 6px rgba(0,0,0,0.3);">
-                                <b>HeatMap Intensity</b><br>
-                                <i style="background:#ffffb2;width:18px;height:10px;display:inline-block;"></i> Low<br>
-                                <i style="background:#fd8d3c;width:18px;height:10px;display:inline-block;"></i> Medium<br>
-                                <i style="background:#e31a1c;width:18px;height:10px;display:inline-block;"></i> High<br>
+                                <b>HeatMap Intensity</b>
+                                <div style="height: 10px; width: 120px;
+                                    background: linear-gradient(to right, #ffffb2, #fd8d3c, #e31a1c);
+                                    margin: 5px 0;"></div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Low</span>
+                                    <span>Medium</span>
+                                    <span>High</span>
+                                </div>
                             </div>
                         '''
                         m.get_root().html.add_child(folium.Element(legend_html))
-                        st.components.v1.html(m._repr_html_(), height=600)
+
+                        html_str = m.get_root().render()
+                        st.components.v1.html(html_str, height=600)
 
                         full_map_path = os.path.join(tempfile.gettempdir(), "aurum_map.html")
                         m.save(full_map_path)
