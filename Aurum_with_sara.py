@@ -1188,6 +1188,24 @@ if uploaded_file is not None:
                             HeatMap(data=gdf_wgs[['Latitude', 'Longitude']].values, radius=25).add_to(m)
                             st.components.v1.html(m._repr_html_(), height=600)
 
+                            import tempfile
+                            import base64
+                            import streamlit.components.v1 as components
+                            import os
+
+                            # Salvar mapa em arquivo temporário
+                            tmp_dir = tempfile.gettempdir()
+                            full_map_path = os.path.join(tmp_dir, "aurum_map.html")
+                            m.save(full_map_path)
+
+                            # Botão para abrir em nova aba
+                            st.markdown("#### 🌐 Fullscreen Map")
+                            with open(full_map_path, "r", encoding="utf-8") as f:
+                                html_content = f.read()
+                                b64 = base64.b64encode(html_content.encode()).decode()
+                                href = f'data:text/html;base64,{b64}'
+                                st.markdown(f'<a href="{href}" target="_blank" rel="noopener noreferrer" class="stButton">🔍 Open in new tab</a>', unsafe_allow_html=True)
+                           
                             with st.expander("ℹ️ Learn more about this analysis"):
                                 st.markdown("""
                                     ### About Geospatial Analysis
