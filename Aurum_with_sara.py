@@ -1212,12 +1212,6 @@ if uploaded_file is not None:
                             mime="text/html"
                         )
 
-                        with open(full_map_path, "r", encoding="utf-8") as f:
-                            html_content = f.read()
-                            b64 = base64.b64encode(html_content.encode()).decode()
-                            href = f'data:text/html;base64,{b64}'
-                            st.markdown(f'<a href="{href}" target="_blank" rel="noopener noreferrer" class="stButton">🔍 Ver em tela cheia</a>', unsafe_allow_html=True)
-
                         with st.expander("ℹ️ Learn more about this analysis"):
                             st.markdown("""
                                 ### About Geospatial Analysis
