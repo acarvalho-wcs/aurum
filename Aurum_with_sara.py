@@ -1176,15 +1176,6 @@ if uploaded_file is not None:
                             grid_coords = np.vstack([xx.ravel(), yy.ravel()]).T
                             zz = np.exp(kde.score_samples(grid_coords)).reshape(xx.shape)
 
-                            st.subheader("KDE Heatmap (Static)")
-
-                            fig, ax = plt.subplots(figsize=(10, 10))
-                            ax.set_title("Kernel Density Estimation of Trafficking Cases", fontsize=14)
-                            ax.imshow(np.rot90(zz), cmap='Reds', extent=[xmin, xmax, ymin, ymax])
-                            gdf_proj.plot(ax=ax, markersize=5, color='blue', alpha=0.4)
-                            ctx.add_basemap(ax, crs=gdf_proj.crs.to_string())
-                            st.pyplot(fig)
-
                             st.subheader("Interactive Heatmap (Folium)")
 
                             gdf_wgs = gdf.to_crs(epsg=4326)
