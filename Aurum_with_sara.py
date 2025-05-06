@@ -1154,7 +1154,6 @@ if uploaded_file is not None:
 
                         # FILTROS
                         species_list = df_geo['Species'].dropna().unique().tolist()
-                        selected_species = st.sidebar.multiselect("Filter by species:", species_list, default=species_list)
                         df_geo = df_geo[df_geo['Species'].isin(selected_species)]
 
                         temporal_mode = st.sidebar.radio("Select temporal mode:", ["Year Range", "Single Year"])
