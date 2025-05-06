@@ -1198,14 +1198,6 @@ if uploaded_file is not None:
                             full_map_path = os.path.join(tmp_dir, "aurum_map.html")
                             m.save(full_map_path)
 
-                            # Botão para abrir em nova aba
-                            st.markdown("#### Fullscreen Map")
-                            with open(full_map_path, "r", encoding="utf-8") as f:
-                                html_content = f.read()
-                                b64 = base64.b64encode(html_content.encode()).decode()
-                                href = f'data:text/html;base64,{b64}'
-                                st.markdown(f'<a href="{href}" target="_blank" rel="noopener noreferrer" class="stButton">Open in new tab (refresh the page to visualize the map)</a>', unsafe_allow_html=True)
-
                             with open(full_map_path, "rb") as f:
                                 btn_data = f.read()
                             st.download_button(
