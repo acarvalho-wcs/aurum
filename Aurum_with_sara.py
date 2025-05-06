@@ -1244,9 +1244,7 @@ if uploaded_file is not None:
                                     **Use Cases:**
                                     - Detect trafficking corridors or hubs.
                                     - Compare species-specific patterns geographically.
-                                    - Support decision-making for targeted enforcement or prevention.
-
-                                    **Note:** The KDE map uses projected coordinates for calculation (EPSG:3857), and the interactive map uses geographic coordinates (EPSG:4326).
+                                    - Support decision-making for targeted enforcement or prevention.                                  
                                 """)
                                 
         else:
