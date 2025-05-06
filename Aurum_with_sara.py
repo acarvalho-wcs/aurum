@@ -1168,7 +1168,14 @@ if uploaded_file is not None:
                             max_year = int(df_geo['Year'].max())
 
                             if temporal_mode == "Year Range":
-                                selected_years = st.sidebar.slider("Select year range:", min_year, max_year, (min_year, max_year))
+                                selected_years = st.sidebar.slider(
+                                    "Select year range:",
+                                    min_value=min_year,
+                                    max_value=max_year,
+                                    value=(min_year, max_year),
+                                    step=1,
+                                    format="%d"
+                                )
                                 df_geo = df_geo[df_geo['Year'].between(selected_years[0], selected_years[1])]
                                 st.markdown(f"📆 Filtering cases from **{selected_years[0]}** to **{selected_years[1]}**")
 
