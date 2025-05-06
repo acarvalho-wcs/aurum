@@ -1129,7 +1129,89 @@ if uploaded_file is not None:
 
                 else:
                     st.info("Please select at least one feature to define connections between cases.")
-                    
+
+            show_geo = st.sidebar.checkbox("Geo Analysis", value=False)
+            if show_geo:
+                st.markdown("## Geo Analysis")
+
+                st.markdown("This section maps the spatial distribution of wildlife trafficking cases using kernel density estimation (KDE) and interactive heatmaps.")
+
+                if 'Latitude' not in df_selected.columns or 'Longitude' not in df_selected.columns:
+                    st.warning("This analysis requires columns 'Latitude' and 'Longitude' in the dataset.")
+                else:
+                    df_geo = df_selected.dropna(subset=["Latitude", "Longitude"]).copy()
+                    if df_geo.empty:
+                        st.warning("No valid geolocation data found.")
+                    else:
+                        import geopandas as gpd
+                        import numpy as np
+                        from sklearn.neighbors import KernelDensity
+                        import matplotlib.pyplot as plt
+                        import contextily as ctx
+                        import folium
+                        from folium.plugins import HeatMap
+                        from shapely.geometry import Point
+
+                        species_list = df_geo['Species'].dropna().unique().tolist()
+                        selected_species = st.sidebar.multiselect("Filter by species:", species_list, default=species_list)
+                        filtered_df = df_geo[df_geo['Species'].isin(selected_species)]
+
+                        gdf = gpd.GeoDataFrame(
+                            filtered_df,
+                            geometry=gpd.points_from_xy(filtered_df['Longitude'], filtered_df['Latitude']),
+                            crs="EPSG:4326"
+                        )
+                        gdf_proj = gdf.to_crs(epsg=3857)
+
+                        coords = np.vstack([gdf_proj.geometry.x, gdf_proj.geometry.y]).T
+                        if len(coords) < 2:
+                            st.warning("At least two geolocated cases are needed to calculate KDE.")
+                        else:
+                            bandwidth_km = st.sidebar.slider("KDE bandwidth (km)", 10, 200, 50) * 1000
+                            kde = KernelDensity(bandwidth=bandwidth_km, kernel='gaussian')
+                            kde.fit(coords)
+
+                            xmin, ymin, xmax, ymax = gdf_proj.total_bounds
+                            xx, yy = np.mgrid[xmin:xmax:500j, ymin:ymax:500j]
+                            grid_coords = np.vstack([xx.ravel(), yy.ravel()]).T
+                            zz = np.exp(kde.score_samples(grid_coords)).reshape(xx.shape)
+
+                            st.subheader("🗺️ KDE Heatmap (Static)")
+
+                            fig, ax = plt.subplots(figsize=(10, 10))
+                            ax.set_title("Kernel Density Estimation of Trafficking Cases", fontsize=14)
+                            ax.imshow(np.rot90(zz), cmap='Reds', extent=[xmin, xmax, ymin, ymax])
+                            gdf_proj.plot(ax=ax, markersize=5, color='blue', alpha=0.4)
+                            ctx.add_basemap(ax, crs=gdf_proj.crs.to_string())
+                            st.pyplot(fig)
+
+                            st.subheader("🧭 Interactive Heatmap (Folium)")
+
+                            gdf_wgs = gdf.to_crs(epsg=4326)
+                            m = folium.Map(location=[gdf_wgs['Latitude'].mean(), gdf_wgs['Longitude'].mean()], zoom_start=5)
+                            HeatMap(data=gdf_wgs[['Latitude', 'Longitude']].values, radius=25).add_to(m)
+                            st.components.v1.html(m._repr_html_(), height=600)
+
+                            with st.expander("ℹ️ Learn more about this analysis"):
+                                st.markdown("""
+                                    ### About Geospatial Analysis
+
+                                    This section uses **Kernel Density Estimation (KDE)** to identify **spatial hotspots** of wildlife trafficking activity.
+
+                                    - **Red areas** on the map indicate regions with **higher concentration** of cases.
+                                    - KDE uses a smoothing technique to estimate the **probability density** of case locations.
+                                    - You can adjust the **bandwidth** (smoothing radius) to control how localized or spread the clusters appear.
+                                    - An **interactive heatmap** is also included to explore locations dynamically.
+
+                                    ---
+                                    **Use Cases:**
+                                    - Detect trafficking corridors or hubs.
+                                    - Compare species-specific patterns geographically.
+                                    - Support decision-making for targeted enforcement or prevention.
+
+                                    **Note:** The KDE map uses projected coordinates for calculation (EPSG:3857), and the interactive map uses geographic coordinates (EPSG:4326).
+                                """)
+                                
         else:
             st.warning("⚠️ Please select at least one species to explore the data.")
 
