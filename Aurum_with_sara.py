@@ -1147,64 +1147,22 @@ if uploaded_file is not None:
                         import numpy as np
                         import folium
                         from folium.plugins import HeatMap
-                        from shapely.geometry import Point
-                        import tempfile
-                        import base64
                         import os
-
-                        # FILTROS
-                        species_list = df_geo['Species'].dropna().unique().tolist()
-                        df_geo = df_geo[df_geo['Species'].isin(selected_species)]
-
-                        temporal_mode = st.sidebar.radio("Select temporal mode:", ["Year Range", "Single Year"])
-
-                        if 'Year' in df_geo.columns:
-                            min_year = int(df_geo['Year'].min())
-                            max_year = int(df_geo['Year'].max())
-
-                            if temporal_mode == "Year Range":
-                                selected_years = st.sidebar.slider(
-                                    "Select year range:",
-                                    min_value=min_year,
-                                    max_value=max_year,
-                                    value=(min_year, max_year),
-                                    step=1,
-                                    format="%d"
-                                )
-                                df_geo = df_geo[df_geo['Year'].between(selected_years[0], selected_years[1])]
-                                st.markdown(f"📆 Filtering cases from **{selected_years[0]}** to **{selected_years[1]}**")
-
-                            elif temporal_mode == "Single Year":
-                                unique_years = sorted(df_geo['Year'].dropna().unique().tolist())
-                                selected_year = st.sidebar.select_slider("Choose a year to display KDE:", options=unique_years)
-                                df_geo = df_geo[df_geo['Year'] == selected_year]
-                                st.markdown(f"📆 Displaying KDE for **{selected_year}**")
-
-                        # Mapa Interativo
-                        gdf = gpd.GeoDataFrame(
-                            df_geo,
-                            geometry=gpd.points_from_xy(df_geo['Longitude'], df_geo['Latitude']),
-                            crs="EPSG:4326"
-                        )
-
-                        gdf_wgs = gdf.to_crs(epsg=4326)
-                        bounds = gdf_wgs.total_bounds
-                        center_lat = (bounds[1] + bounds[3]) / 2
-                        center_lon = (bounds[0] + bounds[2]) / 2
+                        import tempfile
 
                         st.markdown("### Analysis Settings")
                         col1, col2 = st.columns(2)
 
                         with col1:
                             species_list = sorted(df_geo['Species'].dropna().unique().tolist())
-                            selected_species = st.multiselect("Filter by species:", species_list, default=species_list)
+                            selected_species = st.multiselect("Filter by species:", species_list, default=species_list, key="species_dashboard")
                             df_geo = df_geo[df_geo['Species'].isin(selected_species)]
 
                         with col2:
                             radius_val = st.slider("HeatMap radius (px)", 5, 50, 25)
 
                         st.markdown("### Temporal Filter")
-                        temporal_mode = st.radio("Select temporal mode:", ["Year Range", "Single Year"], index=0, horizontal=True)
+                        temporal_mode = st.radio("Select temporal mode:", ["Year Range", "Single Year"], index=0)
 
                         if 'Year' in df_geo.columns:
                             min_year = int(df_geo['Year'].min())
@@ -1227,14 +1185,14 @@ if uploaded_file is not None:
                                 df_geo = df_geo[df_geo['Year'] == selected_year]
                                 st.markdown(f"📆 Displaying KDE for **{selected_year}**")
 
-                        # Gerar novo GeoDataFrame com filtros aplicados
+                        # Mapa Interativo
                         gdf = gpd.GeoDataFrame(
                             df_geo,
                             geometry=gpd.points_from_xy(df_geo['Longitude'], df_geo['Latitude']),
                             crs="EPSG:4326"
                         )
-                        gdf_wgs = gdf.to_crs(epsg=4326)
 
+                        gdf_wgs = gdf.to_crs(epsg=4326)
                         bounds = gdf_wgs.total_bounds
                         center_lat = (bounds[1] + bounds[3]) / 2
                         center_lon = (bounds[0] + bounds[2]) / 2
@@ -1243,7 +1201,6 @@ if uploaded_file is not None:
                         m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
                         HeatMap(data=gdf_wgs[['Latitude', 'Longitude']].values, radius=radius_val).add_to(m)
 
-                        # Legenda com gradiente contínuo coerente com o folium
                         legend_html = '''
                             <div style="
                                 position: fixed;
@@ -1256,23 +1213,18 @@ if uploaded_file is not None:
                                 border-radius:5px;
                                 font-size:14px;
                                 box-shadow: 2px 2px 6px rgba(0,0,0,0.3);">
-                                <b>HeatMap Intensity</b>
-                                <div style="height: 10px; width: 120px;
-                                    background: linear-gradient(to right, blue, cyan, lime, yellow, orange, red);
-                                    margin: 5px 0;"></div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span>Low</span>
-                                    <span>Medium</span>
-                                    <span>High</span>
-                                </div>
+                                <b>HeatMap Intensity</b><br>
+                                <i style="background:#0000ff;width:18px;height:10px;display:inline-block;"></i> Very Low<br>
+                                <i style="background:#ffffb2;width:18px;height:10px;display:inline-block;"></i> Low<br>
+                                <i style="background:#fd8d3c;width:18px;height:10px;display:inline-block;"></i> Medium<br>
+                                <i style="background:#e31a1c;width:18px;height:10px;display:inline-block;"></i> High<br>
                             </div>
                         '''
                         m.get_root().html.add_child(folium.Element(legend_html))
 
-                        html_str = m.get_root().render()
-                        st.components.v1.html(html_str, height=600)
+                        st.components.v1.html(m._repr_html_(), height=600)
 
-                        full_map_path = os.path.join(tempfile.gettempdir(), "aurum_map.html")
+                        full_map_path = os.path.join(tempfile.gettempdir(), "aurum_kde_map.html")
                         m.save(full_map_path)
 
                         with open(full_map_path, "rb") as f:
@@ -1283,7 +1235,6 @@ if uploaded_file is not None:
                             file_name="aurum_kde_map.html",
                             mime="text/html"
                         )
-
 
                         with st.expander("ℹ️ Learn more about this analysis"):
                             st.markdown("""
