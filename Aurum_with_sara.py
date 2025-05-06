@@ -1183,7 +1183,7 @@ if uploaded_file is not None:
                             center_lat = (bounds[1] + bounds[3]) / 2
                             center_lon = (bounds[0] + bounds[2]) / 2
 
-                            m = folium.Map(location=[center_lat, center_lon], zoom_start=4)
+                            m = folium.Map(location=[center_lat, center_lon], zoom_start=2)
                             HeatMap(data=gdf_wgs[['Latitude', 'Longitude']].values, radius=25).add_to(m)
                             st.components.v1.html(m._repr_html_(), height=600)
 
