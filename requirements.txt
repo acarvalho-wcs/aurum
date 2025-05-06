@@ -30,3 +30,4 @@ contextily
 seaborn
 pyproj
 shapely
+imageio
