@@ -1198,6 +1198,25 @@ if uploaded_file is not None:
                         m = folium.Map(location=[center_lat, center_lon], zoom_start=2)
                         m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
                         HeatMap(data=gdf_wgs[['Latitude', 'Longitude']].values, radius=radius_val).add_to(m)
+                        legend_html = '''
+                            <div style="
+                                position: fixed;
+                                bottom: 40px;
+                                right: 20px;
+                                z-index: 9999;
+                                background-color: white;
+                                padding: 10px;
+                                border:2px solid gray;
+                                border-radius:5px;
+                                font-size:14px;
+                                box-shadow: 2px 2px 6px rgba(0,0,0,0.3);">
+                                <b>HeatMap Intensity</b><br>
+                                <i style="background:#ffffb2;width:18px;height:10px;display:inline-block;"></i> Low<br>
+                                <i style="background:#fd8d3c;width:18px;height:10px;display:inline-block;"></i> Medium<br>
+                                <i style="background:#e31a1c;width:18px;height:10px;display:inline-block;"></i> High<br>
+                            </div>
+                        '''
+                        m.get_root().html.add_child(folium.Element(legend_html))
                         st.components.v1.html(m._repr_html_(), height=600)
 
                         full_map_path = os.path.join(tempfile.gettempdir(), "aurum_map.html")
