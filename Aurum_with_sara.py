@@ -1193,13 +1193,57 @@ if uploaded_file is not None:
                         center_lat = (bounds[1] + bounds[3]) / 2
                         center_lon = (bounds[0] + bounds[2]) / 2
 
-                        radius_val = st.sidebar.slider("HeatMap radius (px)", 5, 50, 25)
+                        st.markdown("### Analysis Settings")
+                        col1, col2 = st.columns(2)
+
+                        with col1:
+                            species_list = sorted(df_geo['Species'].dropna().unique().tolist())
+                            selected_species = st.multiselect("Filter by species:", species_list, default=species_list)
+                            df_geo = df_geo[df_geo['Species'].isin(selected_species)]
+
+                            temporal_mode = st.radio("Select temporal mode:", ["Year Range", "Single Year"], index=0)
+
+                            if 'Year' in df_geo.columns:
+                                min_year = int(df_geo['Year'].min())
+                                max_year = int(df_geo['Year'].max())
+
+                                if temporal_mode == "Year Range":
+                                    selected_years = st.slider(
+                                        "Select year range:",
+                                        min_value=min_year,
+                                        max_value=max_year,
+                                        value=(min_year, max_year),
+                                        step=1
+                                    )
+                                    df_geo = df_geo[df_geo['Year'].between(selected_years[0], selected_years[1])]
+                                    st.markdown(f"📆 Filtering cases from **{selected_years[0]}** to **{selected_years[1]}**")
+
+                                elif temporal_mode == "Single Year":
+                                    unique_years = sorted(df_geo['Year'].dropna().unique().tolist())
+                                    selected_year = st.select_slider("Choose a year to display KDE:", options=unique_years)
+                                    df_geo = df_geo[df_geo['Year'] == selected_year]
+                                    st.markdown(f"📆 Displaying KDE for **{selected_year}**")
+
+                        with col2:
+                            radius_val = st.slider("HeatMap radius (px)", 5, 50, 25)
+
+                        # Gerar novo GeoDataFrame com filtros aplicados
+                        gdf = gpd.GeoDataFrame(
+                            df_geo,
+                            geometry=gpd.points_from_xy(df_geo['Longitude'], df_geo['Latitude']),
+                            crs="EPSG:4326"
+                        )
+                        gdf_wgs = gdf.to_crs(epsg=4326)
+
+                        bounds = gdf_wgs.total_bounds
+                        center_lat = (bounds[1] + bounds[3]) / 2
+                        center_lon = (bounds[0] + bounds[2]) / 2
 
                         m = folium.Map(location=[center_lat, center_lon], zoom_start=2)
                         m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
                         HeatMap(data=gdf_wgs[['Latitude', 'Longitude']].values, radius=radius_val).add_to(m)
 
-                        # Legenda avançada com gradiente contínuo
+                        # Legenda com gradiente contínuo coerente com o folium
                         legend_html = '''
                             <div style="
                                 position: fixed;
