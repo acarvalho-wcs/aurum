@@ -1953,8 +1953,8 @@ if "user" in st.session_state:
 
             st.dataframe(data)
 
-            # --- Data Requests ---
-            if "user_email" in st.session_state:
+# --- Data Requests ---
+if "user_email" in st.session_state:
             st.markdown("## Data Requests")
             st.markdown("Use this form to request access to filtered datasets uploaded to Aurum. You can request based on species, country, and year.")
 
