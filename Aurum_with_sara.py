@@ -415,7 +415,7 @@ def display_alert_update_timeline(sheet_id):
     # ----------------------------
     # 📁 CASES MANAGEMENT
     # ----------------------------
-    elif selected_tab == "Cases Management":
+    if selected_tab == "Cases Management":
         st.markdown("### Case Management")
         col3, col4 = st.columns(2)
 
@@ -608,7 +608,7 @@ def display_alert_update_timeline(sheet_id):
     # ----------------------------
     # 📊 DATA REQUESTS
     # ----------------------------
-    elif selected_tab == "Data Requests":
+    if selected_tab == "Data Requests":
         st.markdown("## Data Requests")
         st.markdown("Use this form to request access to datasets uploaded to Aurum.")
 
