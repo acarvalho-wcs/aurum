@@ -1962,11 +1962,17 @@ if "user" in st.session_state:
         st.markdown("## Data Requests")
         st.markdown("Use this form to request access to datasets uploaded to Aurum. You can describe your interest freely.")
 
+        # Campos controlados por session_state
+        species_key = "datareq_species"
+        years_key = "datareq_years"
+        country_key = "datareq_country"
+        reason_key = "datareq_reason"
+
         with st.form("data_request_form"):
-            species = st.text_input("Species of interest (e.g., Anodorhynchus_lear)")
-            years = st.text_input("Year(s) of interest (e.g., 2022 or 2015–2020)")
-            country = st.text_input("Country or region of interest (e.g., Brazil)", value="All")
-            reason = st.text_area("Justify your request:")
+            species = st.text_input("Species of interest (e.g., Anodorhynchus_lear)", key=species_key)
+            years = st.text_input("Year(s) of interest (e.g., 2022 or 2015–2020)", key=years_key)
+            country = st.text_input("Country or region of interest (e.g., Brazil)", value="All", key=country_key)
+            reason = st.text_area("Justify your request:", key=reason_key)
 
             submitted = st.form_submit_button("Submit Data Request")
 
@@ -2004,6 +2010,13 @@ if "user" in st.session_state:
                         ])
 
                         st.success("✅ Your data request was submitted successfully.")
+
+                        # Reset dos campos
+                        st.session_state[species_key] = ""
+                        st.session_state[years_key] = ""
+                        st.session_state[country_key] = "All"
+                        st.session_state[reason_key] = ""
+
                     except Exception as e:
                         st.error(f"❌ Failed to submit your request: {e}")
 
