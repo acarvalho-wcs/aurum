@@ -1957,44 +1957,55 @@ if "user" in st.session_state:
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
 
-    # --- Data Requests (Simplified Form) ---
+    # --- DATA REQUESTS (USERS) ---
     if "user_email" in st.session_state:
         st.markdown("## Data Requests")
         st.markdown("Use this form to request access to datasets uploaded to Aurum. You can describe your interest freely.")
 
         with st.form("data_request_form"):
-            species_input = st.text_input("Species of interest (e.g., Anodorhynchus_leari)")
-            year_input = st.text_input("Year(s) of interest (e.g., 2022 or 2015–2020)")
-            country_input = st.text_input("Country or region of interest (e.g., Brazil)")
+            species = st.text_input("Species of interest (e.g., Anodorhynchus_lear)")
+            years = st.text_input("Year(s) of interest (e.g., 2022 or 2015–2020)")
+            country = st.text_input("Country or region of interest (e.g., Brazil)", value="All")
             reason = st.text_area("Justify your request:")
 
             submitted = st.form_submit_button("Submit Data Request")
 
-        if submitted:
-            if not reason.strip():
-                st.warning("Please provide a justification for your request.")
-            else:
-                try:
-                    from datetime import datetime
-                    import gspread
+            if submitted:
+                if not species or not years or not reason:
+                    st.warning("Species, year(s), and justification are required.")
+                else:
+                    try:
+                        from datetime import datetime
+                        import gspread
+                        from google.oauth2.service_account import Credentials
 
-                    gc = gspread.service_account(filename="service_credentials.json")
-                    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-                    worksheet = sh.worksheet("Data Requests")
+                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-                    worksheet.append_row([
-                        datetime.now().isoformat(),
-                        st.session_state.get("user_email", "anonymous"),
-                        species_input or "—",
-                        year_input or "—",
-                        country_input or "—",
-                        reason,
-                        "Pending"
-                    ])
+                        scope = ["https://www.googleapis.com/auth/spreadsheets"]
+                        credentials = Credentials.from_service_account_info(
+                            st.secrets["gcp_service_account"], scopes=scope)
+                        client = gspread.authorize(credentials)
+                        sheet = client.open_by_key(SHEET_ID)
 
-                    st.success("Your request has been submitted and is now marked as 'Pending'.")
-                except Exception as e:
-                    st.error(f"❌ Failed to submit your request: {e}")
+                        try:
+                            req_ws = sheet.worksheet("Data Requests")
+                        except gspread.exceptions.WorksheetNotFound:
+                            req_ws = sheet.add_worksheet(title="Data Requests", rows="1000", cols="7")
+                            req_ws.append_row(["Timestamp", "User", "Species", "Year(s)", "Country", "Reason", "Status"])
+
+                        req_ws.append_row([
+                            timestamp,
+                            st.session_state["user_email"],
+                            species,
+                            years,
+                            country,
+                            reason,
+                            "Pending"
+                        ])
+
+                        st.success("✅ Your data request was submitted successfully.")
+                    except Exception as e:
+                        st.error(f"❌ Failed to submit your request: {e}")
 
 # --- SUGGESTIONS AND COMMENTS (SIDEBAR) ---
 if "show_sidebar_feedback" not in st.session_state:
