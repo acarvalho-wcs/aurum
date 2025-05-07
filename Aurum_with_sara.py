@@ -1725,7 +1725,7 @@ if "user" in st.session_state:
     # --- MENU SUPERIOR COM TABS ---
     selected_tab = tabs(
         options=["Alerts Management", "Cases Management", "Data Requests"],
-        default_value="Alerts Management",
+        default_value="",
         key="main_tab"
     )
 
