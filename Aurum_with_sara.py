@@ -1809,7 +1809,7 @@ if uploaded_file is None and st.session_state.get("user"):
 
             dashboard_tab = tabs(
                 options=["Summary Dashboard", "Distribution of Seizures"],
-                default_value="Summary Dashboard",
+                default_value="",
                 key="dashboard_tabs"
             )
 
