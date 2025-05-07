@@ -1933,7 +1933,7 @@ if "user_email" in st.session_state:
 
     st.markdown("Use this form to request access to datasets uploaded to Aurum by other users. All requests will be reviewed by the data owner or platform administrator.")
 
-    available_batches = df_cases['Batch'].dropna().unique().tolist() if 'Batch' in df_cases.columns else []
+    available_batches = data['Batch'].dropna().unique().tolist() if 'Batch' in data.columns else []
 
     if not available_batches:
         st.info("No datasets available for request at the moment.")
