@@ -1960,7 +1960,7 @@ if "user" in st.session_state:
     # --- Data Requests ---
     if "user_email" in st.session_state:
         st.markdown("## Data Requests")
-        st.markdown("Use this form to request access to filtered datasets uploaded to Aurum. You can request based on species, country, and year.")
+        st.markdown("Use this form to request access to filtered datasets uploaded to Aurum. You may combine filters below or leave any of them empty.")
 
         try:
             species_pool = []
@@ -1978,10 +1978,22 @@ if "user" in st.session_state:
                 countries = data_all["Country of seizure or shipment"].dropna().astype(str)
                 country_pool = sorted(set("; ".join(countries).replace("+", ";").split("; ")))
 
-            selected_species = st.selectbox("Select species of interest:", species_pool) if species_pool else None
-            selected_year = st.selectbox("Select year of interest:", year_pool) if year_pool else None
-            selected_country = st.selectbox("Select country of interest:", country_pool) if country_pool else None
+            selected_species = st.multiselect("Species (optional):", species_pool)
+            selected_years = st.multiselect("Years (optional):", year_pool)
+            selected_countries = st.multiselect("Countries (optional):", country_pool)
             reason = st.text_area("Justify your request:")
+
+            # Aplica filtros condicionalmente
+            filtered = data_all.copy()
+            if selected_species and "N seized specimens" in filtered.columns:
+                pattern = "|".join(selected_species)
+                filtered = filtered[filtered["N seized specimens"].str.contains(pattern, na=False)]
+            if selected_years and "Year" in filtered.columns:
+                filtered = filtered[filtered["Year"].isin(selected_years)]
+            if selected_countries and "Country of seizure or shipment" in filtered.columns:
+                filtered = filtered[filtered["Country of seizure or shipment"].isin(selected_countries)]
+
+            st.markdown(f"**Matching records:** {len(filtered)}")
 
             if st.button("Submit Data Request"):
                 from datetime import datetime
@@ -1994,9 +2006,9 @@ if "user" in st.session_state:
                 worksheet.append_row([
                     datetime.now().isoformat(),
                     st.session_state.get("user_email", "anonymous"),
-                    selected_species or "—",
-                    selected_year or "—",
-                    selected_country or "—",
+                    ", ".join(selected_species) if selected_species else "—",
+                    ", ".join([str(y) for y in selected_years]) if selected_years else "—",
+                    ", ".join(selected_countries) if selected_countries else "—",
                     reason,
                     "Pending"
                 ])
