@@ -1130,122 +1130,98 @@ if uploaded_file is not None:
             show_multi = st.sidebar.checkbox("Multivariate Analyses", value=False)
             if show_multi:
                 st.markdown("## Multivariate Analyses")
+                st.markdown("This section explores relationships between variables using dimensionality reduction, clustering, and predictive modeling techniques.")
 
                 import pandas as pd
                 import numpy as np
-                from sklearn.decomposition import PCA
-                from sklearn.preprocessing import StandardScaler, OneHotEncoder
-                from sklearn.compose import ColumnTransformer
-                from sklearn.pipeline import Pipeline
-                from sklearn.cluster import KMeans
-                from sklearn.linear_model import PoissonRegressor, LogisticRegression
-                from sklearn.metrics import silhouette_score
                 import matplotlib.pyplot as plt
                 import seaborn as sns
+                from sklearn.preprocessing import StandardScaler, OneHotEncoder
+                from sklearn.decomposition import PCA
+                from sklearn.cluster import KMeans
+                from sklearn.linear_model import LogisticRegression, PoissonRegressor
+                from sklearn.compose import ColumnTransformer
+                from sklearn.pipeline import Pipeline
+                from sklearn.model_selection import train_test_split
 
-                st.markdown("### Data Preprocessing")
-
+                # Preprocess
                 df_clean = df_selected.copy()
+                df_clean = df_clean.dropna(subset=['Species'])
 
-                # Expandir coluna de especies
-                def extract_species_info(row):
-                    parts = str(row).split('+')
-                    species = []
-                    total = 0
-                    for p in parts:
-                        try:
-                            n, s = p.strip().split(' ', 1)
-                            species.append(s.strip())
-                            total += int(n)
-                        except:
-                            continue
-                    return pd.Series({'Species Count': total, 'Species List': species})
+                # Define features
+                numeric_cols = df_clean.select_dtypes(include=['float64', 'int64']).columns.tolist()
+                categorical_cols = df_clean.select_dtypes(include=['object', 'category']).columns.tolist()
+                
+                # Remove target and identifiers from features
+                for col in ['Case #', 'Year', 'Interdiction']:
+                    if col in numeric_cols:
+                        numeric_cols.remove(col)
+                    if col in categorical_cols:
+                        categorical_cols.remove(col)
 
-                species_data = df_clean['N seized specimens'].apply(extract_species_info)
-                df_clean = df_clean.join(species_data)
+                preprocessor = ColumnTransformer(
+                    transformers=[
+                        ('num', StandardScaler(), numeric_cols),
+                        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
+                    ]
+                )
 
-                # Remover colunas não numéricas exceto para codificação
-                features = ['Year', 'Country of seizure or shipment', 'Country of offenders',
-                            'Seizure Status', 'Transit Feature', 'Species Count']
-                df_model = df_clean[features].dropna()
-
-                # Pipeline de pré-processamento
-                numeric_features = ['Year', 'Species Count']
-                categorical_features = ['Country of seizure or shipment', 'Country of offenders',
-                                        'Seizure Status', 'Transit Feature']
-
-                preprocessor = ColumnTransformer([
-                    ("num", StandardScaler(), numeric_features),
-                    ("cat", OneHotEncoder(drop='first'), categorical_features)
-                ])
+                X = preprocessor.fit_transform(df_clean)
 
                 st.markdown("### Principal Component Analysis (PCA)")
-                pca_pipeline = Pipeline([
-                    ("pre", preprocessor),
-                    ("pca", PCA(n_components=2))
-                ])
-
-                X_pca = pca_pipeline.fit_transform(df_model)
-                df_pca = pd.DataFrame(X_pca, columns=["PC1", "PC2"])
+                pca = PCA(n_components=2)
+                components = pca.fit_transform(X.toarray() if hasattr(X, 'toarray') else X)
 
                 fig, ax = plt.subplots()
-                sns.scatterplot(data=df_pca, x="PC1", y="PC2", ax=ax)
-                ax.set_title("Projection of Cases (PCA)")
+                ax.scatter(components[:, 0], components[:, 1], alpha=0.6)
+                ax.set_xlabel("PC1")
+                ax.set_ylabel("PC2")
+                ax.set_title("PCA Projection")
                 st.pyplot(fig)
 
-                st.markdown("### Clustering (K-Means)")
-                preprocessed = preprocessor.fit_transform(df_model)
-                kmeans = KMeans(n_clusters=3, random_state=42)
-                clusters = kmeans.fit_predict(preprocessed)
+                st.markdown("### K-Means Clustering")
+                n_clusters = st.slider("Select number of clusters:", 2, 10, 3)
+                kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(X)
+                labels = kmeans.labels_
 
-                df_pca['Cluster'] = clusters
-                fig2, ax2 = plt.subplots()
-                sns.scatterplot(data=df_pca, x="PC1", y="PC2", hue="Cluster", palette="tab10", ax=ax2)
-                ax2.set_title("K-Means Clustering over PCA")
-                st.pyplot(fig2)
+                fig, ax = plt.subplots()
+                scatter = ax.scatter(components[:, 0], components[:, 1], c=labels, cmap='viridis', alpha=0.6)
+                ax.set_title("K-Means Clusters (PCA space)")
+                st.pyplot(fig)
 
-                silhouette = silhouette_score(preprocessed, clusters)
-                st.markdown(f"**Silhouette Score:** `{silhouette:.3f}`")
+                st.markdown("### Predictive Modeling")
+                model_type = st.radio("Select model:", ["Poisson Regression (count)", "Logistic Regression (binary)"])
 
-                st.markdown("### Poisson Regression")
-                X_poisson = preprocessor.fit_transform(df_model)
-                y_poisson = df_model['Species Count']
-                poisson_model = PoissonRegressor(alpha=0.1, max_iter=1000)
-                poisson_model.fit(X_poisson, y_poisson)
-                st.markdown("**Top predictors of total seized individuals (Poisson coefficients):**")
-                coefs = poisson_model.coef_
-                feat_names = preprocessor.get_feature_names_out()
-                coef_df = pd.DataFrame({'Feature': feat_names, 'Coef': coefs})
-                coef_df_sorted = coef_df.reindex(coef_df['Coef'].abs().sort_values(ascending=False).index)
-                st.dataframe(coef_df_sorted.head(10))
+                if model_type == "Poisson Regression (count)":
+                    if 'Quantity' in df_clean.columns:
+                        y = df_clean['Quantity']
+                        model = Pipeline(steps=[
+                            ('pre', preprocessor),
+                            ('reg', PoissonRegressor(max_iter=300))
+                        ])
+                        model.fit(df_clean, y)
+                        st.success("Poisson regression trained. Coefficients available in code if needed.")
+                    else:
+                        st.warning("Column 'Quantity' not found for Poisson regression.")
 
-                st.markdown("### Logistic Regression")
-                df_model = df_model[df_model['Seizure Status'].isin(['attempt', 'interdicted'])].copy()
-                df_model['Status_Binary'] = df_model['Seizure Status'].map({'interdicted': 1, 'attempt': 0})
-
-                X_logistic = preprocessor.fit_transform(df_model.drop(columns=['Seizure Status']))
-                y_logistic = df_model['Status_Binary']
-                logreg = LogisticRegression(max_iter=1000)
-                logreg.fit(X_logistic, y_logistic)
-                log_coefs = logreg.coef_[0]
-
-                st.markdown("**Top predictors of interdiction success (Logistic coefficients):**")
-                logcoef_df = pd.DataFrame({'Feature': preprocessor.get_feature_names_out(), 'Coef': log_coefs})
-                logcoef_df_sorted = logcoef_df.reindex(logcoef_df['Coef'].abs().sort_values(ascending=False).index)
-                st.dataframe(logcoef_df_sorted.head(10))
+                if model_type == "Logistic Regression (binary)":
+                    if 'Interdiction' in df_clean.columns:
+                        y = df_clean['Interdiction'].astype(int)
+                        model = Pipeline(steps=[
+                            ('pre', preprocessor),
+                            ('clf', LogisticRegression(max_iter=300))
+                        ])
+                        model.fit(df_clean, y)
+                        st.success("Logistic regression trained. Coefficients available in code if needed.")
+                    else:
+                        st.warning("Column 'Interdiction' not found for logistic regression.")
 
                 with st.expander("ℹ️ Learn more about these analyses"):
                     st.markdown("""
-                        ### About Multivariate Analyses
-
-                        This module introduces statistical modeling and dimensionality reduction to extract deeper patterns:
-
-                        - **PCA (Principal Component Analysis):** simplifies multidimensional patterns across cases.
-                        - **K-Means Clustering:** identifies natural case groupings (e.g., organized vs. opportunistic).
-                        - **Poisson Regression:** identifies predictors of the number of individuals seized.
-                        - **Logistic Regression:** estimates the likelihood of interdiction success based on features.
-
-                        These methods can support strategic profiling, risk estimation and hypothesis testing.
+                        - **PCA** reduces the dimensionality of the dataset to visualize patterns.
+                        - **K-Means** automatically assigns cases to groups based on similar attributes.
+                        - **Poisson regression** is suitable for predicting counts (e.g., number of animals).
+                        - **Logistic regression** is used to estimate binary outcomes (e.g., whether a case was interdicted).
                     """)
 
             show_geo = st.sidebar.checkbox("Geospatial Analysis", value=False)
