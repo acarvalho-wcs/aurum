@@ -2014,7 +2014,7 @@ if "user" in st.session_state:
                         # Reset dos campos
                         st.session_state[species_key] = ""
                         st.session_state[years_key] = ""
-                        st.session_state[country_key] = "All"
+                        st.session_state[country_key] = ""
                         st.session_state[reason_key] = ""
 
                     except Exception as e:
