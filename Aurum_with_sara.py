@@ -1147,6 +1147,9 @@ if uploaded_file is not None:
                         import os
                         import tempfile
                         import zipfile
+                        from shapely.geometry import Polygon
+                        import matplotlib.pyplot as plt
+                        from sklearn.neighbors import KernelDensity
 
                         st.markdown("### Analysis Settings")
                         col1, col2 = st.columns(2)
@@ -1252,18 +1255,47 @@ if uploaded_file is not None:
                             mime="text/html"
                         )
 
-                        # Exportar shapefile compactado (.zip)
-                        with tempfile.TemporaryDirectory() as tmpdir:
-                            shp_path = os.path.join(tmpdir, "aurum_geo_export.shp")
-                            gdf_wgs.to_file(shp_path, driver='ESRI Shapefile', encoding='utf-8')
+                        # Exportar shapefile de zonas de densidade (polígonos)
+                        gdf_proj = gdf.to_crs(epsg=3857)
+                        coords = np.vstack([gdf_proj.geometry.x, gdf_proj.geometry.y]).T
+                        kde = KernelDensity(bandwidth=50000, kernel='gaussian').fit(coords)
+                        xmin, ymin, xmax, ymax = gdf_proj.total_bounds
+                        xx, yy = np.meshgrid(
+                            np.linspace(xmin, xmax, 200),
+                            np.linspace(ymin, ymax, 200)
+                        )
+                        grid_coords = np.vstack([xx.ravel(), yy.ravel()]).T
+                        zz = np.exp(kde.score_samples(grid_coords)).reshape(xx.shape)
+                        fig, ax = plt.subplots()
+                        levels = np.linspace(zz.min(), zz.max(), 6)[1:]  # descarta valor mais baixo
+                        cs = ax.contour(xx, yy, zz, levels=levels)
 
-                            zip_path = os.path.join(tmpdir, "aurum_geo_export.zip")
+                        polygons = []
+                        values = []
+                        for i, collection in enumerate(cs.collections):
+                            for path in collection.get_paths():
+                                try:
+                                    poly = path.to_polygons()
+                                    if len(poly) > 0:
+                                        exterior = poly[0]
+                                        interiors = poly[1:] if len(poly) > 1 else []
+                                        polygon = Polygon(shell=exterior, holes=interiors)
+                                        polygons.append(polygon)
+                                        values.append(float(cs.levels[i]))
+                                except Exception:
+                                    continue
+
+                        gdf_contours = gpd.GeoDataFrame({'density': values, 'geometry': polygons}, crs=gdf_proj.crs)
+
+                        with tempfile.TemporaryDirectory() as tmpdir:
+                            shp_path = os.path.join(tmpdir, "aurum_density_zones.shp")
+                            gdf_contours.to_file(shp_path, driver='ESRI Shapefile', encoding='utf-8')
+                            zip_path = os.path.join(tmpdir, "aurum_density_zones.zip")
                             with zipfile.ZipFile(zip_path, 'w') as zipf:
                                 for ext in ['.shp', '.shx', '.dbf', '.prj']:
-                                    zipf.write(os.path.join(tmpdir, f"aurum_geo_export{ext}"), arcname=f"aurum_geo_export{ext}")
-
+                                    zipf.write(os.path.join(tmpdir, f"aurum_density_zones{ext}"), arcname=f"aurum_density_zones{ext}")
                             with open(zip_path, 'rb') as zf:
-                                st.download_button("Download shapefile (.zip)", data=zf, file_name="aurum_geo_export.zip")
+                                st.download_button("📦 Download density zones (.zip)", data=zf, file_name="aurum_density_zones.zip")
 
                         with st.expander("ℹ️ Learn more about this analysis"):
                             st.markdown("""
