@@ -1830,7 +1830,7 @@ if uploaded_file is None and st.session_state.get("user"):
                 df_dashboard["parts_seized"] = df_dashboard["N seized specimens"].str.extract(r'(\d+(?:\.\d+)?)\s*(part|parts)', expand=False)[0]
                 total_parts = pd.to_numeric(df_dashboard["parts_seized"], errors="coerce").fillna(0).sum()
 
-                st.markdown("---\n### Global Summary")
+                st.markdown("### Global Summary")
                 col1, col2, col3 = st.columns(3)
                 col1.metric("Species seized", total_species)
                 col2.metric("Total cases", total_cases_all)
