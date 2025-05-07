@@ -1146,7 +1146,6 @@ if uploaded_file is not None:
                         from folium.plugins import HeatMap
                         import os
                         import tempfile
-                        import zipfile
                         from shapely.geometry import Polygon
                         import matplotlib.pyplot as plt
                         from sklearn.neighbors import KernelDensity
@@ -1189,7 +1188,7 @@ if uploaded_file is not None:
                                 elif temporal_mode == "Single Year":
                                     unique_years = sorted(df_geo['Year'].dropna().unique().tolist())
                                     selected_year = st.select_slider(
-                                        "", 
+                                        "",
                                         options=unique_years,
                                         value=max_year,
                                         label_visibility="collapsed"
@@ -1255,47 +1254,44 @@ if uploaded_file is not None:
                             mime="text/html"
                         )
 
-                        # Exportar shapefile de zonas de densidade (polígonos)
-                        gdf_proj = gdf.to_crs(epsg=3857)
-                        coords = np.vstack([gdf_proj.geometry.x, gdf_proj.geometry.y]).T
-                        kde = KernelDensity(bandwidth=50000, kernel='gaussian').fit(coords)
-                        xmin, ymin, xmax, ymax = gdf_proj.total_bounds
-                        xx, yy = np.meshgrid(
-                            np.linspace(xmin, xmax, 200),
-                            np.linspace(ymin, ymax, 200)
-                        )
-                        grid_coords = np.vstack([xx.ravel(), yy.ravel()]).T
-                        zz = np.exp(kde.score_samples(grid_coords)).reshape(xx.shape)
-                        fig, ax = plt.subplots()
-                        levels = np.linspace(zz.min(), zz.max(), 6)[1:]  # descarta valor mais baixo
-                        cs = ax.contour(xx, yy, zz, levels=levels)
+                        # Export shapefile de zonas de densidade (polígonos vetoriais)
+                        if not gdf.empty:
+                            gdf_proj = gdf.to_crs(epsg=3857)
+                            coords = np.vstack([gdf_proj.geometry.x, gdf_proj.geometry.y]).T
+                            kde = KernelDensity(bandwidth=50000, kernel='gaussian')
+                            kde.fit(coords)
 
-                        polygons = []
-                        values = []
-                        for i, collection in enumerate(cs.collections):
-                            for path in collection.get_paths():
-                                try:
+                            xmin, ymin, xmax, ymax = gdf_proj.total_bounds
+                            xx, yy = np.mgrid[xmin:xmax:200j, ymin:ymax:200j]
+                            grid_coords = np.vstack([xx.ravel(), yy.ravel()]).T
+                            zz = np.exp(kde.score_samples(grid_coords)).reshape(xx.shape)
+
+                            fig, ax = plt.subplots()
+                            cs = ax.contour(xx, yy, zz, levels=6)
+
+                            polygons = []
+                            values = []
+                            for i, collection in enumerate(cs.collections):
+                                for path in collection.get_paths():
                                     poly = path.to_polygons()
                                     if len(poly) > 0:
                                         exterior = poly[0]
                                         interiors = poly[1:] if len(poly) > 1 else []
-                                        polygon = Polygon(shell=exterior, holes=interiors)
-                                        polygons.append(polygon)
-                                        values.append(float(cs.levels[i]))
-                                except Exception:
-                                    continue
+                                        polygons.append(Polygon(shell=exterior, holes=interiors))
+                                        values.append(cs.levels[i])
 
-                        gdf_contours = gpd.GeoDataFrame({'density': values, 'geometry': polygons}, crs=gdf_proj.crs)
+                            contour_gdf = gpd.GeoDataFrame({"value": values}, geometry=polygons, crs="EPSG:3857")
+                            shp_dir = os.path.join(tempfile.gettempdir(), "aurum_geo_export")
+                            shp_path = os.path.join(shp_dir, "aurum_kde_polygons.shp")
+                            contour_gdf.to_file(shp_path)
 
-                        with tempfile.TemporaryDirectory() as tmpdir:
-                            shp_path = os.path.join(tmpdir, "aurum_density_zones.shp")
-                            gdf_contours.to_file(shp_path, driver='ESRI Shapefile', encoding='utf-8')
-                            zip_path = os.path.join(tmpdir, "aurum_density_zones.zip")
-                            with zipfile.ZipFile(zip_path, 'w') as zipf:
-                                for ext in ['.shp', '.shx', '.dbf', '.prj']:
-                                    zipf.write(os.path.join(tmpdir, f"aurum_density_zones{ext}"), arcname=f"aurum_density_zones{ext}")
-                            with open(zip_path, 'rb') as zf:
-                                st.download_button("📦 Download density zones (.zip)", data=zf, file_name="aurum_density_zones.zip")
+                            with open(shp_path, "rb") as f:
+                                st.download_button(
+                                    label="Download KDE Zones (.shp)",
+                                    data=f.read(),
+                                    file_name="aurum_kde_polygons.shp",
+                                    mime="application/octet-stream"
+                                )
 
                         with st.expander("ℹ️ Learn more about this analysis"):
                             st.markdown("""
@@ -1313,9 +1309,9 @@ if uploaded_file is not None:
                                 - Compare species-specific patterns geographically.
                                 - Support decision-making for targeted enforcement or prevention.
 
-                                **Note:** This map uses geographic coordinates (EPSG:4326) and is rendered using `folium`.
+                                **Note:** This map uses geographic coordinates (EPSG:4326) and is rendered using `folium`. KDE export is vectorized in EPSG:3857.
                             """)
-                                
+                               
         else:
             st.warning("⚠️ Please select at least one species to explore the data.")
 
