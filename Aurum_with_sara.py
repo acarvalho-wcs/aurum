@@ -1957,6 +1957,8 @@ if "user" in st.session_state:
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
 
+st.markdown("---")
+
     # --- DATA REQUESTS (USERS) ---
     if "user_email" in st.session_state:
         st.markdown("## Data Requests")
