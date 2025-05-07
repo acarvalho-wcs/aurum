@@ -23,6 +23,7 @@ import os
 from uuid import uuid4
 from datetime import datetime
 import pytz
+from streamlit_shadcn_ui import tabs
 brt = pytz.timezone("America/Sao_Paulo")
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
@@ -1720,249 +1721,226 @@ def display_alert_update_timeline(sheet_id):
 
 # --- Interface em colunas: Alertas (superior) e Casos (inferior) ---
 if "user" in st.session_state:
+    
+    # --- MENU SUPERIOR COM TABS ---
+    selected_tab = tabs(
+        options=["Alerts Management", "Cases Management", "Data Requests"],
+        default_value="Alerts Management",
+        key="main_tab"
+    )
 
-    # --- Colunas superiores: Alertas ---
-    st.markdown("### Alert Management")
-    col1, col2 = st.columns(2)
+    # ----------------------------
+    # 🔔 ALERTS MANAGEMENT
+    # ----------------------------
+    if selected_tab == "Alerts Management":
+        st.markdown("### Alert Management")
+        col1, col2 = st.columns(2)
 
-    with col1:
-        with st.expander("**Submit New Alert**", expanded=False):
-            display_alert_submission_form(SHEET_ID)
+        with col1:
+            with st.expander("**Submit New Alert**", expanded=False):
+                display_alert_submission_form(SHEET_ID)
 
-    with col2:
-        with st.expander("**Update My Alerts**", expanded=False):
-            display_alert_update_timeline(SHEET_ID)
+        with col2:
+            with st.expander("**Update My Alerts**", expanded=False):
+                display_alert_update_timeline(SHEET_ID)
 
-    st.markdown("---")
+    # ----------------------------
+    # 📁 CASES MANAGEMENT
+    # ----------------------------
+    elif selected_tab == "Cases Management":
+        st.markdown("### Case Management")
+        col3, col4 = st.columns(2)
 
-    # --- Colunas inferiores: Casos ---
-    st.markdown("### Case Management")
-    col3, col4 = st.columns(2)
+        # --- Submit new case ---
+        with col3:
+            with st.expander("**Submit New Case**", expanded=False):
+                field_keys = {
+                    "case_id": "case_id_input",
+                    "n_seized": "n_seized_input",
+                    "year": "year_input",
+                    "country": "country_input",
+                    "seizure_status": "seizure_status_input",
+                    "transit": "transit_input",
+                    "notes": "notes_input"
+                }
 
-    with col3:
-        with st.expander("**Submit New Case**", expanded=False):
-            # Chaves dos campos para controlar o form
-            field_keys = {
-                "case_id": "case_id_input",
-                "n_seized": "n_seized_input",
-                "year": "year_input",
-                "country": "country_input",
-                "seizure_status": "seizure_status_input",
-                "transit": "transit_input",
-                "notes": "notes_input"
-            }
+                default_values = {
+                    "case_id": "",
+                    "n_seized": "",
+                    "year": 2024,
+                    "country": "",
+                    "seizure_status": "",
+                    "transit": "",
+                    "notes": ""
+                }
 
-            default_values = {
-                "case_id": "",
-                "n_seized": "",
-                "year": 2024,
-                "country": "",
-                "seizure_status": "",
-                "transit": "",
-                "notes": ""
-            }
+                for key, default in default_values.items():
+                    st.session_state.setdefault(field_keys[key], default)
 
-            for key, default in default_values.items():
-                st.session_state.setdefault(field_keys[key], default)
+                with st.form("aurum_form"):
+                    case_id = st.text_input("Case #", key=field_keys["case_id"])
+                    seizure_country = st.text_input("Country of seizure or shipment")
+                    n_seized = st.text_input("N seized specimens", key=field_keys["n_seized"])
+                    year = st.number_input("Year", step=1, format="%d", min_value=1900, max_value=2100, key=field_keys["year"])
+                    country = st.text_input("Country of offenders", key=field_keys["country"])
+                    seizure_status = st.text_input("Seizure status", key=field_keys["seizure_status"])
+                    transit = st.text_input("Transit feature", key=field_keys["transit"])
+                    notes = st.text_area("Additional notes", key=field_keys["notes"])
 
-            with st.form("aurum_form"):
-                case_id = st.text_input("Case #", key=field_keys["case_id"])
-                seizure_country = st.text_input("Country of seizure or shipment")
-                n_seized = st.text_input("N seized specimens (e.g. 2 lion + 1 chimpanze)", key=field_keys["n_seized"])
-                year = st.number_input("Year", step=1, format="%d", min_value=1900, max_value=2100, key=field_keys["year"])
-                country = st.text_input("Country of offenders", key=field_keys["country"])
-                seizure_status = st.text_input("Seizure status", key=field_keys["seizure_status"])
-                transit = st.text_input("Transit feature", key=field_keys["transit"])
-                notes = st.text_area("Additional notes", key=field_keys["notes"])
+                    submitted = st.form_submit_button("Submit Case")
 
-                submitted = st.form_submit_button("Submit Case")
-
-            if submitted:
-                new_row = [
-                    datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)"),
-                    case_id,
-                    seizure_country,
-                    n_seized,
-                    year,
-                    country,
-                    seizure_status,
-                    transit,
-                    notes,
-                    st.session_state["user"]
-                ]
-
-                worksheet = get_worksheet()
-                worksheet.append_row(new_row)
-                st.success("✅ Case submitted to Aurum successfully!")
-
-                for k in field_keys.values():
-                    if k in st.session_state:
-                        del st.session_state[k]
-                st.rerun()
-
-    with col4:
-        with st.expander("**Edit My Cases**", expanded=False):
-            try:
-                worksheet = get_worksheet()
-                records = worksheet.get_all_records()
-                df_user = pd.DataFrame(records)
-                df_user = df_user[df_user["Author"] == st.session_state["user"]]
-
-                if df_user.empty:
-                    st.info("You haven't submitted any cases yet.")
-                else:
-                    selected_case = st.selectbox("Select a case to edit:", df_user["Case #"].unique())
-                    if selected_case:
-                        row_index = df_user[df_user["Case #"] == selected_case].index[0] + 2
-                        current_row = df_user.loc[df_user["Case #"] == selected_case].iloc[0]
-
-                        with st.form("edit_case_form"):
-                            new_case_id = st.text_input("Case #", value=current_row["Case #"])
-                            new_seizure_country = st.text_input("Country of seizure or shipment", value=current_row["Country of seizure or shipment"])
-                            new_n_seized = st.text_input("N seized specimens", value=current_row["N seized specimens"])
-                            new_year = st.number_input("Year", step=1, format="%d", value=int(current_row["Year"]))
-                            new_country = st.text_input("Country of offenders", value=current_row["Country of offenders"])
-                            new_status = st.text_input("Seizure status", value=current_row["Seizure status"])
-                            new_transit = st.text_input("Transit feature", value=current_row["Transit feature"])
-                            new_notes = st.text_area("Additional notes", value=current_row["Notes"])
-
-                            submitted_edit = st.form_submit_button("Save Changes")
-
-                        if submitted_edit:
-                            updated_row = [
-                                current_row["Timestamp"],
-                                new_case_id,
-                                new_seizure_country,
-                                new_n_seized,
-                                new_year,
-                                new_country,
-                                new_status,
-                                new_transit,
-                                new_notes,
-                                st.session_state["user"]
-                            ]
-                            worksheet.update(f"A{row_index}:J{row_index}", [updated_row])
-                            st.success("✅ Case updated successfully!")
-                            st.rerun()
-            except Exception as e:
-                st.error(f"❌ Failed to load or update your cases: {e}")
-
-    st.subheader("Upload Multiple Cases (Batch Mode)")
-    uploaded_file_batch = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"], key="uploaded_file_batch")
-
-    if uploaded_file_batch is not None:
-        st.info("📄 File uploaded. Click the button below to confirm batch submission.")
-        submit_batch = st.button("📥 **Submit Batch Upload**")
-
-        if submit_batch:
-            try:
-                if uploaded_file_batch.name.endswith(".csv"):
-                    batch_data = pd.read_csv(uploaded_file_batch)
-                else:
-                    batch_data = pd.read_excel(uploaded_file_batch)
-
-                # Normaliza os nomes das colunas
-                batch_data.columns = (
-                    batch_data.columns
-                    .str.normalize('NFKD')
-                    .str.encode('ascii', errors='ignore')
-                    .str.decode('utf-8')
-                    .str.strip()
-                    .str.lower()
-                )
-
-                required_cols_original = [
-                    "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
-                    "Country of offenders", "Seizure status", "Transit feature", "Notes"
-                ]
-                required_cols_normalized = [col.lower() for col in required_cols_original]
-
-                missing_cols = [
-                    orig for orig, norm in zip(required_cols_original, required_cols_normalized)
-                    if norm not in batch_data.columns
-                ]
-
-                if missing_cols:
-                    st.error("🚫 Upload blocked: the uploaded file has incorrect formatting.")
-                    st.markdown(f"""
-                    The file must include the following required columns:
-
-                    - Case #
-                    - Country of seizure or shipment
-                    - N seized specimens
-                    - Year
-                    - Country of offenders
-                    - Seizure status
-                    - Transit feature
-                    - Notes
-
-                    The following columns are missing:  
-                    **{', '.join(missing_cols)}**
-
-                    > 💡 Tip: You can download the correct template from the sidebar (“Download Template”) and fill it with your data.
-                    """)
-                else:
-                    batch_data = batch_data.fillna("")
-                    batch_data["Timestamp"] = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
-                    batch_data["Author"] = st.session_state["user"]
-
-                    # Renomeia colunas normalizadas de volta para os nomes originais
-                    rename_map = dict(zip(required_cols_normalized, required_cols_original))
-                    batch_data.rename(columns=rename_map, inplace=True)
-
-                    ordered_cols = [
-                        "Timestamp", "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
-                        "Country of offenders", "Seizure status", "Transit feature",
-                        "Notes", "Author"
+                if submitted:
+                    new_row = [
+                        datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)"),
+                        case_id,
+                        seizure_country,
+                        n_seized,
+                        year,
+                        country,
+                        seizure_status,
+                        transit,
+                        notes,
+                        st.session_state["user"]
                     ]
-                    batch_data = batch_data[ordered_cols]
-
-                    rows_to_append = batch_data.values.tolist()
                     worksheet = get_worksheet()
-                    worksheet.append_rows(rows_to_append, value_input_option="USER_ENTERED")
-
-                    st.success("✅ Batch upload completed successfully!")
-                    if "uploaded_file_batch" in st.session_state:
-                        del st.session_state["uploaded_file_batch"]
-                        
+                    worksheet.append_row(new_row)
+                    st.success("✅ Case submitted to Aurum successfully!")
+                    for k in field_keys.values():
+                        if k in st.session_state:
+                            del st.session_state[k]
                     st.rerun()
 
-            except Exception as e:
-                st.error(f"❌ Error during upload: {e}")
+        # --- Edit cases ---
+        with col4:
+            with st.expander("**Edit My Cases**", expanded=False):
+                try:
+                    worksheet = get_worksheet()
+                    records = worksheet.get_all_records()
+                    df_user = pd.DataFrame(records)
+                    df_user = df_user[df_user["Author"] == st.session_state["user"]]
 
-    st.markdown("## My Cases")
-    worksheet = get_worksheet()
-    try:
-        records = worksheet.get_all_records()
-        if not records:
-            st.info("No data available at the moment.")
-        else:
-            data = pd.DataFrame(records)
-            data_all = data.copy()  # Mantém os dados completos disponíveis
+                    if df_user.empty:
+                        st.info("You haven't submitted any cases yet.")
+                    else:
+                        selected_case = st.selectbox("Select a case to edit:", df_user["Case #"].unique())
+                        if selected_case:
+                            row_index = df_user[df_user["Case #"] == selected_case].index[0] + 2
+                            current_row = df_user.loc[df_user["Case #"] == selected_case].iloc[0]
 
-            # Aplica filtro de autor se não for admin
-            if not st.session_state.get("is_admin"):
-                data = data[data["Author"] == st.session_state["user"]]
+                            with st.form("edit_case_form"):
+                                new_case_id = st.text_input("Case #", value=current_row["Case #"])
+                                new_seizure_country = st.text_input("Country of seizure or shipment", value=current_row["Country of seizure or shipment"])
+                                new_n_seized = st.text_input("N seized specimens", value=current_row["N seized specimens"])
+                                new_year = st.number_input("Year", step=1, format="%d", value=int(current_row["Year"]))
+                                new_country = st.text_input("Country of offenders", value=current_row["Country of offenders"])
+                                new_status = st.text_input("Seizure status", value=current_row["Seizure status"])
+                                new_transit = st.text_input("Transit feature", value=current_row["Transit feature"])
+                                new_notes = st.text_area("Additional notes", value=current_row["Notes"])
 
-            # Filtro por espécie com base em "N seized specimens"
-            if "N seized specimens" in data.columns:
-                species_matches = data["N seized specimens"].str.extractall(r'\d+\s*([A-Z][a-z]+(?:_[a-z]+)+)')
-                species_list = sorted(species_matches[0].dropna().unique())
+                                submitted_edit = st.form_submit_button("Save Changes")
 
-                selected_species = st.multiselect("Filter by species:", species_list)
+                            if submitted_edit:
+                                updated_row = [
+                                    current_row["Timestamp"],
+                                    new_case_id,
+                                    new_seizure_country,
+                                    new_n_seized,
+                                    new_year,
+                                    new_country,
+                                    new_status,
+                                    new_transit,
+                                    new_notes,
+                                    st.session_state["user"]
+                                ]
+                                worksheet.update(f"A{row_index}:J{row_index}", [updated_row])
+                                st.success("✅ Case updated successfully!")
+                                st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Failed to load or update your cases: {e}")
 
-                if selected_species:
-                    data = data[data["N seized specimens"].str.contains("|".join(selected_species))]
+        # --- Upload múltiplo ---
+        st.subheader("Upload Multiple Cases (Batch Mode)")
+        uploaded_file_batch = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"], key="uploaded_file_batch")
 
-            st.dataframe(data)
+        if uploaded_file_batch is not None:
+            st.info("📄 File uploaded. Click the button below to confirm batch submission.")
+            submit_batch = st.button("📥 **Submit Batch Upload**")
 
-    except Exception as e:
-        st.error(f"❌ Failed to load data: {e}")
+            if submit_batch:
+                try:
+                    if uploaded_file_batch.name.endswith(".csv"):
+                        batch_data = pd.read_csv(uploaded_file_batch)
+                    else:
+                        batch_data = pd.read_excel(uploaded_file_batch)
 
-    st.markdown("---")
+                    batch_data.columns = (
+                        batch_data.columns
+                        .str.normalize('NFKD')
+                        .str.encode('ascii', errors='ignore')
+                        .str.decode('utf-8')
+                        .str.strip()
+                        .str.lower()
+                    )
 
-    # --- DATA REQUESTS (USERS) ---
-    if "user_email" in st.session_state:
+                    required_cols_original = [
+                        "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
+                        "Country of offenders", "Seizure status", "Transit feature", "Notes"
+                    ]
+                    required_cols_normalized = [col.lower() for col in required_cols_original]
+
+                    missing_cols = [
+                        orig for orig, norm in zip(required_cols_original, required_cols_normalized)
+                        if norm not in batch_data.columns
+                    ]
+
+                    if missing_cols:
+                        st.error("🚫 Upload blocked: the uploaded file has incorrect formatting.")
+                        st.markdown(f"""**Missing columns**: {', '.join(missing_cols)}""")
+                    else:
+                        batch_data = batch_data.fillna("")
+                        batch_data["Timestamp"] = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
+                        batch_data["Author"] = st.session_state["user"]
+                        rename_map = dict(zip(required_cols_normalized, required_cols_original))
+                        batch_data.rename(columns=rename_map, inplace=True)
+                        ordered_cols = ["Timestamp"] + required_cols_original + ["Author"]
+                        batch_data = batch_data[ordered_cols]
+                        worksheet = get_worksheet()
+                        worksheet.append_rows(batch_data.values.tolist(), value_input_option="USER_ENTERED")
+                        st.success("✅ Batch upload completed successfully!")
+                        del st.session_state["uploaded_file_batch"]
+                        st.rerun()
+
+                except Exception as e:
+                    st.error(f"❌ Error during upload: {e}")
+
+        # --- Visualização dos próprios casos ---
+        st.markdown("## My Cases")
+        try:
+            worksheet = get_worksheet()
+            records = worksheet.get_all_records()
+            if not records:
+                st.info("No data available at the moment.")
+            else:
+                data = pd.DataFrame(records)
+                if not st.session_state.get("is_admin"):
+                    data = data[data["Author"] == st.session_state["user"]]
+
+                if "N seized specimens" in data.columns:
+                    species_matches = data["N seized specimens"].str.extractall(r'\d+\s*([A-Z][a-z]+(?:_[a-z]+)+)')
+                    species_list = sorted(species_matches[0].dropna().unique())
+                    selected_species = st.multiselect("Filter by species:", species_list)
+                    if selected_species:
+                        data = data[data["N seized specimens"].str.contains("|".join(selected_species))]
+
+                st.dataframe(data)
+
+        except Exception as e:
+            st.error(f"❌ Failed to load data: {e}")
+
+    # ----------------------------
+    # 📊 DATA REQUESTS
+    # ----------------------------
+    elif selected_tab == "Data Requests":
         st.markdown("## Data Requests")
         st.markdown("Use this form to request access to datasets uploaded to Aurum.")
 
@@ -1971,12 +1949,10 @@ if "user" in st.session_state:
         country_key = "datareq_country"
         reason_key = "datareq_reason"
 
-        # Exibe sucesso após rerun
         if st.session_state.get("datareq_submitted_success"):
             st.success("✅ Your data request was submitted successfully.")
             del st.session_state["datareq_submitted_success"]
 
-        # Reseta os campos caso tenha havido submissão anterior
         if st.session_state.get("datareq_submitted_reset"):
             st.session_state[species_key] = ""
             st.session_state[years_key] = ""
@@ -1997,15 +1973,9 @@ if "user" in st.session_state:
                     st.warning("Species, year(s), and justification are required.")
                 else:
                     try:
-                        from datetime import datetime
-                        import gspread
-                        from google.oauth2.service_account import Credentials
-
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
                         scope = ["https://www.googleapis.com/auth/spreadsheets"]
-                        credentials = Credentials.from_service_account_info(
-                            st.secrets["gcp_service_account"], scopes=scope)
+                        credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
                         client = gspread.authorize(credentials)
                         sheet = client.open_by_key(SHEET_ID)
 
@@ -2025,7 +1995,6 @@ if "user" in st.session_state:
                             "Pending"
                         ])
 
-                        # Marca para exibir sucesso e limpar na próxima execução
                         st.session_state["datareq_submitted_success"] = True
                         st.session_state["datareq_submitted_reset"] = True
                         st.rerun()
