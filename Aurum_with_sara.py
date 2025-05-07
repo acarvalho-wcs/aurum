@@ -204,472 +204,6 @@ def display_public_alerts_section(sheet_id):
 if "user" in st.session_state:
     display_public_alerts_section(SHEET_ID)
 
-# --- Interface em colunas: Alertas (superior) e Casos (inferior) ---
-if "user" in st.session_state:
-    
-    # --- MENU SUPERIOR COM TABS ---
-    selected_tab = tabs(
-        options=["Alerts Management", "Cases Management", "Data Requests"],
-        default_value="",
-        key="main_tab"
-    )
-
-    # ----------------------------
-    # 🔔 ALERTS MANAGEMENT
-    # ----------------------------
-    if selected_tab == "Alerts Management":
-        st.markdown("### Alert Management")
-        col1, col2 = st.columns(2)
-
-        with col1:
-            with st.expander("**Submit New Alert**", expanded=False):
-                display_alert_submission_form(SHEET_ID)
-
-        with col2:
-            with st.expander("**Update My Alerts**", expanded=False):
-                display_alert_update_timeline(SHEET_ID)
-
-# --- Função para submissão de alertas ---
-def display_alert_submission_form(sheet_id):
-    scope = ["https://www.googleapis.com/auth/spreadsheets"]
-    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-    client = gspread.authorize(credentials)
-    sheets = client.open_by_key(sheet_id)
-
-    field_keys = {
-        "title": "alert_title_input",
-        "description": "alert_description_input",
-        "category": "alert_category_select",
-        "risk_level": "alert_risk_select",
-        "species": "alert_species_input",
-        "country": "alert_country_input",
-        "source_link": "alert_source_input",
-        "author_choice": "alert_author_choice"
-    }
-
-    categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
-    risk_levels = ["Low", "Medium", "High"]
-
-    for key in ["title", "description", "species", "country", "source_link"]:
-        st.session_state.setdefault(field_keys[key], "")
-
-    if st.session_state.get(field_keys["category"]) not in categories:
-        st.session_state[field_keys["category"]] = categories[0]
-    if st.session_state.get(field_keys["risk_level"]) not in risk_levels:
-        st.session_state[field_keys["risk_level"]] = risk_levels[0]
-
-    st.session_state.setdefault(field_keys["author_choice"], "Show my username")
-
-    with st.form("alert_form"):
-        title = st.text_input("Alert Title", key=field_keys["title"])
-        description = st.text_area("Alert Description", key=field_keys["description"])
-        category = st.selectbox("Category", categories, key=field_keys["category"])
-        risk_level = st.selectbox("Risk Level", risk_levels, key=field_keys["risk_level"])
-        species = st.text_input("Species involved (optional)", key=field_keys["species"])
-        country = st.text_input("Country or Region (optional)", key=field_keys["country"])
-        source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
-
-        author_choice = st.radio(
-            "Choose how to display your name:",
-            ["Show my username", "Submit anonymously"],
-            key=field_keys["author_choice"]
-        )
-
-        created_by = st.session_state["user_email"]
-        display_as = st.session_state["user"] if author_choice == "Show my username" else "Anonymous"
-
-        submitted = st.form_submit_button("📤 Submit Alert")
-
-    if submitted:
-        if not title or not description:
-            st.warning("Title and Description are required.")
-        else:
-            alert_id = str(uuid4())
-            created_at = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
-            public = True
-
-            alert_row = [
-                alert_id, created_at, created_by, display_as, title, description,
-                category, species, country, risk_level, source_link,
-                str(public)
-            ]
-
-            try:
-                worksheet = sheets.worksheet("Alerts")
-                worksheet.append_row(alert_row, value_input_option="USER_ENTERED")
-                st.success("✅ Alert submitted successfully!")
-                st.balloons()
-
-                for k in field_keys.values():
-                    st.session_state[k] = ''
-
-                st.rerun()
-            except Exception as e:
-                st.error(f"❌ Failed to submit alert: {e}")
-
-def display_alert_update_timeline(sheet_id):
-    scope = ["https://www.googleapis.com/auth/spreadsheets"]
-    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-    client = gspread.authorize(credentials)
-    sheets = client.open_by_key(sheet_id)
-
-    try:
-        df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
-        df_alerts.columns = [col.strip() for col in df_alerts.columns]
-
-        df_updates = pd.DataFrame(sheets.worksheet("Alert Updates").get_all_records())
-        if df_updates.empty:
-            df_updates = pd.DataFrame(columns=["Alert ID", "Timestamp", "User", "Update Text"])
-        else:
-            df_updates.columns = [col.strip() for col in df_updates.columns]
-
-        user = st.session_state.get("user")
-        user_email = st.session_state.get("user_email")
-
-        # Alertas criados pelo usuário (usando o e-mail como referência)
-        created_alerts = df_alerts[df_alerts["Created By"] == user_email]
-
-        # Alertas que o usuário atualizou (usando username nos updates)
-        relevant_updates = df_updates[
-            (df_updates["User"] == user) | (df_updates["User"] == "Anonymous")
-        ]
-        updated_alert_ids = relevant_updates["Alert ID"].unique()
-        updated_alerts = df_alerts[df_alerts["Alert ID"].isin(updated_alert_ids)]
-
-        # Junta alertas criados e alertas atualizados
-        df_user_alerts = pd.concat([created_alerts, updated_alerts]).drop_duplicates(subset="Alert ID")
-
-        if df_user_alerts.empty:
-            st.info("You haven't submitted or updated any alerts yet.")
-            return
-
-        # 🔵 Fixar seleção do alerta no session_state
-        if "selected_alert_id" not in st.session_state:
-            st.session_state["selected_alert_id"] = None
-
-        selected_title = st.selectbox(
-            "Select an alert to update:",
-            df_user_alerts["Title"].tolist()
-        )
-
-        selected_row = df_user_alerts[df_user_alerts["Title"] == selected_title].iloc[0]
-        alert_id = selected_row["Alert ID"]
-
-        # 🔵 Salva o alerta selecionado fixo
-        st.session_state["selected_alert_id"] = alert_id
-
-        timeline = df_updates[df_updates["Alert ID"] == alert_id].sort_values("Timestamp")
-
-        if not timeline.empty:
-            st.markdown("### Update Timeline")
-            for _, row in timeline.iterrows():
-                st.markdown(f"**{row['Timestamp']}** – *{row['User']}*: {row['Update Text']}")
-        else:
-            st.info("This alert has no updates yet.")
-
-        update_author_choice = st.radio(
-            "Choose how to display your name in this update:",
-            ["Show my username", "Submit anonymously"],
-            key="update_author_choice"
-        )
-        update_user = user if update_author_choice == "Show my username" else "Anonymous"
-
-        update_text_key = f"update_text_{alert_id}"
-        field_keys = {"update_text": update_text_key}
-
-        with st.form(f"update_form_{alert_id}"):
-            st.markdown("**Add a new update to this alert:**")
-            new_update = st.text_area("Update Description", key=update_text_key)
-            submitted = st.form_submit_button("➕ Add Update")
-
-            if submitted:
-                if not new_update.strip():
-                    st.warning("Update description is required.")
-                else:
-                    timestamp = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
-                    update_row = [alert_id, timestamp, update_user, new_update.strip()]
-
-                    try:
-                        try:
-                            update_ws = sheets.worksheet("Alert Updates")
-                        except gspread.exceptions.WorksheetNotFound:
-                            update_ws = sheets.add_worksheet(title="Alert Updates", rows="1000", cols="4")
-                            update_ws.append_row(["Alert ID", "Timestamp", "User", "Update Text"])
-
-                        update_ws.append_row(update_row)
-                        st.success("✅ Update added to alert!")
-
-                        # 🔥 Apaga o campo de texto depois de submeter
-                        for k in field_keys.values():
-                            if k in st.session_state:
-                                del st.session_state[k]
-
-                        st.rerun()
-
-                    except Exception as e:
-                        st.error(f"❌ Failed to add update: {e}")
-
-    except Exception as e:
-        st.error(f"❌ Could not load alerts or updates: {e}")
-    
-    # ----------------------------
-    # 📁 CASES MANAGEMENT
-    # ----------------------------
-    if selected_tab == "Cases Management":
-        st.markdown("### Case Management")
-        col3, col4 = st.columns(2)
-
-        # --- Submit new case ---
-        with col3:
-            with st.expander("**Submit New Case**", expanded=False):
-                field_keys = {
-                    "case_id": "case_id_input",
-                    "n_seized": "n_seized_input",
-                    "year": "year_input",
-                    "country": "country_input",
-                    "seizure_status": "seizure_status_input",
-                    "transit": "transit_input",
-                    "notes": "notes_input"
-                }
-
-                default_values = {
-                    "case_id": "",
-                    "n_seized": "",
-                    "year": 2024,
-                    "country": "",
-                    "seizure_status": "",
-                    "transit": "",
-                    "notes": ""
-                }
-
-                for key, default in default_values.items():
-                    st.session_state.setdefault(field_keys[key], default)
-
-                with st.form("aurum_form"):
-                    case_id = st.text_input("Case #", key=field_keys["case_id"])
-                    seizure_country = st.text_input("Country of seizure or shipment")
-                    n_seized = st.text_input("N seized specimens", key=field_keys["n_seized"])
-                    year = st.number_input("Year", step=1, format="%d", min_value=1900, max_value=2100, key=field_keys["year"])
-                    country = st.text_input("Country of offenders", key=field_keys["country"])
-                    seizure_status = st.text_input("Seizure status", key=field_keys["seizure_status"])
-                    transit = st.text_input("Transit feature", key=field_keys["transit"])
-                    notes = st.text_area("Additional notes", key=field_keys["notes"])
-
-                    submitted = st.form_submit_button("Submit Case")
-
-                if submitted:
-                    new_row = [
-                        datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)"),
-                        case_id,
-                        seizure_country,
-                        n_seized,
-                        year,
-                        country,
-                        seizure_status,
-                        transit,
-                        notes,
-                        st.session_state["user"]
-                    ]
-                    worksheet = get_worksheet()
-                    worksheet.append_row(new_row)
-                    st.success("✅ Case submitted to Aurum successfully!")
-                    for k in field_keys.values():
-                        if k in st.session_state:
-                            del st.session_state[k]
-                    st.rerun()
-
-        # --- Edit cases ---
-        with col4:
-            with st.expander("**Edit My Cases**", expanded=False):
-                try:
-                    worksheet = get_worksheet()
-                    records = worksheet.get_all_records()
-                    df_user = pd.DataFrame(records)
-                    df_user = df_user[df_user["Author"] == st.session_state["user"]]
-
-                    if df_user.empty:
-                        st.info("You haven't submitted any cases yet.")
-                    else:
-                        selected_case = st.selectbox("Select a case to edit:", df_user["Case #"].unique())
-                        if selected_case:
-                            row_index = df_user[df_user["Case #"] == selected_case].index[0] + 2
-                            current_row = df_user.loc[df_user["Case #"] == selected_case].iloc[0]
-
-                            with st.form("edit_case_form"):
-                                new_case_id = st.text_input("Case #", value=current_row["Case #"])
-                                new_seizure_country = st.text_input("Country of seizure or shipment", value=current_row["Country of seizure or shipment"])
-                                new_n_seized = st.text_input("N seized specimens", value=current_row["N seized specimens"])
-                                new_year = st.number_input("Year", step=1, format="%d", value=int(current_row["Year"]))
-                                new_country = st.text_input("Country of offenders", value=current_row["Country of offenders"])
-                                new_status = st.text_input("Seizure status", value=current_row["Seizure status"])
-                                new_transit = st.text_input("Transit feature", value=current_row["Transit feature"])
-                                new_notes = st.text_area("Additional notes", value=current_row["Notes"])
-
-                                submitted_edit = st.form_submit_button("Save Changes")
-
-                            if submitted_edit:
-                                updated_row = [
-                                    current_row["Timestamp"],
-                                    new_case_id,
-                                    new_seizure_country,
-                                    new_n_seized,
-                                    new_year,
-                                    new_country,
-                                    new_status,
-                                    new_transit,
-                                    new_notes,
-                                    st.session_state["user"]
-                                ]
-                                worksheet.update(f"A{row_index}:J{row_index}", [updated_row])
-                                st.success("✅ Case updated successfully!")
-                                st.rerun()
-                except Exception as e:
-                    st.error(f"❌ Failed to load or update your cases: {e}")
-
-        # --- Upload múltiplo ---
-        st.subheader("Upload Multiple Cases (Batch Mode)")
-        uploaded_file_batch = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"], key="uploaded_file_batch")
-
-        if uploaded_file_batch is not None:
-            st.info("📄 File uploaded. Click the button below to confirm batch submission.")
-            submit_batch = st.button("📥 **Submit Batch Upload**")
-
-            if submit_batch:
-                try:
-                    if uploaded_file_batch.name.endswith(".csv"):
-                        batch_data = pd.read_csv(uploaded_file_batch)
-                    else:
-                        batch_data = pd.read_excel(uploaded_file_batch)
-
-                    batch_data.columns = (
-                        batch_data.columns
-                        .str.normalize('NFKD')
-                        .str.encode('ascii', errors='ignore')
-                        .str.decode('utf-8')
-                        .str.strip()
-                        .str.lower()
-                    )
-
-                    required_cols_original = [
-                        "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
-                        "Country of offenders", "Seizure status", "Transit feature", "Notes"
-                    ]
-                    required_cols_normalized = [col.lower() for col in required_cols_original]
-
-                    missing_cols = [
-                        orig for orig, norm in zip(required_cols_original, required_cols_normalized)
-                        if norm not in batch_data.columns
-                    ]
-
-                    if missing_cols:
-                        st.error("🚫 Upload blocked: the uploaded file has incorrect formatting.")
-                        st.markdown(f"""**Missing columns**: {', '.join(missing_cols)}""")
-                    else:
-                        batch_data = batch_data.fillna("")
-                        batch_data["Timestamp"] = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
-                        batch_data["Author"] = st.session_state["user"]
-                        rename_map = dict(zip(required_cols_normalized, required_cols_original))
-                        batch_data.rename(columns=rename_map, inplace=True)
-                        ordered_cols = ["Timestamp"] + required_cols_original + ["Author"]
-                        batch_data = batch_data[ordered_cols]
-                        worksheet = get_worksheet()
-                        worksheet.append_rows(batch_data.values.tolist(), value_input_option="USER_ENTERED")
-                        st.success("✅ Batch upload completed successfully!")
-                        del st.session_state["uploaded_file_batch"]
-                        st.rerun()
-
-                except Exception as e:
-                    st.error(f"❌ Error during upload: {e}")
-
-        # --- Visualização dos próprios casos ---
-        st.markdown("## My Cases")
-        try:
-            worksheet = get_worksheet()
-            records = worksheet.get_all_records()
-            if not records:
-                st.info("No data available at the moment.")
-            else:
-                data = pd.DataFrame(records)
-                if not st.session_state.get("is_admin"):
-                    data = data[data["Author"] == st.session_state["user"]]
-
-                if "N seized specimens" in data.columns:
-                    species_matches = data["N seized specimens"].str.extractall(r'\d+\s*([A-Z][a-z]+(?:_[a-z]+)+)')
-                    species_list = sorted(species_matches[0].dropna().unique())
-                    selected_species = st.multiselect("Filter by species:", species_list)
-                    if selected_species:
-                        data = data[data["N seized specimens"].str.contains("|".join(selected_species))]
-
-                st.dataframe(data)
-
-        except Exception as e:
-            st.error(f"❌ Failed to load data: {e}")
-
-    # ----------------------------
-    # 📊 DATA REQUESTS
-    # ----------------------------
-    if selected_tab == "Data Requests":
-        st.markdown("## Data Requests")
-        st.markdown("Use this form to request access to datasets uploaded to Aurum.")
-
-        species_key = "datareq_species"
-        years_key = "datareq_years"
-        country_key = "datareq_country"
-        reason_key = "datareq_reason"
-
-        if st.session_state.get("datareq_submitted_success"):
-            st.success("✅ Your data request was submitted successfully.")
-            del st.session_state["datareq_submitted_success"]
-
-        if st.session_state.get("datareq_submitted_reset"):
-            st.session_state[species_key] = ""
-            st.session_state[years_key] = ""
-            st.session_state[country_key] = ""
-            st.session_state[reason_key] = ""
-            del st.session_state["datareq_submitted_reset"]
-
-        with st.form("data_request_form"):
-            species = st.text_input("Species of interest (e.g., _Anodorhynchus leari_)", key=species_key)
-            years = st.text_input("Year(s) of interest (e.g., 2022 or 2015–2020)", key=years_key)
-            country = st.text_input("Country or region of interest (e.g., All or Brazil or South America)", key=country_key)
-            reason = st.text_area("Justify your request:", key=reason_key)
-
-            submitted = st.form_submit_button("Submit Data Request")
-
-            if submitted:
-                if not species or not years or not reason:
-                    st.warning("Species, year(s), and justification are required.")
-                else:
-                    try:
-                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        scope = ["https://www.googleapis.com/auth/spreadsheets"]
-                        credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-                        client = gspread.authorize(credentials)
-                        sheet = client.open_by_key(SHEET_ID)
-
-                        try:
-                            req_ws = sheet.worksheet("Data Requests")
-                        except gspread.exceptions.WorksheetNotFound:
-                            req_ws = sheet.add_worksheet(title="Data Requests", rows="1000", cols="7")
-                            req_ws.append_row(["Timestamp", "User", "Species", "Year(s)", "Country", "Reason", "Status"])
-
-                        req_ws.append_row([
-                            timestamp,
-                            st.session_state["user_email"],
-                            species,
-                            years,
-                            country,
-                            reason,
-                            "Pending"
-                        ])
-
-                        st.session_state["datareq_submitted_success"] = True
-                        st.session_state["datareq_submitted_reset"] = True
-                        st.rerun()
-
-                    except Exception as e:
-                        st.error(f"❌ Failed to submit your request: {e}")
-
 # --- DASHBOARD RESUMO INICIAL (sem login, baseado no Google Sheets) ---
 if uploaded_file is None and st.session_state.get("user"):
     try:
@@ -2001,6 +1535,472 @@ def load_sheet_data(sheet_name, sheets):
     except Exception as e:
         st.error(f"❌ Failed to load data from sheet '{sheet_name}': {e}")
         return pd.DataFrame()
+
+# --- Função para submissão de alertas ---
+def display_alert_submission_form(sheet_id):
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+    client = gspread.authorize(credentials)
+    sheets = client.open_by_key(sheet_id)
+
+    field_keys = {
+        "title": "alert_title_input",
+        "description": "alert_description_input",
+        "category": "alert_category_select",
+        "risk_level": "alert_risk_select",
+        "species": "alert_species_input",
+        "country": "alert_country_input",
+        "source_link": "alert_source_input",
+        "author_choice": "alert_author_choice"
+    }
+
+    categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
+    risk_levels = ["Low", "Medium", "High"]
+
+    for key in ["title", "description", "species", "country", "source_link"]:
+        st.session_state.setdefault(field_keys[key], "")
+
+    if st.session_state.get(field_keys["category"]) not in categories:
+        st.session_state[field_keys["category"]] = categories[0]
+    if st.session_state.get(field_keys["risk_level"]) not in risk_levels:
+        st.session_state[field_keys["risk_level"]] = risk_levels[0]
+
+    st.session_state.setdefault(field_keys["author_choice"], "Show my username")
+
+    with st.form("alert_form"):
+        title = st.text_input("Alert Title", key=field_keys["title"])
+        description = st.text_area("Alert Description", key=field_keys["description"])
+        category = st.selectbox("Category", categories, key=field_keys["category"])
+        risk_level = st.selectbox("Risk Level", risk_levels, key=field_keys["risk_level"])
+        species = st.text_input("Species involved (optional)", key=field_keys["species"])
+        country = st.text_input("Country or Region (optional)", key=field_keys["country"])
+        source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
+
+        author_choice = st.radio(
+            "Choose how to display your name:",
+            ["Show my username", "Submit anonymously"],
+            key=field_keys["author_choice"]
+        )
+
+        created_by = st.session_state["user_email"]
+        display_as = st.session_state["user"] if author_choice == "Show my username" else "Anonymous"
+
+        submitted = st.form_submit_button("📤 Submit Alert")
+
+    if submitted:
+        if not title or not description:
+            st.warning("Title and Description are required.")
+        else:
+            alert_id = str(uuid4())
+            created_at = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
+            public = True
+
+            alert_row = [
+                alert_id, created_at, created_by, display_as, title, description,
+                category, species, country, risk_level, source_link,
+                str(public)
+            ]
+
+            try:
+                worksheet = sheets.worksheet("Alerts")
+                worksheet.append_row(alert_row, value_input_option="USER_ENTERED")
+                st.success("✅ Alert submitted successfully!")
+                st.balloons()
+
+                for k in field_keys.values():
+                    st.session_state[k] = ''
+
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ Failed to submit alert: {e}")
+
+def display_alert_update_timeline(sheet_id):
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+    client = gspread.authorize(credentials)
+    sheets = client.open_by_key(sheet_id)
+
+    try:
+        df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
+        df_alerts.columns = [col.strip() for col in df_alerts.columns]
+
+        df_updates = pd.DataFrame(sheets.worksheet("Alert Updates").get_all_records())
+        if df_updates.empty:
+            df_updates = pd.DataFrame(columns=["Alert ID", "Timestamp", "User", "Update Text"])
+        else:
+            df_updates.columns = [col.strip() for col in df_updates.columns]
+
+        user = st.session_state.get("user")
+        user_email = st.session_state.get("user_email")
+
+        # Alertas criados pelo usuário (usando o e-mail como referência)
+        created_alerts = df_alerts[df_alerts["Created By"] == user_email]
+
+        # Alertas que o usuário atualizou (usando username nos updates)
+        relevant_updates = df_updates[
+            (df_updates["User"] == user) | (df_updates["User"] == "Anonymous")
+        ]
+        updated_alert_ids = relevant_updates["Alert ID"].unique()
+        updated_alerts = df_alerts[df_alerts["Alert ID"].isin(updated_alert_ids)]
+
+        # Junta alertas criados e alertas atualizados
+        df_user_alerts = pd.concat([created_alerts, updated_alerts]).drop_duplicates(subset="Alert ID")
+
+        if df_user_alerts.empty:
+            st.info("You haven't submitted or updated any alerts yet.")
+            return
+
+        # 🔵 Fixar seleção do alerta no session_state
+        if "selected_alert_id" not in st.session_state:
+            st.session_state["selected_alert_id"] = None
+
+        selected_title = st.selectbox(
+            "Select an alert to update:",
+            df_user_alerts["Title"].tolist()
+        )
+
+        selected_row = df_user_alerts[df_user_alerts["Title"] == selected_title].iloc[0]
+        alert_id = selected_row["Alert ID"]
+
+        # 🔵 Salva o alerta selecionado fixo
+        st.session_state["selected_alert_id"] = alert_id
+
+        timeline = df_updates[df_updates["Alert ID"] == alert_id].sort_values("Timestamp")
+
+        if not timeline.empty:
+            st.markdown("### Update Timeline")
+            for _, row in timeline.iterrows():
+                st.markdown(f"**{row['Timestamp']}** – *{row['User']}*: {row['Update Text']}")
+        else:
+            st.info("This alert has no updates yet.")
+
+        update_author_choice = st.radio(
+            "Choose how to display your name in this update:",
+            ["Show my username", "Submit anonymously"],
+            key="update_author_choice"
+        )
+        update_user = user if update_author_choice == "Show my username" else "Anonymous"
+
+        update_text_key = f"update_text_{alert_id}"
+        field_keys = {"update_text": update_text_key}
+
+        with st.form(f"update_form_{alert_id}"):
+            st.markdown("**Add a new update to this alert:**")
+            new_update = st.text_area("Update Description", key=update_text_key)
+            submitted = st.form_submit_button("➕ Add Update")
+
+            if submitted:
+                if not new_update.strip():
+                    st.warning("Update description is required.")
+                else:
+                    timestamp = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
+                    update_row = [alert_id, timestamp, update_user, new_update.strip()]
+
+                    try:
+                        try:
+                            update_ws = sheets.worksheet("Alert Updates")
+                        except gspread.exceptions.WorksheetNotFound:
+                            update_ws = sheets.add_worksheet(title="Alert Updates", rows="1000", cols="4")
+                            update_ws.append_row(["Alert ID", "Timestamp", "User", "Update Text"])
+
+                        update_ws.append_row(update_row)
+                        st.success("✅ Update added to alert!")
+
+                        # 🔥 Apaga o campo de texto depois de submeter
+                        for k in field_keys.values():
+                            if k in st.session_state:
+                                del st.session_state[k]
+
+                        st.rerun()
+
+                    except Exception as e:
+                        st.error(f"❌ Failed to add update: {e}")
+
+    except Exception as e:
+        st.error(f"❌ Could not load alerts or updates: {e}")
+
+# --- Interface em colunas: Alertas (superior) e Casos (inferior) ---
+if "user" in st.session_state:
+    
+    # --- MENU SUPERIOR COM TABS ---
+    selected_tab = tabs(
+        options=["Alerts Management", "Cases Management", "Data Requests"],
+        default_value="",
+        key="main_tab"
+    )
+
+    # ----------------------------
+    # 🔔 ALERTS MANAGEMENT
+    # ----------------------------
+    if selected_tab == "Alerts Management":
+        st.markdown("### Alert Management")
+        col1, col2 = st.columns(2)
+
+        with col1:
+            with st.expander("**Submit New Alert**", expanded=False):
+                display_alert_submission_form(SHEET_ID)
+
+        with col2:
+            with st.expander("**Update My Alerts**", expanded=False):
+                display_alert_update_timeline(SHEET_ID)
+
+    # ----------------------------
+    # 📁 CASES MANAGEMENT
+    # ----------------------------
+    elif selected_tab == "Cases Management":
+        st.markdown("### Case Management")
+        col3, col4 = st.columns(2)
+
+        # --- Submit new case ---
+        with col3:
+            with st.expander("**Submit New Case**", expanded=False):
+                field_keys = {
+                    "case_id": "case_id_input",
+                    "n_seized": "n_seized_input",
+                    "year": "year_input",
+                    "country": "country_input",
+                    "seizure_status": "seizure_status_input",
+                    "transit": "transit_input",
+                    "notes": "notes_input"
+                }
+
+                default_values = {
+                    "case_id": "",
+                    "n_seized": "",
+                    "year": 2024,
+                    "country": "",
+                    "seizure_status": "",
+                    "transit": "",
+                    "notes": ""
+                }
+
+                for key, default in default_values.items():
+                    st.session_state.setdefault(field_keys[key], default)
+
+                with st.form("aurum_form"):
+                    case_id = st.text_input("Case #", key=field_keys["case_id"])
+                    seizure_country = st.text_input("Country of seizure or shipment")
+                    n_seized = st.text_input("N seized specimens", key=field_keys["n_seized"])
+                    year = st.number_input("Year", step=1, format="%d", min_value=1900, max_value=2100, key=field_keys["year"])
+                    country = st.text_input("Country of offenders", key=field_keys["country"])
+                    seizure_status = st.text_input("Seizure status", key=field_keys["seizure_status"])
+                    transit = st.text_input("Transit feature", key=field_keys["transit"])
+                    notes = st.text_area("Additional notes", key=field_keys["notes"])
+
+                    submitted = st.form_submit_button("Submit Case")
+
+                if submitted:
+                    new_row = [
+                        datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)"),
+                        case_id,
+                        seizure_country,
+                        n_seized,
+                        year,
+                        country,
+                        seizure_status,
+                        transit,
+                        notes,
+                        st.session_state["user"]
+                    ]
+                    worksheet = get_worksheet()
+                    worksheet.append_row(new_row)
+                    st.success("✅ Case submitted to Aurum successfully!")
+                    for k in field_keys.values():
+                        if k in st.session_state:
+                            del st.session_state[k]
+                    st.rerun()
+
+        # --- Edit cases ---
+        with col4:
+            with st.expander("**Edit My Cases**", expanded=False):
+                try:
+                    worksheet = get_worksheet()
+                    records = worksheet.get_all_records()
+                    df_user = pd.DataFrame(records)
+                    df_user = df_user[df_user["Author"] == st.session_state["user"]]
+
+                    if df_user.empty:
+                        st.info("You haven't submitted any cases yet.")
+                    else:
+                        selected_case = st.selectbox("Select a case to edit:", df_user["Case #"].unique())
+                        if selected_case:
+                            row_index = df_user[df_user["Case #"] == selected_case].index[0] + 2
+                            current_row = df_user.loc[df_user["Case #"] == selected_case].iloc[0]
+
+                            with st.form("edit_case_form"):
+                                new_case_id = st.text_input("Case #", value=current_row["Case #"])
+                                new_seizure_country = st.text_input("Country of seizure or shipment", value=current_row["Country of seizure or shipment"])
+                                new_n_seized = st.text_input("N seized specimens", value=current_row["N seized specimens"])
+                                new_year = st.number_input("Year", step=1, format="%d", value=int(current_row["Year"]))
+                                new_country = st.text_input("Country of offenders", value=current_row["Country of offenders"])
+                                new_status = st.text_input("Seizure status", value=current_row["Seizure status"])
+                                new_transit = st.text_input("Transit feature", value=current_row["Transit feature"])
+                                new_notes = st.text_area("Additional notes", value=current_row["Notes"])
+
+                                submitted_edit = st.form_submit_button("Save Changes")
+
+                            if submitted_edit:
+                                updated_row = [
+                                    current_row["Timestamp"],
+                                    new_case_id,
+                                    new_seizure_country,
+                                    new_n_seized,
+                                    new_year,
+                                    new_country,
+                                    new_status,
+                                    new_transit,
+                                    new_notes,
+                                    st.session_state["user"]
+                                ]
+                                worksheet.update(f"A{row_index}:J{row_index}", [updated_row])
+                                st.success("✅ Case updated successfully!")
+                                st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Failed to load or update your cases: {e}")
+
+        # --- Upload múltiplo ---
+        st.subheader("Upload Multiple Cases (Batch Mode)")
+        uploaded_file_batch = st.file_uploader("Upload an Excel or CSV file with multiple cases", type=["xlsx", "csv"], key="uploaded_file_batch")
+
+        if uploaded_file_batch is not None:
+            st.info("📄 File uploaded. Click the button below to confirm batch submission.")
+            submit_batch = st.button("📥 **Submit Batch Upload**")
+
+            if submit_batch:
+                try:
+                    if uploaded_file_batch.name.endswith(".csv"):
+                        batch_data = pd.read_csv(uploaded_file_batch)
+                    else:
+                        batch_data = pd.read_excel(uploaded_file_batch)
+
+                    batch_data.columns = (
+                        batch_data.columns
+                        .str.normalize('NFKD')
+                        .str.encode('ascii', errors='ignore')
+                        .str.decode('utf-8')
+                        .str.strip()
+                        .str.lower()
+                    )
+
+                    required_cols_original = [
+                        "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
+                        "Country of offenders", "Seizure status", "Transit feature", "Notes"
+                    ]
+                    required_cols_normalized = [col.lower() for col in required_cols_original]
+
+                    missing_cols = [
+                        orig for orig, norm in zip(required_cols_original, required_cols_normalized)
+                        if norm not in batch_data.columns
+                    ]
+
+                    if missing_cols:
+                        st.error("🚫 Upload blocked: the uploaded file has incorrect formatting.")
+                        st.markdown(f"""**Missing columns**: {', '.join(missing_cols)}""")
+                    else:
+                        batch_data = batch_data.fillna("")
+                        batch_data["Timestamp"] = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
+                        batch_data["Author"] = st.session_state["user"]
+                        rename_map = dict(zip(required_cols_normalized, required_cols_original))
+                        batch_data.rename(columns=rename_map, inplace=True)
+                        ordered_cols = ["Timestamp"] + required_cols_original + ["Author"]
+                        batch_data = batch_data[ordered_cols]
+                        worksheet = get_worksheet()
+                        worksheet.append_rows(batch_data.values.tolist(), value_input_option="USER_ENTERED")
+                        st.success("✅ Batch upload completed successfully!")
+                        del st.session_state["uploaded_file_batch"]
+                        st.rerun()
+
+                except Exception as e:
+                    st.error(f"❌ Error during upload: {e}")
+
+        # --- Visualização dos próprios casos ---
+        st.markdown("## My Cases")
+        try:
+            worksheet = get_worksheet()
+            records = worksheet.get_all_records()
+            if not records:
+                st.info("No data available at the moment.")
+            else:
+                data = pd.DataFrame(records)
+                if not st.session_state.get("is_admin"):
+                    data = data[data["Author"] == st.session_state["user"]]
+
+                if "N seized specimens" in data.columns:
+                    species_matches = data["N seized specimens"].str.extractall(r'\d+\s*([A-Z][a-z]+(?:_[a-z]+)+)')
+                    species_list = sorted(species_matches[0].dropna().unique())
+                    selected_species = st.multiselect("Filter by species:", species_list)
+                    if selected_species:
+                        data = data[data["N seized specimens"].str.contains("|".join(selected_species))]
+
+                st.dataframe(data)
+
+        except Exception as e:
+            st.error(f"❌ Failed to load data: {e}")
+
+    # ----------------------------
+    # 📊 DATA REQUESTS
+    # ----------------------------
+    elif selected_tab == "Data Requests":
+        st.markdown("## Data Requests")
+        st.markdown("Use this form to request access to datasets uploaded to Aurum.")
+
+        species_key = "datareq_species"
+        years_key = "datareq_years"
+        country_key = "datareq_country"
+        reason_key = "datareq_reason"
+
+        if st.session_state.get("datareq_submitted_success"):
+            st.success("✅ Your data request was submitted successfully.")
+            del st.session_state["datareq_submitted_success"]
+
+        if st.session_state.get("datareq_submitted_reset"):
+            st.session_state[species_key] = ""
+            st.session_state[years_key] = ""
+            st.session_state[country_key] = ""
+            st.session_state[reason_key] = ""
+            del st.session_state["datareq_submitted_reset"]
+
+        with st.form("data_request_form"):
+            species = st.text_input("Species of interest (e.g., _Anodorhynchus leari_)", key=species_key)
+            years = st.text_input("Year(s) of interest (e.g., 2022 or 2015–2020)", key=years_key)
+            country = st.text_input("Country or region of interest (e.g., All or Brazil or South America)", key=country_key)
+            reason = st.text_area("Justify your request:", key=reason_key)
+
+            submitted = st.form_submit_button("Submit Data Request")
+
+            if submitted:
+                if not species or not years or not reason:
+                    st.warning("Species, year(s), and justification are required.")
+                else:
+                    try:
+                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        scope = ["https://www.googleapis.com/auth/spreadsheets"]
+                        credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+                        client = gspread.authorize(credentials)
+                        sheet = client.open_by_key(SHEET_ID)
+
+                        try:
+                            req_ws = sheet.worksheet("Data Requests")
+                        except gspread.exceptions.WorksheetNotFound:
+                            req_ws = sheet.add_worksheet(title="Data Requests", rows="1000", cols="7")
+                            req_ws.append_row(["Timestamp", "User", "Species", "Year(s)", "Country", "Reason", "Status"])
+
+                        req_ws.append_row([
+                            timestamp,
+                            st.session_state["user_email"],
+                            species,
+                            years,
+                            country,
+                            reason,
+                            "Pending"
+                        ])
+
+                        st.session_state["datareq_submitted_success"] = True
+                        st.session_state["datareq_submitted_reset"] = True
+                        st.rerun()
+
+                    except Exception as e:
+                        st.error(f"❌ Failed to submit your request: {e}")
 
 # --- SUGGESTIONS AND COMMENTS (SIDEBAR) ---
 if "show_sidebar_feedback" not in st.session_state:
