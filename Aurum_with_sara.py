@@ -1936,6 +1936,7 @@ if "user" in st.session_state:
             st.info("No data available at the moment.")
         else:
             data = pd.DataFrame(records)
+            data_all = data.copy()  # Mantém os dados completos disponíveis
 
             # Aplica filtro de autor se não for admin
             if not st.session_state.get("is_admin"):
