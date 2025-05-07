@@ -1146,6 +1146,7 @@ if uploaded_file is not None:
                         from folium.plugins import HeatMap
                         import os
                         import tempfile
+                        import zipfile
 
                         st.markdown("### Analysis Settings")
                         col1, col2 = st.columns(2)
@@ -1172,7 +1173,7 @@ if uploaded_file is not None:
                             with col2:
                                 if temporal_mode == "Year Range":
                                     selected_years = st.slider(
-                                        "",  # ocultar label para visual compacto
+                                        "",
                                         min_value=min_year,
                                         max_value=max_year,
                                         value=(min_year, max_year),
@@ -1192,7 +1193,6 @@ if uploaded_file is not None:
                                     )
                                     df_geo = df_geo[df_geo['Year'] == selected_year]
                                     st.markdown(f"📆 Year: **{selected_year}**")
-
 
                         # Mapa Interativo
                         gdf = gpd.GeoDataFrame(
@@ -1251,6 +1251,19 @@ if uploaded_file is not None:
                             file_name="aurum_kde_map.html",
                             mime="text/html"
                         )
+
+                        # Exportar shapefile compactado (.zip)
+                        with tempfile.TemporaryDirectory() as tmpdir:
+                            shp_path = os.path.join(tmpdir, "aurum_geo_export.shp")
+                            gdf_wgs.to_file(shp_path, driver='ESRI Shapefile', encoding='utf-8')
+
+                            zip_path = os.path.join(tmpdir, "aurum_geo_export.zip")
+                            with zipfile.ZipFile(zip_path, 'w') as zipf:
+                                for ext in ['.shp', '.shx', '.dbf', '.prj']:
+                                    zipf.write(os.path.join(tmpdir, f"aurum_geo_export{ext}"), arcname=f"aurum_geo_export{ext}")
+
+                            with open(zip_path, 'rb') as zf:
+                                st.download_button("Download shapefile (.zip)", data=zf, file_name="aurum_geo_export.zip")
 
                         with st.expander("ℹ️ Learn more about this analysis"):
                             st.markdown("""
