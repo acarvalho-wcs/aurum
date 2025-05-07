@@ -1997,7 +1997,7 @@ if "user" in st.session_state:
                         import gspread
                         from google.oauth2.service_account import Credentials
 
-                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S (BRT)")
 
                         scope = ["https://www.googleapis.com/auth/spreadsheets"]
                         credentials = Credentials.from_service_account_info(
