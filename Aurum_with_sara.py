@@ -1149,7 +1149,7 @@ if uploaded_file is not None:
                         import matplotlib.pyplot as plt
                         from sklearn.neighbors import KernelDensity
                         from shapely.geometry import Polygon
-                        from pyproj import CRS
+                        import zipfile
 
                         st.markdown("### Analysis Settings")
                         col1, col2 = st.columns(2)
@@ -1254,7 +1254,7 @@ if uploaded_file is not None:
                             mime="text/html"
                         )
 
-                        # Exportar zonas de densidade KDE como shapefile (vetorial)
+                        # Exportar shapefile com zonas de densidade KDE (completo)
                         gdf_proj = gdf.to_crs(epsg=3857)
                         coords = np.vstack([gdf_proj.geometry.x, gdf_proj.geometry.y]).T
                         kde = KernelDensity(bandwidth=radius_val * 100, kernel='gaussian')
@@ -1281,17 +1281,26 @@ if uploaded_file is not None:
 
                         if polygons:
                             kde_gdf = gpd.GeoDataFrame({'level': values, 'geometry': polygons}, crs="EPSG:3857")
-                            shp_path = os.path.join(tempfile.gettempdir(), "aurum_kde_zones.shp")
+                            shp_dir = os.path.join(tempfile.gettempdir(), "aurum_kde_export")
+                            os.makedirs(shp_dir, exist_ok=True)
+
+                            shp_path = os.path.join(shp_dir, "aurum_kde_polygons.shp")
                             kde_gdf.to_file(shp_path)
 
-                            with open(shp_path, "rb") as f:
-                                shp_bytes = f.read()
-                            st.download_button(
-                                label="Download KDE Zones (.shp)",
-                                data=shp_bytes,
-                                file_name="aurum_kde_zones.shp",
-                                mime="application/octet-stream"
-                            )
+                            zip_path = os.path.join(tempfile.gettempdir(), "aurum_kde_polygons.zip")
+                            with zipfile.ZipFile(zip_path, 'w') as zipf:
+                                for ext in ['.shp', '.shx', '.dbf', '.prj']:
+                                    part = shp_path.replace('.shp', ext)
+                                    if os.path.exists(part):
+                                        zipf.write(part, arcname=os.path.basename(part))
+
+                            with open(zip_path, "rb") as f:
+                                st.download_button(
+                                    label="📦 Download KDE polygons (.zip)",
+                                    data=f.read(),
+                                    file_name="aurum_kde_polygons.zip",
+                                    mime="application/zip"
+                                )
                         else:
                             st.warning("No valid KDE contour polygons were generated.")
 
