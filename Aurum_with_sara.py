@@ -1238,7 +1238,7 @@ if uploaded_file is not None:
                         m.get_root().html.add_child(folium.Element(legend_html))
 
                         html_str = m.get_root().render()
-                        st.components.v1.html(html_str, height=400)
+                        st.components.v1.html(html_str, height=800)
 
                         full_map_path = os.path.join(tempfile.gettempdir(), "aurum_map.html")
                         m.save(full_map_path)
