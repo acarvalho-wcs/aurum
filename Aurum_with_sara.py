@@ -1969,9 +1969,9 @@ if "user" in st.session_state:
         reason_key = "datareq_reason"
 
         with st.form("data_request_form"):
-            species = st.text_input("Species of interest (e.g., Anodorhynchus_lear)", key=species_key)
+            species = st.text_input("Species of interest (e.g., _Anodorhynchus leari_)", key=species_key)
             years = st.text_input("Year(s) of interest (e.g., 2022 or 2015–2020)", key=years_key)
-            country = st.text_input("Country or region of interest (e.g., Brazil)", value="All", key=country_key)
+            country = st.text_input("Country or region of interest (e.g., All or Brazil or South America)", value="All", key=country_key)
             reason = st.text_area("Justify your request:", key=reason_key)
 
             submitted = st.form_submit_button("Submit Data Request")
