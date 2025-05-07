@@ -1962,11 +1962,19 @@ if "user" in st.session_state:
         st.markdown("## Data Requests")
         st.markdown("Use this form to request access to datasets uploaded to Aurum.")
 
-        # Campos controlados por session_state
+        # Define chaves dos campos
         species_key = "datareq_species"
         years_key = "datareq_years"
         country_key = "datareq_country"
         reason_key = "datareq_reason"
+
+        # Reseta campos após submissão anterior
+        if st.session_state.get("datareq_submitted"):
+            st.session_state[species_key] = ""
+            st.session_state[years_key] = ""
+            st.session_state[country_key] = ""
+            st.session_state[reason_key] = ""
+            del st.session_state["datareq_submitted"]
 
         with st.form("data_request_form"):
             species = st.text_input("Species of interest (e.g., _Anodorhynchus leari_)", key=species_key)
@@ -1985,7 +1993,7 @@ if "user" in st.session_state:
                         import gspread
                         from google.oauth2.service_account import Credentials
 
-                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S (BRT)")
+                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
                         scope = ["https://www.googleapis.com/auth/spreadsheets"]
                         credentials = Credentials.from_service_account_info(
@@ -2010,13 +2018,7 @@ if "user" in st.session_state:
                         ])
 
                         st.success("✅ Your data request was submitted successfully.")
-
-                        # Reset dos campos
-                        st.session_state[species_key] = ""
-                        st.session_state[years_key] = ""
-                        st.session_state[country_key] = ""
-                        st.session_state[reason_key] = ""
-
+                        st.session_state["datareq_submitted"] = True
                         st.rerun()
 
                     except Exception as e:
