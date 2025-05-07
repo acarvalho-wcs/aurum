@@ -229,6 +229,189 @@ if "user" in st.session_state:
             with st.expander("**Update My Alerts**", expanded=False):
                 display_alert_update_timeline(SHEET_ID)
 
+# --- Função para submissão de alertas ---
+def display_alert_submission_form(sheet_id):
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+    client = gspread.authorize(credentials)
+    sheets = client.open_by_key(sheet_id)
+
+    field_keys = {
+        "title": "alert_title_input",
+        "description": "alert_description_input",
+        "category": "alert_category_select",
+        "risk_level": "alert_risk_select",
+        "species": "alert_species_input",
+        "country": "alert_country_input",
+        "source_link": "alert_source_input",
+        "author_choice": "alert_author_choice"
+    }
+
+    categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
+    risk_levels = ["Low", "Medium", "High"]
+
+    for key in ["title", "description", "species", "country", "source_link"]:
+        st.session_state.setdefault(field_keys[key], "")
+
+    if st.session_state.get(field_keys["category"]) not in categories:
+        st.session_state[field_keys["category"]] = categories[0]
+    if st.session_state.get(field_keys["risk_level"]) not in risk_levels:
+        st.session_state[field_keys["risk_level"]] = risk_levels[0]
+
+    st.session_state.setdefault(field_keys["author_choice"], "Show my username")
+
+    with st.form("alert_form"):
+        title = st.text_input("Alert Title", key=field_keys["title"])
+        description = st.text_area("Alert Description", key=field_keys["description"])
+        category = st.selectbox("Category", categories, key=field_keys["category"])
+        risk_level = st.selectbox("Risk Level", risk_levels, key=field_keys["risk_level"])
+        species = st.text_input("Species involved (optional)", key=field_keys["species"])
+        country = st.text_input("Country or Region (optional)", key=field_keys["country"])
+        source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
+
+        author_choice = st.radio(
+            "Choose how to display your name:",
+            ["Show my username", "Submit anonymously"],
+            key=field_keys["author_choice"]
+        )
+
+        created_by = st.session_state["user_email"]
+        display_as = st.session_state["user"] if author_choice == "Show my username" else "Anonymous"
+
+        submitted = st.form_submit_button("📤 Submit Alert")
+
+    if submitted:
+        if not title or not description:
+            st.warning("Title and Description are required.")
+        else:
+            alert_id = str(uuid4())
+            created_at = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
+            public = True
+
+            alert_row = [
+                alert_id, created_at, created_by, display_as, title, description,
+                category, species, country, risk_level, source_link,
+                str(public)
+            ]
+
+            try:
+                worksheet = sheets.worksheet("Alerts")
+                worksheet.append_row(alert_row, value_input_option="USER_ENTERED")
+                st.success("✅ Alert submitted successfully!")
+                st.balloons()
+
+                for k in field_keys.values():
+                    st.session_state[k] = ''
+
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ Failed to submit alert: {e}")
+
+def display_alert_update_timeline(sheet_id):
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+    client = gspread.authorize(credentials)
+    sheets = client.open_by_key(sheet_id)
+
+    try:
+        df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
+        df_alerts.columns = [col.strip() for col in df_alerts.columns]
+
+        df_updates = pd.DataFrame(sheets.worksheet("Alert Updates").get_all_records())
+        if df_updates.empty:
+            df_updates = pd.DataFrame(columns=["Alert ID", "Timestamp", "User", "Update Text"])
+        else:
+            df_updates.columns = [col.strip() for col in df_updates.columns]
+
+        user = st.session_state.get("user")
+        user_email = st.session_state.get("user_email")
+
+        # Alertas criados pelo usuário (usando o e-mail como referência)
+        created_alerts = df_alerts[df_alerts["Created By"] == user_email]
+
+        # Alertas que o usuário atualizou (usando username nos updates)
+        relevant_updates = df_updates[
+            (df_updates["User"] == user) | (df_updates["User"] == "Anonymous")
+        ]
+        updated_alert_ids = relevant_updates["Alert ID"].unique()
+        updated_alerts = df_alerts[df_alerts["Alert ID"].isin(updated_alert_ids)]
+
+        # Junta alertas criados e alertas atualizados
+        df_user_alerts = pd.concat([created_alerts, updated_alerts]).drop_duplicates(subset="Alert ID")
+
+        if df_user_alerts.empty:
+            st.info("You haven't submitted or updated any alerts yet.")
+            return
+
+        # 🔵 Fixar seleção do alerta no session_state
+        if "selected_alert_id" not in st.session_state:
+            st.session_state["selected_alert_id"] = None
+
+        selected_title = st.selectbox(
+            "Select an alert to update:",
+            df_user_alerts["Title"].tolist()
+        )
+
+        selected_row = df_user_alerts[df_user_alerts["Title"] == selected_title].iloc[0]
+        alert_id = selected_row["Alert ID"]
+
+        # 🔵 Salva o alerta selecionado fixo
+        st.session_state["selected_alert_id"] = alert_id
+
+        timeline = df_updates[df_updates["Alert ID"] == alert_id].sort_values("Timestamp")
+
+        if not timeline.empty:
+            st.markdown("### Update Timeline")
+            for _, row in timeline.iterrows():
+                st.markdown(f"**{row['Timestamp']}** – *{row['User']}*: {row['Update Text']}")
+        else:
+            st.info("This alert has no updates yet.")
+
+        update_author_choice = st.radio(
+            "Choose how to display your name in this update:",
+            ["Show my username", "Submit anonymously"],
+            key="update_author_choice"
+        )
+        update_user = user if update_author_choice == "Show my username" else "Anonymous"
+
+        update_text_key = f"update_text_{alert_id}"
+        field_keys = {"update_text": update_text_key}
+
+        with st.form(f"update_form_{alert_id}"):
+            st.markdown("**Add a new update to this alert:**")
+            new_update = st.text_area("Update Description", key=update_text_key)
+            submitted = st.form_submit_button("➕ Add Update")
+
+            if submitted:
+                if not new_update.strip():
+                    st.warning("Update description is required.")
+                else:
+                    timestamp = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
+                    update_row = [alert_id, timestamp, update_user, new_update.strip()]
+
+                    try:
+                        try:
+                            update_ws = sheets.worksheet("Alert Updates")
+                        except gspread.exceptions.WorksheetNotFound:
+                            update_ws = sheets.add_worksheet(title="Alert Updates", rows="1000", cols="4")
+                            update_ws.append_row(["Alert ID", "Timestamp", "User", "Update Text"])
+
+                        update_ws.append_row(update_row)
+                        st.success("✅ Update added to alert!")
+
+                        # 🔥 Apaga o campo de texto depois de submeter
+                        for k in field_keys.values():
+                            if k in st.session_state:
+                                del st.session_state[k]
+
+                        st.rerun()
+
+                    except Exception as e:
+                        st.error(f"❌ Failed to add update: {e}")
+
+    except Exception as e:
+        st.error(f"❌ Could not load alerts or updates: {e}")
+    
     # ----------------------------
     # 📁 CASES MANAGEMENT
     # ----------------------------
@@ -1818,189 +2001,6 @@ def load_sheet_data(sheet_name, sheets):
     except Exception as e:
         st.error(f"❌ Failed to load data from sheet '{sheet_name}': {e}")
         return pd.DataFrame()
-
-# --- Função para submissão de alertas ---
-def display_alert_submission_form(sheet_id):
-    scope = ["https://www.googleapis.com/auth/spreadsheets"]
-    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-    client = gspread.authorize(credentials)
-    sheets = client.open_by_key(sheet_id)
-
-    field_keys = {
-        "title": "alert_title_input",
-        "description": "alert_description_input",
-        "category": "alert_category_select",
-        "risk_level": "alert_risk_select",
-        "species": "alert_species_input",
-        "country": "alert_country_input",
-        "source_link": "alert_source_input",
-        "author_choice": "alert_author_choice"
-    }
-
-    categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
-    risk_levels = ["Low", "Medium", "High"]
-
-    for key in ["title", "description", "species", "country", "source_link"]:
-        st.session_state.setdefault(field_keys[key], "")
-
-    if st.session_state.get(field_keys["category"]) not in categories:
-        st.session_state[field_keys["category"]] = categories[0]
-    if st.session_state.get(field_keys["risk_level"]) not in risk_levels:
-        st.session_state[field_keys["risk_level"]] = risk_levels[0]
-
-    st.session_state.setdefault(field_keys["author_choice"], "Show my username")
-
-    with st.form("alert_form"):
-        title = st.text_input("Alert Title", key=field_keys["title"])
-        description = st.text_area("Alert Description", key=field_keys["description"])
-        category = st.selectbox("Category", categories, key=field_keys["category"])
-        risk_level = st.selectbox("Risk Level", risk_levels, key=field_keys["risk_level"])
-        species = st.text_input("Species involved (optional)", key=field_keys["species"])
-        country = st.text_input("Country or Region (optional)", key=field_keys["country"])
-        source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
-
-        author_choice = st.radio(
-            "Choose how to display your name:",
-            ["Show my username", "Submit anonymously"],
-            key=field_keys["author_choice"]
-        )
-
-        created_by = st.session_state["user_email"]
-        display_as = st.session_state["user"] if author_choice == "Show my username" else "Anonymous"
-
-        submitted = st.form_submit_button("📤 Submit Alert")
-
-    if submitted:
-        if not title or not description:
-            st.warning("Title and Description are required.")
-        else:
-            alert_id = str(uuid4())
-            created_at = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
-            public = True
-
-            alert_row = [
-                alert_id, created_at, created_by, display_as, title, description,
-                category, species, country, risk_level, source_link,
-                str(public)
-            ]
-
-            try:
-                worksheet = sheets.worksheet("Alerts")
-                worksheet.append_row(alert_row, value_input_option="USER_ENTERED")
-                st.success("✅ Alert submitted successfully!")
-                st.balloons()
-
-                for k in field_keys.values():
-                    st.session_state[k] = ''
-
-                st.rerun()
-            except Exception as e:
-                st.error(f"❌ Failed to submit alert: {e}")
-
-def display_alert_update_timeline(sheet_id):
-    scope = ["https://www.googleapis.com/auth/spreadsheets"]
-    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-    client = gspread.authorize(credentials)
-    sheets = client.open_by_key(sheet_id)
-
-    try:
-        df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
-        df_alerts.columns = [col.strip() for col in df_alerts.columns]
-
-        df_updates = pd.DataFrame(sheets.worksheet("Alert Updates").get_all_records())
-        if df_updates.empty:
-            df_updates = pd.DataFrame(columns=["Alert ID", "Timestamp", "User", "Update Text"])
-        else:
-            df_updates.columns = [col.strip() for col in df_updates.columns]
-
-        user = st.session_state.get("user")
-        user_email = st.session_state.get("user_email")
-
-        # Alertas criados pelo usuário (usando o e-mail como referência)
-        created_alerts = df_alerts[df_alerts["Created By"] == user_email]
-
-        # Alertas que o usuário atualizou (usando username nos updates)
-        relevant_updates = df_updates[
-            (df_updates["User"] == user) | (df_updates["User"] == "Anonymous")
-        ]
-        updated_alert_ids = relevant_updates["Alert ID"].unique()
-        updated_alerts = df_alerts[df_alerts["Alert ID"].isin(updated_alert_ids)]
-
-        # Junta alertas criados e alertas atualizados
-        df_user_alerts = pd.concat([created_alerts, updated_alerts]).drop_duplicates(subset="Alert ID")
-
-        if df_user_alerts.empty:
-            st.info("You haven't submitted or updated any alerts yet.")
-            return
-
-        # 🔵 Fixar seleção do alerta no session_state
-        if "selected_alert_id" not in st.session_state:
-            st.session_state["selected_alert_id"] = None
-
-        selected_title = st.selectbox(
-            "Select an alert to update:",
-            df_user_alerts["Title"].tolist()
-        )
-
-        selected_row = df_user_alerts[df_user_alerts["Title"] == selected_title].iloc[0]
-        alert_id = selected_row["Alert ID"]
-
-        # 🔵 Salva o alerta selecionado fixo
-        st.session_state["selected_alert_id"] = alert_id
-
-        timeline = df_updates[df_updates["Alert ID"] == alert_id].sort_values("Timestamp")
-
-        if not timeline.empty:
-            st.markdown("### Update Timeline")
-            for _, row in timeline.iterrows():
-                st.markdown(f"**{row['Timestamp']}** – *{row['User']}*: {row['Update Text']}")
-        else:
-            st.info("This alert has no updates yet.")
-
-        update_author_choice = st.radio(
-            "Choose how to display your name in this update:",
-            ["Show my username", "Submit anonymously"],
-            key="update_author_choice"
-        )
-        update_user = user if update_author_choice == "Show my username" else "Anonymous"
-
-        update_text_key = f"update_text_{alert_id}"
-        field_keys = {"update_text": update_text_key}
-
-        with st.form(f"update_form_{alert_id}"):
-            st.markdown("**Add a new update to this alert:**")
-            new_update = st.text_area("Update Description", key=update_text_key)
-            submitted = st.form_submit_button("➕ Add Update")
-
-            if submitted:
-                if not new_update.strip():
-                    st.warning("Update description is required.")
-                else:
-                    timestamp = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
-                    update_row = [alert_id, timestamp, update_user, new_update.strip()]
-
-                    try:
-                        try:
-                            update_ws = sheets.worksheet("Alert Updates")
-                        except gspread.exceptions.WorksheetNotFound:
-                            update_ws = sheets.add_worksheet(title="Alert Updates", rows="1000", cols="4")
-                            update_ws.append_row(["Alert ID", "Timestamp", "User", "Update Text"])
-
-                        update_ws.append_row(update_row)
-                        st.success("✅ Update added to alert!")
-
-                        # 🔥 Apaga o campo de texto depois de submeter
-                        for k in field_keys.values():
-                            if k in st.session_state:
-                                del st.session_state[k]
-
-                        st.rerun()
-
-                    except Exception as e:
-                        st.error(f"❌ Failed to add update: {e}")
-
-    except Exception as e:
-        st.error(f"❌ Could not load alerts or updates: {e}")
 
 # --- SUGGESTIONS AND COMMENTS (SIDEBAR) ---
 if "show_sidebar_feedback" not in st.session_state:
