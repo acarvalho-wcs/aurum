@@ -1513,7 +1513,7 @@ if "user" in st.session_state:
     # 🔔 ALERTS MANAGEMENT
     # ----------------------------
     if selected_tab == "Alerts Management":
-        st.markdown("### Alert Management")
+        st.markdown("### Alerts Management")
         col1, col2 = st.columns(2)
 
         with col1:
