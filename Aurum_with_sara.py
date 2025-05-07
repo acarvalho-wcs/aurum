@@ -2017,10 +2017,9 @@ if "user" in st.session_state:
                             "Pending"
                         ])
 
-                        st.success("✅ Your data request was submitted successfully.")
-                        st.session_state["datareq_submitted"] = True
+                          st.session_state["datareq_submitted"] = True
                         st.rerun()
-
+                      st.success("✅ Your data request was submitted successfully.")
                     except Exception as e:
                         st.error(f"❌ Failed to submit your request: {e}")
 
