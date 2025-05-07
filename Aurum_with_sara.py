@@ -1733,6 +1733,8 @@ if "user" in st.session_state:
         with st.expander("**Update My Alerts**", expanded=False):
             display_alert_update_timeline(SHEET_ID)
 
+    st.markdown("---")
+
     # --- Colunas inferiores: Casos ---
     st.markdown("### Case Management")
     col3, col4 = st.columns(2)
