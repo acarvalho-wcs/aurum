@@ -1958,21 +1958,30 @@ if "user" in st.session_state:
                 st.markdown("## Data Requests")
                 st.markdown("Use this form to request access to filtered datasets uploaded to Aurum. You can request based on species, country, and year.")
 
-                # Valores disponíveis
                 available_species = []
-                if "N seized specimens" in data.columns:
-                    species_matches = data["N seized specimens"].str.extractall(r'\d+\s*([A-Z][a-z]+(?:_[a-z]+)+)')
+                if "N seized specimens" in data_all.columns:
+                    species_matches = data_all["N seized specimens"].str.extractall(r'\d+\s*([A-Z][a-z]+(?:_[a-z]+)+)')
                     available_species = sorted(species_matches[0].dropna().unique())
 
-                available_countries = sorted(data['Country of seizure or shipment'].dropna().unique()) if 'Country of seizure or shipment' in data.columns else []
-                available_years = sorted(data['Year'].dropna().unique()) if 'Year' in data.columns else []
+                available_countries = sorted(data_all['Country of seizure or shipment'].dropna().unique()) if 'Country of seizure or shipment' in data_all.columns else []
+                available_years = sorted(data_all['Year'].dropna().unique()) if 'Year' in data_all.columns else []
 
-                # Seletor interativo
                 selected_species = st.multiselect("Select species of interest:", available_species)
                 selected_countries = st.multiselect("Select countries of interest:", available_countries)
                 selected_years = st.multiselect("Select years of interest:", available_years)
-
                 reason = st.text_area("Justify your request:")
+
+                # Filtra os dados conforme os critérios selecionados
+                filtered_request = data_all.copy()
+                if selected_species and "N seized specimens" in filtered_request.columns:
+                    pattern = "|".join(selected_species)
+                    filtered_request = filtered_request[filtered_request["N seized specimens"].str.contains(pattern)]
+                if selected_countries and "Country of seizure or shipment" in filtered_request.columns:
+                    filtered_request = filtered_request[filtered_request["Country of seizure or shipment"].isin(selected_countries)]
+                if selected_years and "Year" in filtered_request.columns:
+                    filtered_request = filtered_request[filtered_request["Year"].isin(selected_years)]
+
+                st.markdown(f"**Matching cases in database:** {len(filtered_request)}")
 
                 if st.button("Submit Data Request"):
                     from datetime import datetime
