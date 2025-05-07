@@ -1957,17 +1957,20 @@ if "user" in st.session_state:
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
 
-    # --- Data Requests ---
+    # --- Data Requests (Simplified Form) ---
     if "user_email" in st.session_state:
         st.markdown("## Data Requests")
         st.markdown("Use this form to request access to datasets uploaded to Aurum. You can describe your interest freely.")
 
-        species_input = st.text_input("Species of interest (e.g., Anodorhynchus_leari)")
-        year_input = st.text_input("Year(s) of interest (e.g., 2022 or 2015–2020)")
-        country_input = st.text_input("Country or region of interest (e.g., Brazil)")
-        reason = st.text_area("Justify your request:")
+        with st.form("data_request_form"):
+            species_input = st.text_input("Species of interest (e.g., Anodorhynchus_leari)")
+            year_input = st.text_input("Year(s) of interest (e.g., 2022 or 2015–2020)")
+            country_input = st.text_input("Country or region of interest (e.g., Brazil)")
+            reason = st.text_area("Justify your request:")
 
-        if st.button("Submit Data Request"):
+            submitted = st.form_submit_button("Submit Data Request")
+
+        if submitted:
             if not reason.strip():
                 st.warning("Please provide a justification for your request.")
             else:
