@@ -107,84 +107,6 @@ if uploaded_file is None:
     Click **About Aurum** to learn more about each analysis module.
     """)
 
-# --- Função para submissão de alertas ---
-def display_alert_submission_form(sheet_id):
-    scope = ["https://www.googleapis.com/auth/spreadsheets"]
-    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-    client = gspread.authorize(credentials)
-    sheets = client.open_by_key(sheet_id)
-
-    field_keys = {
-        "title": "alert_title_input",
-        "description": "alert_description_input",
-        "category": "alert_category_select",
-        "risk_level": "alert_risk_select",
-        "species": "alert_species_input",
-        "country": "alert_country_input",
-        "source_link": "alert_source_input",
-        "author_choice": "alert_author_choice"
-    }
-
-    categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
-    risk_levels = ["Low", "Medium", "High"]
-
-    for key in ["title", "description", "species", "country", "source_link"]:
-        st.session_state.setdefault(field_keys[key], "")
-
-    if st.session_state.get(field_keys["category"]) not in categories:
-        st.session_state[field_keys["category"]] = categories[0]
-    if st.session_state.get(field_keys["risk_level"]) not in risk_levels:
-        st.session_state[field_keys["risk_level"]] = risk_levels[0]
-
-    st.session_state.setdefault(field_keys["author_choice"], "Show my username")
-
-    with st.form("alert_form"):
-        title = st.text_input("Alert Title", key=field_keys["title"])
-        description = st.text_area("Alert Description", key=field_keys["description"])
-        category = st.selectbox("Category", categories, key=field_keys["category"])
-        risk_level = st.selectbox("Risk Level", risk_levels, key=field_keys["risk_level"])
-        species = st.text_input("Species involved (optional)", key=field_keys["species"])
-        country = st.text_input("Country or Region (optional)", key=field_keys["country"])
-        source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
-
-        author_choice = st.radio(
-            "Choose how to display your name:",
-            ["Show my username", "Submit anonymously"],
-            key=field_keys["author_choice"]
-        )
-
-        created_by = st.session_state["user_email"]
-        display_as = st.session_state["user"] if author_choice == "Show my username" else "Anonymous"
-
-        submitted = st.form_submit_button("📤 Submit Alert")
-
-    if submitted:
-        if not title or not description:
-            st.warning("Title and Description are required.")
-        else:
-            alert_id = str(uuid4())
-            created_at = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
-            public = True
-
-            alert_row = [
-                alert_id, created_at, created_by, display_as, title, description,
-                category, species, country, risk_level, source_link,
-                str(public)
-            ]
-
-            try:
-                worksheet = sheets.worksheet("Alerts")
-                worksheet.append_row(alert_row, value_input_option="USER_ENTERED")
-                st.success("✅ Alert submitted successfully!")
-                st.balloons()
-
-                for k in field_keys.values():
-                    st.session_state[k] = ''
-
-                st.rerun()
-            except Exception as e:
-                st.error(f"❌ Failed to submit alert: {e}")
-
 # --- Interface com abas: Alertas Públicos, Alertas (interno), Casos e Dados ---
 if "user" in st.session_state:
 
@@ -293,6 +215,84 @@ if "user" in st.session_state:
         with col2:
             with st.expander("**Update My Alerts**", expanded=False):
                 display_alert_update_timeline(SHEET_ID)
+
+# --- Função para submissão de alertas ---
+def display_alert_submission_form(sheet_id):
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+    client = gspread.authorize(credentials)
+    sheets = client.open_by_key(sheet_id)
+
+    field_keys = {
+        "title": "alert_title_input",
+        "description": "alert_description_input",
+        "category": "alert_category_select",
+        "risk_level": "alert_risk_select",
+        "species": "alert_species_input",
+        "country": "alert_country_input",
+        "source_link": "alert_source_input",
+        "author_choice": "alert_author_choice"
+    }
+
+    categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
+    risk_levels = ["Low", "Medium", "High"]
+
+    for key in ["title", "description", "species", "country", "source_link"]:
+        st.session_state.setdefault(field_keys[key], "")
+
+    if st.session_state.get(field_keys["category"]) not in categories:
+        st.session_state[field_keys["category"]] = categories[0]
+    if st.session_state.get(field_keys["risk_level"]) not in risk_levels:
+        st.session_state[field_keys["risk_level"]] = risk_levels[0]
+
+    st.session_state.setdefault(field_keys["author_choice"], "Show my username")
+
+    with st.form("alert_form"):
+        title = st.text_input("Alert Title", key=field_keys["title"])
+        description = st.text_area("Alert Description", key=field_keys["description"])
+        category = st.selectbox("Category", categories, key=field_keys["category"])
+        risk_level = st.selectbox("Risk Level", risk_levels, key=field_keys["risk_level"])
+        species = st.text_input("Species involved (optional)", key=field_keys["species"])
+        country = st.text_input("Country or Region (optional)", key=field_keys["country"])
+        source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
+
+        author_choice = st.radio(
+            "Choose how to display your name:",
+            ["Show my username", "Submit anonymously"],
+            key=field_keys["author_choice"]
+        )
+
+        created_by = st.session_state["user_email"]
+        display_as = st.session_state["user"] if author_choice == "Show my username" else "Anonymous"
+
+        submitted = st.form_submit_button("📤 Submit Alert")
+
+    if submitted:
+        if not title or not description:
+            st.warning("Title and Description are required.")
+        else:
+            alert_id = str(uuid4())
+            created_at = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
+            public = True
+
+            alert_row = [
+                alert_id, created_at, created_by, display_as, title, description,
+                category, species, country, risk_level, source_link,
+                str(public)
+            ]
+
+            try:
+                worksheet = sheets.worksheet("Alerts")
+                worksheet.append_row(alert_row, value_input_option="USER_ENTERED")
+                st.success("✅ Alert submitted successfully!")
+                st.balloons()
+
+                for k in field_keys.values():
+                    st.session_state[k] = ''
+
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ Failed to submit alert: {e}")
 
     # ----------------------------
     # 📁 CASES MANAGEMENT
