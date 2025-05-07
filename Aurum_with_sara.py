@@ -1143,7 +1143,7 @@ if uploaded_file is not None:
                         import geopandas as gpd
                         import numpy as np
                         import folium
-                        from folium.plugins import HeatMap
+                        from folium.plugins import HeatMap, Fullscreen
                         import os
                         import tempfile
 
@@ -1206,7 +1206,17 @@ if uploaded_file is not None:
                         center_lat = (bounds[1] + bounds[3]) / 2
                         center_lon = (bounds[0] + bounds[2]) / 2
 
-                        m = folium.Map(location=[center_lat, center_lon], zoom_start=2)
+                        m = folium.Map(location=[center_lat, center_lon], zoom_start=2, zoom_control=False)
+                        folium.LayerControl().add_to(m)
+                        Fullscreen().add_to(m)
+
+                        # Custom zoom controls com step menor
+                        folium.TileLayer().add_to(m)
+                        folium.Map(location=[center_lat, center_lon],
+                                    zoom_start=2,
+                                    control_scale=True,
+                                    prefer_canvas=True).add_to(m)
+
                         m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
                         HeatMap(data=gdf_wgs[['Latitude', 'Longitude']].values, radius=radius_val).add_to(m)
 
