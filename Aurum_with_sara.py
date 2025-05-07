@@ -1146,9 +1146,10 @@ if uploaded_file is not None:
                         from folium.plugins import HeatMap
                         import os
                         import tempfile
-                        from shapely.geometry import Polygon
                         import matplotlib.pyplot as plt
                         from sklearn.neighbors import KernelDensity
+                        from shapely.geometry import Polygon
+                        from pyproj import CRS
 
                         st.markdown("### Analysis Settings")
                         col1, col2 = st.columns(2)
@@ -1212,7 +1213,6 @@ if uploaded_file is not None:
                         m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
                         HeatMap(data=gdf_wgs[['Latitude', 'Longitude']].values, radius=radius_val).add_to(m)
 
-                        # Legenda avançada com gradiente contínuo
                         legend_html = '''
                             <div style="
                                 position: fixed;
@@ -1254,44 +1254,46 @@ if uploaded_file is not None:
                             mime="text/html"
                         )
 
-                        # Export shapefile de zonas de densidade (polígonos vetoriais)
-                        if not gdf.empty:
-                            gdf_proj = gdf.to_crs(epsg=3857)
-                            coords = np.vstack([gdf_proj.geometry.x, gdf_proj.geometry.y]).T
-                            kde = KernelDensity(bandwidth=50000, kernel='gaussian')
-                            kde.fit(coords)
+                        # Exportar zonas de densidade KDE como shapefile (vetorial)
+                        gdf_proj = gdf.to_crs(epsg=3857)
+                        coords = np.vstack([gdf_proj.geometry.x, gdf_proj.geometry.y]).T
+                        kde = KernelDensity(bandwidth=radius_val * 100, kernel='gaussian')
+                        kde.fit(coords)
 
-                            xmin, ymin, xmax, ymax = gdf_proj.total_bounds
-                            xx, yy = np.mgrid[xmin:xmax:200j, ymin:ymax:200j]
-                            grid_coords = np.vstack([xx.ravel(), yy.ravel()]).T
-                            zz = np.exp(kde.score_samples(grid_coords)).reshape(xx.shape)
+                        xmin, ymin, xmax, ymax = gdf_proj.total_bounds
+                        xx, yy = np.mgrid[xmin:xmax:500j, ymin:ymax:500j]
+                        grid_coords = np.vstack([xx.ravel(), yy.ravel()]).T
+                        zz = np.exp(kde.score_samples(grid_coords)).reshape(xx.shape)
 
-                            fig, ax = plt.subplots()
-                            cs = ax.contour(xx, yy, zz, levels=6)
+                        fig, ax = plt.subplots()
+                        levels = 10
+                        contour = ax.contourf(xx, yy, zz, levels=levels)
+                        plt.close(fig)
 
-                            polygons = []
-                            values = []
-                            for i, collection in enumerate(cs.collections):
-                                for path in collection.get_paths():
-                                    poly = path.to_polygons()
-                                    if len(poly) > 0:
-                                        exterior = poly[0]
-                                        interiors = poly[1:] if len(poly) > 1 else []
-                                        polygons.append(Polygon(shell=exterior, holes=interiors))
-                                        values.append(cs.levels[i])
+                        polygons = []
+                        values = []
+                        for i, segs in enumerate(contour.allsegs):
+                            for seg in segs:
+                                poly = Polygon(seg)
+                                if poly.is_valid:
+                                    polygons.append(poly)
+                                    values.append(i)
 
-                            contour_gdf = gpd.GeoDataFrame({"value": values}, geometry=polygons, crs="EPSG:3857")
-                            shp_dir = os.path.join(tempfile.gettempdir(), "aurum_geo_export")
-                            shp_path = os.path.join(shp_dir, "aurum_kde_polygons.shp")
-                            contour_gdf.to_file(shp_path)
+                        if polygons:
+                            kde_gdf = gpd.GeoDataFrame({'level': values, 'geometry': polygons}, crs="EPSG:3857")
+                            shp_path = os.path.join(tempfile.gettempdir(), "aurum_kde_zones.shp")
+                            kde_gdf.to_file(shp_path)
 
                             with open(shp_path, "rb") as f:
-                                st.download_button(
-                                    label="Download KDE Zones (.shp)",
-                                    data=f.read(),
-                                    file_name="aurum_kde_polygons.shp",
-                                    mime="application/octet-stream"
-                                )
+                                shp_bytes = f.read()
+                            st.download_button(
+                                label="Download KDE Zones (.shp)",
+                                data=shp_bytes,
+                                file_name="aurum_kde_zones.shp",
+                                mime="application/octet-stream"
+                            )
+                        else:
+                            st.warning("No valid KDE contour polygons were generated.")
 
                         with st.expander("ℹ️ Learn more about this analysis"):
                             st.markdown("""
@@ -1309,7 +1311,7 @@ if uploaded_file is not None:
                                 - Compare species-specific patterns geographically.
                                 - Support decision-making for targeted enforcement or prevention.
 
-                                **Note:** This map uses geographic coordinates (EPSG:4326) and is rendered using `folium`. KDE export is vectorized in EPSG:3857.
+                                **Note:** This map uses geographic coordinates (EPSG:4326) and is rendered using `folium`. KDE zones are also available in vector format (.shp).
                             """)
                                
         else:
