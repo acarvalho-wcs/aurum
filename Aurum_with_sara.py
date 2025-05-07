@@ -1960,63 +1960,38 @@ if "user" in st.session_state:
     # --- Data Requests ---
     if "user_email" in st.session_state:
         st.markdown("## Data Requests")
-        st.markdown("Use this form to request access to filtered datasets uploaded to Aurum. You may combine filters below or leave any of them empty.")
+        st.markdown("Use this form to request access to datasets uploaded to Aurum. You can describe your interest freely.")
 
-        try:
-            species_pool = []
-            year_pool = []
-            country_pool = []
+        species_input = st.text_input("Species of interest (e.g., Anodorhynchus_leari)")
+        year_input = st.text_input("Year(s) of interest (e.g., 2022 or 2015–2020)")
+        country_input = st.text_input("Country or region of interest (e.g., Brazil)")
+        reason = st.text_area("Justify your request:")
 
-            if "N seized specimens" in data_all.columns:
-                species_matches_all = data_all["N seized specimens"].str.extractall(r'\d+\s*([A-Z][a-z]+(?:_[a-z]+)+)')
-                species_pool = sorted(species_matches_all[0].dropna().unique())
+        if st.button("Submit Data Request"):
+            if not reason.strip():
+                st.warning("Please provide a justification for your request.")
+            else:
+                try:
+                    from datetime import datetime
+                    import gspread
 
-            if "Year" in data_all.columns:
-                year_pool = sorted(data_all["Year"].dropna().unique())
+                    gc = gspread.service_account(filename="service_credentials.json")
+                    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
+                    worksheet = sh.worksheet("Data Requests")
 
-            if "Country of seizure or shipment" in data_all.columns:
-                countries = data_all["Country of seizure or shipment"].dropna().astype(str)
-                country_pool = sorted(set("; ".join(countries).replace("+", ";").split("; ")))
+                    worksheet.append_row([
+                        datetime.now().isoformat(),
+                        st.session_state.get("user_email", "anonymous"),
+                        species_input or "—",
+                        year_input or "—",
+                        country_input or "—",
+                        reason,
+                        "Pending"
+                    ])
 
-            selected_species = st.multiselect("Species (optional):", species_pool)
-            selected_years = st.multiselect("Years (optional):", year_pool)
-            selected_countries = st.multiselect("Countries (optional):", country_pool)
-            reason = st.text_area("Justify your request:")
-
-            # Aplica filtros condicionalmente
-            filtered = data_all.copy()
-            if selected_species and "N seized specimens" in filtered.columns:
-                pattern = "|".join(selected_species)
-                filtered = filtered[filtered["N seized specimens"].str.contains(pattern, na=False)]
-            if selected_years and "Year" in filtered.columns:
-                filtered = filtered[filtered["Year"].isin(selected_years)]
-            if selected_countries and "Country of seizure or shipment" in filtered.columns:
-                filtered = filtered[filtered["Country of seizure or shipment"].isin(selected_countries)]
-
-            st.markdown(f"**Matching records:** {len(filtered)}")
-
-            if st.button("Submit Data Request"):
-                from datetime import datetime
-                import gspread
-
-                gc = gspread.service_account(filename="service_credentials.json")
-                sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-                worksheet = sh.worksheet("Data Requests")
-
-                worksheet.append_row([
-                    datetime.now().isoformat(),
-                    st.session_state.get("user_email", "anonymous"),
-                    ", ".join(selected_species) if selected_species else "—",
-                    ", ".join([str(y) for y in selected_years]) if selected_years else "—",
-                    ", ".join(selected_countries) if selected_countries else "—",
-                    reason,
-                    "Pending"
-                ])
-
-                st.success("Your request was submitted successfully and is now marked as 'Pending'.")
-
-        except Exception as e:
-            st.error(f"❌ Failed to load data: {e}")
+                    st.success("Your request has been submitted and is now marked as 'Pending'.")
+                except Exception as e:
+                    st.error(f"❌ Failed to submit your request: {e}")
 
 # --- SUGGESTIONS AND COMMENTS (SIDEBAR) ---
 if "show_sidebar_feedback" not in st.session_state:
