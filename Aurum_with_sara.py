@@ -107,103 +107,6 @@ if uploaded_file is None:
     Click **About Aurum** to learn more about each analysis module.
     """)
 
-# --- ALERTAS PÚBLICOS (visível para todos, inclusive sem login) ---
-def display_public_alerts_section(sheet_id):
-    with st.container():
-        st.markdown("## 🌍 Alert Board")
-        st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
-        st.markdown("### Wildlife Trafficking Alerts")
-
-        # Acesso ao Google Sheets
-        scope = ["https://www.googleapis.com/auth/spreadsheets"]
-        credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-        client = gspread.authorize(credentials)
-        sheets = client.open_by_key(sheet_id)
-
-        try:
-            df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
-
-            if df_alerts.empty or "Public" not in df_alerts.columns:
-                st.info("No public alerts available.")
-                return
-
-            df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
-
-            if df_alerts.empty:
-                st.info("No public alerts available.")
-                return
-
-            df_alerts = df_alerts.sort_values("Created At", ascending=False)
-
-            try:
-                df_updates = pd.DataFrame(sheets.worksheet("Alert Updates").get_all_records())
-            except Exception:
-                df_updates = pd.DataFrame()
-
-            alert_cols = st.columns(3)
-            for idx, (_, row) in enumerate(df_alerts.iterrows()):
-                col = alert_cols[idx % 3]
-                with col:
-                    with st.expander(f"**🚨 {row['Title']} ({row['Risk Level']})**", expanded=False):
-                        st.markdown(f"**Description:** {row['Description']}")
-                        st.markdown(f"**Category:** {row['Category']}")
-                        if row.get("Species"):
-                            st.markdown(f"**Species:** {row['Species']}")
-                        if row.get("Country"):
-                            st.markdown(f"**Country:** {row['Country']}")
-
-                        # ✅ Link visível (sem duplicacao)
-                        if row.get("Source Link"):
-                            link = row['Source Link']
-                            st.markdown(
-                                f"🔗 **Source:** <a href='{link}' target='_blank'>{link}</a>",
-                                unsafe_allow_html=True
-                            )
-
-                        # Exibe o nome visível (pode ser Anonymous)
-                        display_name = row.get("Display As", row.get("Created By", "Unknown"))
-                        st.caption(f"Submitted on {row['Created At']} by *{display_name}*")
-
-                        # ✅ Rodapé institucional
-                        st.markdown(
-                            """
-                            <div style='font-size: 12px; color: #666; margin-top: 6px;'>
-                                <em>This alert was published by verified users on <strong>AURUM</strong>, the intelligence system against wildlife trafficking.</em>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-
-                        # 🗑️ Botão de remoção (se for o criador real)
-                        user_email = st.session_state.get("user_email", "").strip().lower()
-                        creator = row.get("Created By", "").strip().lower()
-                        if creator == user_email:
-                            if st.button(f"🗑️ Remove alert from public board", key=f"delete_{row['Alert ID']}"):
-                                try:
-                                    sheet = sheets.worksheet("Alerts")
-                                    cell = sheet.find(str(row["Alert ID"]))
-                                    public_col = df_alerts.columns.get_loc("Public") + 1  # gspread é 1-based
-                                    sheet.update_cell(cell.row, public_col, "FALSE")
-                                    st.success("Alert removed from public board (still stored in the system).")
-                                    st.rerun()
-                                except Exception as e:
-                                    st.error(f"❌ Failed to update visibility: {e}")
-
-                        # Timeline (if any)
-                        if not df_updates.empty and "Alert ID" in df_updates.columns:
-                            updates = df_updates[df_updates["Alert ID"] == row["Alert ID"]].sort_values("Timestamp")
-                            if not updates.empty:
-                                st.markdown("**Update Timeline**")
-                                for _, upd in updates.iterrows():
-                                    st.markdown(f"🕒 **{upd['Timestamp']}** – *{upd['User']}*: {upd['Update Text']}")
-
-        except Exception as e:
-            st.error(f"❌ Failed to load public alerts: {e}")
-
-# Executa antes do login
-if "user" in st.session_state:
-    display_public_alerts_section(SHEET_ID)
-
 # --- Interface em colunas: Alertas (superior) e Casos (inferior) ---
 if "user" in st.session_state:
     
@@ -486,6 +389,103 @@ if "user" in st.session_state:
 
                     except Exception as e:
                         st.error(f"❌ Failed to submit your request: {e}")
+                        
+# --- ALERTAS PÚBLICOS (visível para todos, inclusive sem login) ---
+def display_public_alerts_section(sheet_id):
+    with st.container():
+        st.markdown("## 🌍 Alert Board")
+        st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
+        st.markdown("### Wildlife Trafficking Alerts")
+
+        # Acesso ao Google Sheets
+        scope = ["https://www.googleapis.com/auth/spreadsheets"]
+        credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+        client = gspread.authorize(credentials)
+        sheets = client.open_by_key(sheet_id)
+
+        try:
+            df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
+
+            if df_alerts.empty or "Public" not in df_alerts.columns:
+                st.info("No public alerts available.")
+                return
+
+            df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
+
+            if df_alerts.empty:
+                st.info("No public alerts available.")
+                return
+
+            df_alerts = df_alerts.sort_values("Created At", ascending=False)
+
+            try:
+                df_updates = pd.DataFrame(sheets.worksheet("Alert Updates").get_all_records())
+            except Exception:
+                df_updates = pd.DataFrame()
+
+            alert_cols = st.columns(3)
+            for idx, (_, row) in enumerate(df_alerts.iterrows()):
+                col = alert_cols[idx % 3]
+                with col:
+                    with st.expander(f"**🚨 {row['Title']} ({row['Risk Level']})**", expanded=False):
+                        st.markdown(f"**Description:** {row['Description']}")
+                        st.markdown(f"**Category:** {row['Category']}")
+                        if row.get("Species"):
+                            st.markdown(f"**Species:** {row['Species']}")
+                        if row.get("Country"):
+                            st.markdown(f"**Country:** {row['Country']}")
+
+                        # ✅ Link visível (sem duplicacao)
+                        if row.get("Source Link"):
+                            link = row['Source Link']
+                            st.markdown(
+                                f"🔗 **Source:** <a href='{link}' target='_blank'>{link}</a>",
+                                unsafe_allow_html=True
+                            )
+
+                        # Exibe o nome visível (pode ser Anonymous)
+                        display_name = row.get("Display As", row.get("Created By", "Unknown"))
+                        st.caption(f"Submitted on {row['Created At']} by *{display_name}*")
+
+                        # ✅ Rodapé institucional
+                        st.markdown(
+                            """
+                            <div style='font-size: 12px; color: #666; margin-top: 6px;'>
+                                <em>This alert was published by verified users on <strong>AURUM</strong>, the intelligence system against wildlife trafficking.</em>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                        # 🗑️ Botão de remoção (se for o criador real)
+                        user_email = st.session_state.get("user_email", "").strip().lower()
+                        creator = row.get("Created By", "").strip().lower()
+                        if creator == user_email:
+                            if st.button(f"🗑️ Remove alert from public board", key=f"delete_{row['Alert ID']}"):
+                                try:
+                                    sheet = sheets.worksheet("Alerts")
+                                    cell = sheet.find(str(row["Alert ID"]))
+                                    public_col = df_alerts.columns.get_loc("Public") + 1  # gspread é 1-based
+                                    sheet.update_cell(cell.row, public_col, "FALSE")
+                                    st.success("Alert removed from public board (still stored in the system).")
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"❌ Failed to update visibility: {e}")
+
+                        # Timeline (if any)
+                        if not df_updates.empty and "Alert ID" in df_updates.columns:
+                            updates = df_updates[df_updates["Alert ID"] == row["Alert ID"]].sort_values("Timestamp")
+                            if not updates.empty:
+                                st.markdown("**Update Timeline**")
+                                for _, upd in updates.iterrows():
+                                    st.markdown(f"🕒 **{upd['Timestamp']}** – *{upd['User']}*: {upd['Update Text']}")
+
+        except Exception as e:
+            st.error(f"❌ Failed to load public alerts: {e}")
+
+# Executa antes do login
+if "user" in st.session_state:
+    display_public_alerts_section(SHEET_ID)
 
 # --- DASHBOARD RESUMO INICIAL (sem login, baseado no Google Sheets) ---
 if uploaded_file is None and st.session_state.get("user"):
