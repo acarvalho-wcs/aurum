@@ -1955,35 +1955,44 @@ if "user" in st.session_state:
 
             # --- Data Requests ---
             if "user_email" in st.session_state:
-                st.markdown("## 📄 Data Requests")
+                st.markdown("## Data Requests")
+                st.markdown("Use this form to request access to filtered datasets uploaded to Aurum. You can request based on species, country, and year.")
 
-                st.markdown("Use this form to request access to datasets uploaded to Aurum by other users. All requests will be reviewed by the data owner or platform administrator.")
+                # Valores disponíveis
+                available_species = []
+                if "N seized specimens" in data.columns:
+                    species_matches = data["N seized specimens"].str.extractall(r'\d+\s*([A-Z][a-z]+(?:_[a-z]+)+)')
+                    available_species = sorted(species_matches[0].dropna().unique())
 
-                available_batches = data['Batch'].dropna().unique().tolist() if 'Batch' in data.columns else []
+                available_countries = sorted(data['Country of seizure or shipment'].dropna().unique()) if 'Country of seizure or shipment' in data.columns else []
+                available_years = sorted(data['Year'].dropna().unique()) if 'Year' in data.columns else []
 
-                if not available_batches:
-                    st.info("No datasets available for request at the moment.")
-                else:
-                    requested_batch = st.selectbox("Select the dataset or batch to request access to:", available_batches)
-                    reason = st.text_area("Justify your request:")
+                # Seletor interativo
+                selected_species = st.multiselect("Select species of interest:", available_species)
+                selected_countries = st.multiselect("Select countries of interest:", available_countries)
+                selected_years = st.multiselect("Select years of interest:", available_years)
 
-                    if st.button("Submit Data Request"):
-                        from datetime import datetime
-                        import gspread
+                reason = st.text_area("Justify your request:")
 
-                        gc = gspread.service_account(filename="service_credentials.json")
-                        sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-                        worksheet = sh.worksheet("Data Requests")
+                if st.button("Submit Data Request"):
+                    from datetime import datetime
+                    import gspread
 
-                        worksheet.append_row([
-                            datetime.now().isoformat(),
-                            st.session_state.get("user_email", "anonymous"),
-                            requested_batch,
-                            reason,
-                            "Pending"
-                        ])
+                    gc = gspread.service_account(filename="service_credentials.json")
+                    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
+                    worksheet = sh.worksheet("Data Requests")
 
-                        st.success("Your request was submitted successfully and is now marked as 'Pending'.")
+                    worksheet.append_row([
+                        datetime.now().isoformat(),
+                        st.session_state.get("user_email", "anonymous"),
+                        ", ".join(selected_species),
+                        ", ".join(selected_countries),
+                        ", ".join([str(y) for y in selected_years]),
+                        reason,
+                        "Pending"
+                    ])
+
+                    st.success("Your request has been submitted and is marked as 'Pending'.")
 
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
