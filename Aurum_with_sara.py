@@ -1928,37 +1928,6 @@ if "user" in st.session_state:
             except Exception as e:
                 st.error(f"❌ Error during upload: {e}")
 
-if "user_email" in st.session_state:
-    st.markdown("## 📄 Data Requests")
-
-    st.markdown("Use this form to request access to datasets uploaded to Aurum by other users. All requests will be reviewed by the data owner or platform administrator.")
-
-    available_batches = data['Batch'].dropna().unique().tolist() if 'Batch' in data.columns else []
-
-    if not available_batches:
-        st.info("No datasets available for request at the moment.")
-    else:
-        requested_batch = st.selectbox("Select the dataset or batch to request access to:", available_batches)
-        reason = st.text_area("Justify your request:")
-
-        if st.button("Submit Data Request"):
-            from datetime import datetime
-            import gspread
-
-            gc = gspread.service_account(filename="service_credentials.json")
-            sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-            worksheet = sh.worksheet("Data Requests")
-
-            worksheet.append_row([
-                datetime.now().isoformat(),
-                st.session_state.get("user_email", "anonymous"),
-                requested_batch,
-                reason,
-                "Pending"
-            ])
-
-            st.success("Your request was submitted successfully and is now marked as 'Pending'.")
-
     st.markdown("## My Cases")
     worksheet = get_worksheet()
     try:
@@ -1983,6 +1952,38 @@ if "user_email" in st.session_state:
                     data = data[data["N seized specimens"].str.contains("|".join(selected_species))]
 
             st.dataframe(data)
+
+            # --- Data Requests ---
+            if "user_email" in st.session_state:
+                st.markdown("## 📄 Data Requests")
+
+                st.markdown("Use this form to request access to datasets uploaded to Aurum by other users. All requests will be reviewed by the data owner or platform administrator.")
+
+                available_batches = data['Batch'].dropna().unique().tolist() if 'Batch' in data.columns else []
+
+                if not available_batches:
+                    st.info("No datasets available for request at the moment.")
+                else:
+                    requested_batch = st.selectbox("Select the dataset or batch to request access to:", available_batches)
+                    reason = st.text_area("Justify your request:")
+
+                    if st.button("Submit Data Request"):
+                        from datetime import datetime
+                        import gspread
+
+                        gc = gspread.service_account(filename="service_credentials.json")
+                        sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
+                        worksheet = sh.worksheet("Data Requests")
+
+                        worksheet.append_row([
+                            datetime.now().isoformat(),
+                            st.session_state.get("user_email", "anonymous"),
+                            requested_batch,
+                            reason,
+                            "Pending"
+                        ])
+
+                        st.success("Your request was submitted successfully and is now marked as 'Pending'.")
 
     except Exception as e:
         st.error(f"❌ Failed to load data: {e}")
