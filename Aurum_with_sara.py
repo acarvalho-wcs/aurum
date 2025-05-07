@@ -1146,10 +1146,6 @@ if uploaded_file is not None:
                         from folium.plugins import HeatMap
                         import os
                         import tempfile
-                        import matplotlib.pyplot as plt
-                        from sklearn.neighbors import KernelDensity
-                        from shapely.geometry import Polygon
-                        import zipfile
 
                         st.markdown("### Analysis Settings")
                         col1, col2 = st.columns(2)
@@ -1176,7 +1172,7 @@ if uploaded_file is not None:
                             with col2:
                                 if temporal_mode == "Year Range":
                                     selected_years = st.slider(
-                                        "",
+                                        "",  # ocultar label para visual compacto
                                         min_value=min_year,
                                         max_value=max_year,
                                         value=(min_year, max_year),
@@ -1189,13 +1185,14 @@ if uploaded_file is not None:
                                 elif temporal_mode == "Single Year":
                                     unique_years = sorted(df_geo['Year'].dropna().unique().tolist())
                                     selected_year = st.select_slider(
-                                        "",
+                                        "", 
                                         options=unique_years,
                                         value=max_year,
                                         label_visibility="collapsed"
                                     )
                                     df_geo = df_geo[df_geo['Year'] == selected_year]
                                     st.markdown(f"📆 Year: **{selected_year}**")
+
 
                         # Mapa Interativo
                         gdf = gpd.GeoDataFrame(
@@ -1213,6 +1210,7 @@ if uploaded_file is not None:
                         m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
                         HeatMap(data=gdf_wgs[['Latitude', 'Longitude']].values, radius=radius_val).add_to(m)
 
+                        # Legenda avançada com gradiente contínuo
                         legend_html = '''
                             <div style="
                                 position: fixed;
@@ -1254,56 +1252,6 @@ if uploaded_file is not None:
                             mime="text/html"
                         )
 
-                        # Exportar shapefile com zonas de densidade KDE (completo)
-                        gdf_proj = gdf.to_crs(epsg=3857)
-                        coords = np.vstack([gdf_proj.geometry.x, gdf_proj.geometry.y]).T
-                        kde = KernelDensity(bandwidth=radius_val * 100, kernel='gaussian')
-                        kde.fit(coords)
-
-                        xmin, ymin, xmax, ymax = gdf_proj.total_bounds
-                        xx, yy = np.mgrid[xmin:xmax:500j, ymin:ymax:500j]
-                        grid_coords = np.vstack([xx.ravel(), yy.ravel()]).T
-                        zz = np.exp(kde.score_samples(grid_coords)).reshape(xx.shape)
-
-                        fig, ax = plt.subplots()
-                        levels = 10
-                        contour = ax.contourf(xx, yy, zz, levels=levels)
-                        plt.close(fig)
-
-                        polygons = []
-                        values = []
-                        for i, segs in enumerate(contour.allsegs):
-                            for seg in segs:
-                                poly = Polygon(seg)
-                                if poly.is_valid:
-                                    polygons.append(poly)
-                                    values.append(i)
-
-                        if polygons:
-                            kde_gdf = gpd.GeoDataFrame({'level': values, 'geometry': polygons}, crs="EPSG:3857")
-                            shp_dir = os.path.join(tempfile.gettempdir(), "aurum_kde_export")
-                            os.makedirs(shp_dir, exist_ok=True)
-
-                            shp_path = os.path.join(shp_dir, "aurum_kde_polygons.shp")
-                            kde_gdf.to_file(shp_path)
-
-                            zip_path = os.path.join(tempfile.gettempdir(), "aurum_kde_polygons.zip")
-                            with zipfile.ZipFile(zip_path, 'w') as zipf:
-                                for ext in ['.shp', '.shx', '.dbf', '.prj']:
-                                    part = shp_path.replace('.shp', ext)
-                                    if os.path.exists(part):
-                                        zipf.write(part, arcname=os.path.basename(part))
-
-                            with open(zip_path, "rb") as f:
-                                st.download_button(
-                                    label="📦 Download KDE polygons (.zip)",
-                                    data=f.read(),
-                                    file_name="aurum_kde_polygons.zip",
-                                    mime="application/zip"
-                                )
-                        else:
-                            st.warning("No valid KDE contour polygons were generated.")
-
                         with st.expander("ℹ️ Learn more about this analysis"):
                             st.markdown("""
                                 ### About Geospatial Analysis
@@ -1320,9 +1268,9 @@ if uploaded_file is not None:
                                 - Compare species-specific patterns geographically.
                                 - Support decision-making for targeted enforcement or prevention.
 
-                                **Note:** This map uses geographic coordinates (EPSG:4326) and is rendered using `folium`. KDE zones are also available in vector format (.shp).
+                                **Note:** This map uses geographic coordinates (EPSG:4326) and is rendered using `folium`.
                             """)
-                               
+                                
         else:
             st.warning("⚠️ Please select at least one species to explore the data.")
 
