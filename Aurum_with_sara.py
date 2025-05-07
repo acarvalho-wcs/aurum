@@ -1130,99 +1130,87 @@ if uploaded_file is not None:
             show_multi = st.sidebar.checkbox("Multivariate Analyses", value=False)
             if show_multi:
                 st.markdown("## Multivariate Analyses")
-                st.markdown("This section explores relationships between variables using dimensionality reduction, clustering, and predictive modeling techniques.")
 
-                import pandas as pd
-                import numpy as np
-                import matplotlib.pyplot as plt
-                import seaborn as sns
-                from sklearn.preprocessing import StandardScaler, OneHotEncoder
-                from sklearn.decomposition import PCA
-                from sklearn.cluster import KMeans
-                from sklearn.linear_model import LogisticRegression, PoissonRegressor
-                from sklearn.compose import ColumnTransformer
-                from sklearn.pipeline import Pipeline
-                from sklearn.model_selection import train_test_split
+                if df_selected.empty:
+                    st.warning("No data available for analysis.")
+                else:
+                    import pandas as pd
+                    import numpy as np
+                    from sklearn.decomposition import PCA
+                    from sklearn.cluster import KMeans
+                    from sklearn.preprocessing import StandardScaler
+                    import matplotlib.pyplot as plt
+                    import seaborn as sns
+                    import streamlit as st
+                    import plotly.express as px
+                    import plotly.graph_objects as go
 
-                # Preprocess
-                df_clean = df_selected.copy()
-                df_clean = df_clean.dropna(subset=['Species'])
+                    df_multi = df_selected.select_dtypes(include=[np.number]).dropna().copy()
 
-                # Define features
-                numeric_cols = df_clean.select_dtypes(include=['float64', 'int64']).columns.tolist()
-                categorical_cols = df_clean.select_dtypes(include=['object', 'category']).columns.tolist()
-                
-                # Remove target and identifiers from features
-                for col in ['Case #', 'Year', 'Interdiction']:
-                    if col in numeric_cols:
-                        numeric_cols.remove(col)
-                    if col in categorical_cols:
-                        categorical_cols.remove(col)
-
-                preprocessor = ColumnTransformer(
-                    transformers=[
-                        ('num', StandardScaler(), numeric_cols),
-                        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
-                    ]
-                )
-
-                X = preprocessor.fit_transform(df_clean)
-
-                st.markdown("### Principal Component Analysis (PCA)")
-                pca = PCA(n_components=2)
-                components = pca.fit_transform(X.toarray() if hasattr(X, 'toarray') else X)
-
-                fig, ax = plt.subplots()
-                ax.scatter(components[:, 0], components[:, 1], alpha=0.6)
-                ax.set_xlabel("PC1")
-                ax.set_ylabel("PC2")
-                ax.set_title("PCA Projection")
-                st.pyplot(fig)
-
-                st.markdown("### K-Means Clustering")
-                n_clusters = st.slider("Select number of clusters:", 2, 10, 3)
-                kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(X)
-                labels = kmeans.labels_
-
-                fig, ax = plt.subplots()
-                scatter = ax.scatter(components[:, 0], components[:, 1], c=labels, cmap='viridis', alpha=0.6)
-                ax.set_title("K-Means Clusters (PCA space)")
-                st.pyplot(fig)
-
-                st.markdown("### Predictive Modeling")
-                model_type = st.radio("Select model:", ["Poisson Regression (count)", "Logistic Regression (binary)"])
-
-                if model_type == "Poisson Regression (count)":
-                    if 'Quantity' in df_clean.columns:
-                        y = df_clean['Quantity']
-                        model = Pipeline(steps=[
-                            ('pre', preprocessor),
-                            ('reg', PoissonRegressor(max_iter=300))
-                        ])
-                        model.fit(df_clean, y)
-                        st.success("Poisson regression trained. Coefficients available in code if needed.")
+                    if df_multi.shape[1] < 2:
+                        st.warning("Not enough numeric data for multivariate analysis.")
                     else:
-                        st.warning("Column 'Quantity' not found for Poisson regression.")
+                        st.markdown("### Feature Selection")
+                        feature_options = df_multi.columns.tolist()
+                        selected_features = st.multiselect("Select features to include in the analysis:", feature_options, default=feature_options)
 
-                if model_type == "Logistic Regression (binary)":
-                    if 'Interdiction' in df_clean.columns:
-                        y = df_clean['Interdiction'].astype(int)
-                        model = Pipeline(steps=[
-                            ('pre', preprocessor),
-                            ('clf', LogisticRegression(max_iter=300))
-                        ])
-                        model.fit(df_clean, y)
-                        st.success("Logistic regression trained. Coefficients available in code if needed.")
-                    else:
-                        st.warning("Column 'Interdiction' not found for logistic regression.")
+                        if len(selected_features) < 2:
+                            st.warning("Select at least two features.")
+                        else:
+                            X = df_multi[selected_features]
+                            scaler = StandardScaler()
+                            X_scaled = scaler.fit_transform(X)
 
-                with st.expander("ℹ️ Learn more about these analyses"):
-                    st.markdown("""
-                        - **PCA** reduces the dimensionality of the dataset to visualize patterns.
-                        - **K-Means** automatically assigns cases to groups based on similar attributes.
-                        - **Poisson regression** is suitable for predicting counts (e.g., number of animals).
-                        - **Logistic regression** is used to estimate binary outcomes (e.g., whether a case was interdicted).
-                    """)
+                            # PCA
+                            pca = PCA(n_components=2)
+                            X_pca = pca.fit_transform(X_scaled)
+                            explained_var = pca.explained_variance_ratio_
+
+                            st.markdown("### PCA - Principal Component Analysis")
+                            fig_pca = px.scatter(
+                                x=X_pca[:, 0], y=X_pca[:, 1],
+                                labels={'x': 'PC1', 'y': 'PC2'},
+                                title=f"PCA: {explained_var[0]:.1%} variance (PC1), {explained_var[1]:.1%} (PC2)"
+                            )
+                            st.plotly_chart(fig_pca, use_container_width=True)
+
+                            # K-Means - Number of clusters
+                            st.markdown("### K-Means Clustering")
+                            inertia = []
+                            K_range = range(1, 10)
+                            for k in K_range:
+                                kmeans = KMeans(n_clusters=k, random_state=0, n_init='auto').fit(X_scaled)
+                                inertia.append(kmeans.inertia_)
+
+                            fig_elbow = go.Figure()
+                            fig_elbow.add_trace(go.Scatter(x=list(K_range), y=inertia, mode='lines+markers'))
+                            fig_elbow.update_layout(title="Elbow Method for Optimal k", xaxis_title="Number of clusters", yaxis_title="Inertia")
+                            st.plotly_chart(fig_elbow, use_container_width=True)
+
+                            optimal_k = st.slider("Select number of clusters (k):", min_value=2, max_value=9, value=3)
+                            kmeans = KMeans(n_clusters=optimal_k, random_state=0, n_init='auto').fit(X_scaled)
+                            labels = kmeans.labels_
+
+                            fig_kmeans = px.scatter(
+                                x=X_pca[:, 0], y=X_pca[:, 1], color=labels.astype(str),
+                                labels={'x': 'PC1', 'y': 'PC2'},
+                                title="K-Means Clustering on PCA components",
+                                color_discrete_sequence=px.colors.qualitative.Set1
+                            )
+                            st.plotly_chart(fig_kmeans, use_container_width=True)
+
+                            with st.expander("ℹ️ Learn more about multivariate analyses"):
+                                st.markdown("""
+                                    ### About Multivariate Analyses
+
+                                    This module supports exploratory dimensionality reduction and unsupervised learning:
+
+                                    - **PCA** (Principal Component Analysis) simplifies complex datasets while retaining variation.
+                                    - **K-Means** clustering groups similar cases into clusters based on numeric features.
+                                    - You can select the features used in the analysis and define the number of clusters interactively.
+
+                                    These tools help reveal underlying patterns, behavioral profiles, or case typologies in wildlife trafficking data.
+                                """)
 
             show_geo = st.sidebar.checkbox("Geospatial Analysis", value=False)
             if show_geo:
