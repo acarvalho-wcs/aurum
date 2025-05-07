@@ -1231,8 +1231,8 @@ if uploaded_file is not None:
                                     <span>Low</span>
                                     <span>Medium</span>
                                     <span>High</span>
-                                <div style="margin-top:6px; font-size:12px; color:gray;">Generated with Aurum</div>
                                 </div>
+                                <div style="margin-top:6px; font-size:12px; color:gray;">Generated with Aurum</div>
                             </div>
                         '''
                         m.get_root().html.add_child(folium.Element(legend_html))
