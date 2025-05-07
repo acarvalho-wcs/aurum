@@ -1782,7 +1782,6 @@ if "user" in st.session_state:
                     except Exception as e:
                         st.error(f"❌ Failed to submit your request: {e}")
 
-# --- DASHBOARD RESUMO INICIAL (sem login, baseado no Google Sheets) ---
 if uploaded_file is None and st.session_state.get("user"):
     try:
         worksheet = get_worksheet()
@@ -1808,50 +1807,100 @@ if uploaded_file is None and st.session_state.get("user"):
             df_dashboard = df_dashboard[df_dashboard["Species"].notna()]
             df_dashboard["N_seized"] = pd.to_numeric(df_dashboard["N_seized"], errors="coerce").fillna(0)
 
-            st.markdown("## Summary Dashboard")
+            dashboard_tab = tabs(
+                options=["Summary Dashboard", "Distribution of Seizures"],
+                default_value="Summary Dashboard",
+                key="dashboard_tabs"
+            )
 
             available_species = sorted(df_dashboard["Species"].unique())
             selected_species_dash = st.selectbox("Select a species to view:", ["All species"] + available_species)
 
-            filtered_df = df_dashboard.copy()
-            
-            # Extended metrics in two rows: 3 columns per row (only for All species)
-            if selected_species_dash == "All species":
-                total_species = df_dashboard["Species"].nunique()
-                total_cases_all = df_dashboard["Case #"].nunique()
-                total_individuals_all = int(df_dashboard["N_seized"].sum())
-                total_countries_all = df_dashboard["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in df_dashboard.columns else 0
+            if dashboard_tab == "Summary Dashboard":
+                st.markdown("## Summary Dashboard")
 
-                # Extract estimated weight in kg
-                df_dashboard["kg_seized"] = df_dashboard["N seized specimens"].str.extract(r'(\d+(?:\.\d+)?)\s*kg', expand=False)[0]
-                total_kg = pd.to_numeric(df_dashboard["kg_seized"], errors="coerce").fillna(0).sum()
+                if selected_species_dash == "All species":
+                    total_species = df_dashboard["Species"].nunique()
+                    total_cases_all = df_dashboard["Case #"].nunique()
+                    total_individuals_all = int(df_dashboard["N_seized"].sum())
+                    total_countries_all = df_dashboard["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in df_dashboard.columns else 0
 
-                # Extract number of parts
-                df_dashboard["parts_seized"] = df_dashboard["N seized specimens"].str.extract(r'(\d+(?:\.\d+)?)\s*(part|parts)', expand=False)[0]
-                total_parts = pd.to_numeric(df_dashboard["parts_seized"], errors="coerce").fillna(0).sum()
+                    df_dashboard["kg_seized"] = df_dashboard["N seized specimens"].str.extract(r'(\d+(?:\.\d+)?)\s*kg', expand=False)[0]
+                    total_kg = pd.to_numeric(df_dashboard["kg_seized"], errors="coerce").fillna(0).sum()
 
-                st.markdown("### Global Summary")
-                col1, col2, col3 = st.columns(3)
-                col1.metric("Species seized", total_species)
-                col2.metric("Total cases", total_cases_all)
-                col3.metric("Countries involved", total_countries_all)
+                    df_dashboard["parts_seized"] = df_dashboard["N seized specimens"].str.extract(r'(\d+(?:\.\d+)?)\s*(part|parts)', expand=False)[0]
+                    total_parts = pd.to_numeric(df_dashboard["parts_seized"], errors="coerce").fillna(0).sum()
 
-                col4, col5, col6 = st.columns(3)
-                col4.metric("Individuals seized", total_individuals_all)
-                col5.metric("Estimated weight (kg)", f"{total_kg:.1f}")
-                col6.metric("Animal parts seized", int(total_parts))
-                
-            if selected_species_dash == "All species":
-                # --- DISTRIBUIÇÃO TEMPORAL E GEOGRÁFICA ---
+                    st.markdown("### Global Summary")
+                    col1, col2, col3 = st.columns(3)
+                    col1.metric("Species seized", total_species)
+                    col2.metric("Total cases", total_cases_all)
+                    col3.metric("Countries involved", total_countries_all)
+
+                    col4, col5, col6 = st.columns(3)
+                    col4.metric("Individuals seized", total_individuals_all)
+                    col5.metric("Estimated weight (kg)", f"{total_kg:.1f}")
+                    col6.metric("Animal parts seized", int(total_parts))
+
+                elif selected_species_dash != "All species":
+                    df_species = df_dashboard[df_dashboard["Species"] == selected_species_dash]
+                    if "Year" in df_species.columns and not df_species.empty:
+                        try:
+                            df_species["Year"] = pd.to_numeric(df_species["Year"], errors="coerce")
+                            n_cases = df_species["Case #"].nunique()
+                            n_countries = df_species["Country of seizure or shipment"].nunique()
+                            if df_species["N_seized"].max() > 0:
+                                idx_max = df_species["N_seized"].idxmax()
+                                max_row = df_species.loc[idx_max]
+                                max_apreensao = f"{max_row['Country of seizure or shipment']} in {int(max_row['Year'])}"
+                            else:
+                                max_apreensao = "No data"
+
+                            st.markdown("### Key Indicators for Selected Species")
+                            col_a, col_b, col_c = st.columns(3)
+                            col_a.metric("Cases recorded", n_cases)
+                            col_b.metric("Countries with seizures", n_countries)
+                            col_c.metric("Largest seizure", max_apreensao)
+
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                fig_scatter = px.scatter(
+                                    df_species,
+                                    x="Year",
+                                    y="N_seized",
+                                    title="Individuals Seized per Case",
+                                    labels={"N_seized": "Individuals", "Year": "Year"}
+                                )
+                                st.plotly_chart(fig_scatter, use_container_width=True)
+
+                            with col2:
+                                df_bar = df_species.groupby("Year", as_index=False)["N_seized"].sum()
+                                fig_bar = px.bar(
+                                    df_bar,
+                                    x="Year",
+                                    y="N_seized",
+                                    title="Total Individuals per Year",
+                                    labels={"N_seized": "Total Individuals", "Year": "Year"}
+                                )
+                                st.plotly_chart(fig_bar, use_container_width=True)
+
+                        except Exception as e:
+                            st.warning(f"Could not render plots: {e}")
+
+                    st.markdown("### Species co-occurring in same cases")
+                    cases_with_selected = df_dashboard[df_dashboard["Species"] == selected_species_dash]["Case #"].unique()
+                    coocurrence_df = df_dashboard[df_dashboard["Case #"].isin(cases_with_selected)]
+                    co_species = coocurrence_df[coocurrence_df["Species"] != selected_species_dash]["Species"].unique()
+
+                    if len(co_species) > 0:
+                        st.write(", ".join(sorted(co_species)))
+                    else:
+                        st.info("No other species recorded with the selected species.")
+
+            elif dashboard_tab == "Distribution of Seizures":
                 st.markdown("## Temporal and Geographic Distribution of Recorded Seizures")
 
-                import plotly.express as px
-                import pycountry
-                from collections import Counter
-
-                # Layout lado a lado
                 col1, col2 = st.columns([1, 1.4])
-
                 with col1:
                     st.markdown("#### Cases per Year")
                     if "Year" in df_dashboard.columns:
@@ -1871,10 +1920,11 @@ if uploaded_file is None and st.session_state.get("user"):
 
                 with col2:
                     st.markdown("#### Countries with Recorded Seizures")
+                    import pycountry
+                    from collections import Counter
 
                     country_lookup = {country.name: country.alpha_3 for country in pycountry.countries}
                     iso_to_name = {country.alpha_3: country.name for country in pycountry.countries}
-
                     custom_iso = {
                         "French Guiana": "GUF", "Hong Kong": "HKG", "Macau": "MAC", "Puerto Rico": "PRI",
                         "Palestine": "PSE", "Kosovo": "XKX", "Taiwan": "TWN", "Réunion": "REU",
@@ -1885,7 +1935,6 @@ if uploaded_file is None and st.session_state.get("user"):
 
                     if "Country of seizure or shipment" in df_dashboard.columns:
                         countries_raw = df_dashboard["Country of seizure or shipment"].dropna()
-
                         iso_codes = []
                         for name in countries_raw:
                             name_clean = name.strip()
@@ -1897,7 +1946,6 @@ if uploaded_file is None and st.session_state.get("user"):
                                     iso_codes.append(custom_iso[name_clean])
 
                         country_counts = Counter(iso_codes)
-
                         df_map = pd.DataFrame({"ISO": all_iso_codes})
                         df_map["Cases"] = df_map["ISO"].apply(lambda x: country_counts.get(x, 0))
                         df_map["Country"] = df_map["ISO"].apply(lambda x: iso_to_name.get(x, custom_name.get(x, "Unknown")))
@@ -1929,75 +1977,6 @@ if uploaded_file is None and st.session_state.get("user"):
                         st.plotly_chart(fig_map, use_container_width=True)
                     else:
                         st.info("No country information available to display the map.")
-            
-            # Gráficos lado a lado: scatter + barras (somente para uma espécie selecionada)
-            if selected_species_dash != "All species":
-                df_species = df_dashboard[df_dashboard["Species"] == selected_species_dash]
-
-                if "Year" in df_species.columns and not df_species.empty:
-                    try:
-                        df_species["Year"] = pd.to_numeric(df_species["Year"], errors="coerce")
-
-                        n_cases = df_species["Case #"].nunique()
-                        n_countries = df_species["Country of seizure or shipment"].nunique()
-                        if not df_species.empty and df_species["N_seized"].max() > 0:
-                            idx_max = df_species["N_seized"].idxmax()
-                            max_row = df_species.loc[idx_max]
-                            max_apreensao = f"{max_row['Country of seizure or shipment']} in {int(max_row['Year'])}"
-                        else:
-                            max_apreensao = "No data"
-
-                        st.markdown("### Key Indicators for Selected Species")
-                        col_a, col_b, col_c = st.columns(3)
-                        col_a.metric("Cases recorded", n_cases)
-                        col_b.metric("Countries with seizures", n_countries)
-                        col_c.metric("Largest seizure", max_apreensao)
-
-                        # Gráficos
-                        col1, col2 = st.columns(2)
-
-                        with col1:
-                            import plotly.express as px
-                            fig_scatter = px.scatter(
-                                df_species,
-                                x="Year",
-                                y="N_seized",
-                                title="Individuals Seized per Case",
-                                labels={"N_seized": "Individuals", "Year": "Year"}
-                            )
-                            st.plotly_chart(fig_scatter, use_container_width=True)
-
-                        with col2:
-                            df_bar = df_species.groupby("Year", as_index=False)["N_seized"].sum()
-                            fig_bar = px.bar(
-                                df_bar,
-                                x="Year",
-                                y="N_seized",
-                                title="Total Individuals per Year",
-                                labels={"N_seized": "Total Individuals", "Year": "Year"}
-                            )
-                            st.plotly_chart(fig_bar, use_container_width=True)
-
-                    except Exception as e:
-                        st.warning(f"Could not render plots: {e}")
-                        
-            # Co-occurrence with other species in the same cases
-            if selected_species_dash != "All species":
-                st.markdown("### Species co-occurring in same cases")
-
-                # Encontra casos que contêm a espécie selecionada
-                cases_with_selected = df_dashboard[df_dashboard["Species"] == selected_species_dash]["Case #"].unique()
-
-                # Filtra o dataframe apenas para esses casos
-                coocurrence_df = df_dashboard[df_dashboard["Case #"].isin(cases_with_selected)]
-
-                # Remove a espécie selecionada
-                co_species = coocurrence_df[coocurrence_df["Species"] != selected_species_dash]["Species"].unique()
-
-                if len(co_species) > 0:
-                    st.write(", ".join(sorted(co_species)))
-                else:
-                    st.info("No other species recorded with the selected species.")
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
