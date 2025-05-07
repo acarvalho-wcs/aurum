@@ -1985,7 +1985,7 @@ if "user" in st.session_state:
                         import gspread
                         from google.oauth2.service_account import Credentials
 
-                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S (BRT)")
 
                         scope = ["https://www.googleapis.com/auth/spreadsheets"]
                         credentials = Credentials.from_service_account_info(
@@ -2016,6 +2016,8 @@ if "user" in st.session_state:
                         st.session_state[years_key] = ""
                         st.session_state[country_key] = ""
                         st.session_state[reason_key] = ""
+
+                        st.rerun()
 
                     except Exception as e:
                         st.error(f"❌ Failed to submit your request: {e}")
