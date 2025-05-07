@@ -1953,54 +1953,54 @@ if "user" in st.session_state:
 
             st.dataframe(data)
 
-# --- Data Requests ---
-if "user_email" in st.session_state:
-            st.markdown("## Data Requests")
-            st.markdown("Use this form to request access to filtered datasets uploaded to Aurum. You can request based on species, country, and year.")
+            # --- Data Requests ---
+            if "user_email" in st.session_state:
+                st.markdown("## Data Requests")
+                st.markdown("Use this form to request access to filtered datasets uploaded to Aurum. You can request based on species, country, and year.")
 
-            try:
-                species_pool = []
-                year_pool = []
-                country_pool = []
+                try:
+                    species_pool = []
+                    year_pool = []
+                    country_pool = []
 
-                if "N seized specimens" in data_all.columns:
-                    species_matches_all = data_all["N seized specimens"].str.extractall(r'\d+\s*([A-Z][a-z]+(?:_[a-z]+)+)')
-                    species_pool = sorted(species_matches_all[0].dropna().unique())
+                    if "N seized specimens" in data_all.columns:
+                        species_matches_all = data_all["N seized specimens"].str.extractall(r'\d+\s*([A-Z][a-z]+(?:_[a-z]+)+)')
+                        species_pool = sorted(species_matches_all[0].dropna().unique())
 
-                if "Year" in data_all.columns:
-                    year_pool = sorted(data_all["Year"].dropna().unique())
+                    if "Year" in data_all.columns:
+                        year_pool = sorted(data_all["Year"].dropna().unique())
 
-                if "Country of seizure or shipment" in data_all.columns:
-                    countries = data_all["Country of seizure or shipment"].dropna().astype(str)
-                    country_pool = sorted(set("; ".join(countries).replace("+", ";").split("; ")))
+                    if "Country of seizure or shipment" in data_all.columns:
+                        countries = data_all["Country of seizure or shipment"].dropna().astype(str)
+                        country_pool = sorted(set("; ".join(countries).replace("+", ";").split("; ")))
 
-                selected_species = st.selectbox("Select species of interest:", species_pool) if species_pool else None
-                selected_year = st.selectbox("Select year of interest:", year_pool) if year_pool else None
-                selected_country = st.selectbox("Select country of interest:", country_pool) if country_pool else None
-                reason = st.text_area("Justify your request:")
+                    selected_species = st.selectbox("Select species of interest:", species_pool) if species_pool else None
+                    selected_year = st.selectbox("Select year of interest:", year_pool) if year_pool else None
+                    selected_country = st.selectbox("Select country of interest:", country_pool) if country_pool else None
+                    reason = st.text_area("Justify your request:")
 
-                if st.button("Submit Data Request"):
-                    from datetime import datetime
-                    import gspread
+                    if st.button("Submit Data Request"):
+                        from datetime import datetime
+                        import gspread
 
-                    gc = gspread.service_account(filename="service_credentials.json")
-                    sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
-                    worksheet = sh.worksheet("Data Requests")
+                        gc = gspread.service_account(filename="service_credentials.json")
+                        sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
+                        worksheet = sh.worksheet("Data Requests")
 
-                    worksheet.append_row([
-                        datetime.now().isoformat(),
-                        st.session_state.get("user_email", "anonymous"),
-                        selected_species or "—",
-                        selected_year or "—",
-                        selected_country or "—",
-                        reason,
-                        "Pending"
-                    ])
+                        worksheet.append_row([
+                            datetime.now().isoformat(),
+                            st.session_state.get("user_email", "anonymous"),
+                            selected_species or "—",
+                            selected_year or "—",
+                            selected_country or "—",
+                            reason,
+                            "Pending"
+                        ])
 
-                    st.success("Your request was submitted successfully and is now marked as 'Pending'.")
+                        st.success("Your request was submitted successfully and is now marked as 'Pending'.")
 
-            except Exception as e:
-                st.error(f"❌ Failed to load data: {e}")
+                except Exception as e:
+                    st.error(f"❌ Failed to load data: {e}")
 
 # --- SUGGESTIONS AND COMMENTS (SIDEBAR) ---
 if "show_sidebar_feedback" not in st.session_state:
