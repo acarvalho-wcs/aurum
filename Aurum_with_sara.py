@@ -117,6 +117,10 @@ def display_public_alerts_section(sheet_id):
     from folium.plugins import MarkerCluster
     import geopandas as gpd
     from streamlit.components.v1 import html
+    import re
+
+    def parse_italics(text):
+        return re.sub(r'_([^_]+)_', r'<em>\1</em>', str(text))
 
     st.markdown("## 🌍 Alert Board")
     st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
@@ -150,25 +154,26 @@ def display_public_alerts_section(sheet_id):
             st.info("No georeferenced alerts to display on the map.")
             return
 
-        # Cria GeoDataFrame e centraliza o mapa
+        # Cria GeoDataFrame
         gdf = gpd.GeoDataFrame(df_alerts, geometry=gpd.points_from_xy(df_alerts["Longitude"], df_alerts["Latitude"]), crs="EPSG:4326")
-        bounds = gdf.total_bounds
-        center_lat = (bounds[1] + bounds[3]) / 2
-        center_lon = (bounds[0] + bounds[2]) / 2
 
         m = folium.Map(location=[0, 0], zoom_start=2)
         marker_cluster = MarkerCluster().add_to(m)
 
         for _, row in df_alerts.iterrows():
+            title = parse_italics(row["Title"])
+            description = parse_italics(row["Description"])
+            species = parse_italics(row.get("Species", "—"))
+
             popup_html = f"""
-                <b>{row['Title']}</b><br>
+                <b>{title}</b><br>
                 <b>Risk:</b> {row['Risk Level']}<br>
                 <b>Category:</b> {row['Category']}<br>
-                <b>Species:</b> {row.get('Species', '—')}<br>
+                <b>Species:</b> {species}<br>
                 <b>Country:</b> {row.get('Country', '—')}<br>
                 <b>Submitted by:</b> {row.get('Display As', 'Anonymous')}<br>
                 <b>Date:</b> {row['Created At']}<br>
-                <p style='margin-top:5px'><b>Description:</b><br>{row['Description']}</p>
+                <p style='margin-top:5px'><b>Description:</b><br>{description}</p>
             """
             if row.get("Source Link"):
                 popup_html += f"<p><a href='{row['Source Link']}' target='_blank'>🔗 Source Link</a></p>"
