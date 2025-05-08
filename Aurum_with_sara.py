@@ -2106,41 +2106,36 @@ if uploaded_file is None and st.session_state.get("user"):
                             # Gera HTML do mapa
                             map_html = m.get_root().render()
 
-                            # Define nome do arquivo com base na espécie selecionada
+                            # Nome do arquivo baseado na espécie
                             safe_species = selected_species_dash.replace(" ", "_").replace("/", "_")
                             filename = f"aurum_heatmap_{safe_species}.html"
                             map_bytes = BytesIO(map_html.encode("utf-8"))
 
-                            # 🔘 Botão visual usando shadcn_ui
+                            # Botão visual (shadcn_ui)
                             button("Download heatmap as HTML", variant="outline", id="custom-download")
 
-                            # 🔽 Componente invisível de download real
-                            import streamlit.components.v1 as components
-                            components.html(f"""
-                                <html>
-                                    <body>
-                                        <form method="post">
-                                            <button id="fake-download-trigger" style="display:none;"></button>
-                                        </form>
-                                        <script>
-                                            const trigger = window.parent.document.querySelector('button[id="custom-download"]');
-                                            const realDownload = window.parent.document.querySelector('button[title="{filename}"]');
-                                            if (trigger && realDownload) {{
-                                                trigger.addEventListener('click', () => realDownload.click());
-                                            }}
-                                        </script>
-                                    </body>
-                                </html>
-                            """, height=0)
-
-                            # 🔽 Botão real oculto
-                            st.download_button(
-                                label="⚪",  # rótulo irrelevante pois será clicado via JS
+                            # Botão real invisível que será clicado via JavaScript
+                            download_button = st.download_button(
+                                label="⬇",  # ícone neutro, será escondido
                                 data=map_bytes,
                                 file_name=filename,
                                 mime="text/html",
-                                key=f"hidden-download-{safe_species}"
+                                key=f"real-download-{safe_species}"
                             )
+
+                            # Script que simula o clique do botão real ao pressionar o botão visual
+                            import streamlit.components.v1 as components
+                            components.html(f"""
+                                <script>
+                                    const visualButton = window.parent.document.querySelector('button[id="custom-download"]');
+                                    const realButton = window.parent.document.querySelector('button[title="{filename}"]');
+                                    if (visualButton && realButton) {{
+                                        visualButton.addEventListener('click', () => {{
+                                            realButton.click();
+                                        }});
+                                    }}
+                                </script>
+                            """, height=0)
                             
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
