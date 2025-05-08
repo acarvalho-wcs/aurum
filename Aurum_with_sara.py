@@ -23,7 +23,8 @@ import os
 from uuid import uuid4
 from datetime import datetime
 import pytz
-from streamlit_shadcn_ui import tabs
+from streamlit_shadcn_ui import tabs, button
+import streamlit.components.v1 as components
 brt = pytz.timezone("America/Sao_Paulo")
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
@@ -2026,7 +2027,6 @@ if uploaded_file is None and st.session_state.get("user"):
                     else:
                         df_geo = df_dashboard.dropna(subset=["Latitude", "Longitude"]).copy()
 
-                        # --- Corrigir separadores e converter para float com 3 casas decimais ---
                         df_geo["Latitude"] = (
                             df_geo["Latitude"]
                             .astype(str)
@@ -2099,14 +2099,27 @@ if uploaded_file is None and st.session_state.get("user"):
                             html_str = m.get_root().render()
                             st.components.v1.html(html_str, height=300)
 
-                            map_html = m.get_root().render()
-                            map_bytes = BytesIO(map_html.encode("utf-8"))
-                            st.download_button(
-                                label="Download heatmap as HTML",
-                                data=map_bytes,
-                                file_name="aurum_heatmap.html",
-                                mime="text/html"
-                           )    
+                            # 🔘 Botão visual com shadcn_ui
+                            from shadcn_ui import button
+                            button("📥 Download heatmap as HTML", variant="outline", id="custom-download")
+
+                            # 🔽 Link oculto de download com clique programado
+                            import streamlit.components.v1 as components
+                            components.html(f"""
+                                <html>
+                                    <body>
+                                        <a id="hidden-download" href="data:text/html;charset=utf-8,{html_str}" 
+                                           download="aurum_heatmap.html" 
+                                           style="display:none;">Download</a>
+                                        <script>
+                                            const trigger = window.parent.document.querySelector('button[id="custom-download"]');
+                                            trigger?.addEventListener('click', function() {{
+                                                document.getElementById('hidden-download').click();
+                                            }});
+                                        </script>
+                                    </body>
+                                </html>
+                            """, height=0)
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
