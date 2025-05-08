@@ -1814,7 +1814,15 @@ if uploaded_file is None and st.session_state.get("user"):
             )
 
             available_species = sorted(df_dashboard["Species"].unique())
-            selected_species_dash = st.selectbox("Select a species to view:", ["All species"] + available_species)
+
+            if dashboard_tab == "Summary Dashboard":
+                st.markdown("## Summary Dashboard")
+
+                selected_species_dash = st.selectbox(
+                    "Select a species to view:",
+                    ["All species"] + available_species,
+                    key="species_summary_dashboard"
+                )
 
             if dashboard_tab == "Summary Dashboard":
                 st.markdown("## Summary Dashboard")
@@ -1899,6 +1907,12 @@ if uploaded_file is None and st.session_state.get("user"):
 
             elif dashboard_tab == "Distribution of Seizures":
                 st.markdown("## Temporal and Geographic Distribution of Recorded Seizures")
+
+                selected_species_dash = st.selectbox(
+                    "Select a species to view:",
+                    ["All species"] + available_species,
+                    key="species_distribution_dashboard"
+                )
 
                 col1, col2 = st.columns([1, 1.4])
                 with col1:
