@@ -2023,7 +2023,7 @@ if uploaded_file is None and st.session_state.get("user"):
                             m.get_root().html.add_child(folium.Element(legend_html))
 
                             html_str = m.get_root().render()
-                            st.components.v1.html(html_str, height=700)
+                            st.components.v1.html(html_str, height=400)
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
