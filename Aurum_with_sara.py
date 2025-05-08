@@ -1852,10 +1852,12 @@ if uploaded_file is None and st.session_state.get("user"):
                     )
 
                     if matches:
+                        matched_species = set()
                         for qty, unit, species in matches:
                             new_row = row.copy()
                             qty = float(qty)
                             species = species.strip()
+                            matched_species.add(species)
 
                             new_row["Species"] = species
                             new_row["N_seized"] = 0
@@ -1871,6 +1873,17 @@ if uploaded_file is None and st.session_state.get("user"):
                                 new_row["N_seized"] = qty
 
                             expanded_rows.append(new_row)
+
+                        # Adiciona outras espécies mencionadas sem unidade explícita
+                        species_only = re.findall(r'\b([A-Z][a-z]+(?:_[a-z]+)+)\b', text)
+                        for species in species_only:
+                            if species not in matched_species:
+                                new_row = row.copy()
+                                new_row["Species"] = species
+                                new_row["N_seized"] = 0
+                                new_row["Estimated weight (kg)"] = 0
+                                new_row["Animal parts seized"] = 0
+                                expanded_rows.append(new_row)
                     else:
                         expanded_rows.append(row)
 
