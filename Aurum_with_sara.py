@@ -1930,64 +1930,69 @@ if uploaded_file is None and st.session_state.get("user"):
                         st.info("Year column not available in data.")
 
                 with col2:
-                    st.markdown("#### Countries with Recorded Seizures")
-                    import pycountry
-                    from collections import Counter
+                    st.markdown("#### Heatmap of Recorded Seizures by Location")
 
-                    country_lookup = {country.name: country.alpha_3 for country in pycountry.countries}
-                    iso_to_name = {country.alpha_3: country.name for country in pycountry.countries}
-                    custom_iso = {
-                        "French Guiana": "GUF", "Hong Kong": "HKG", "Macau": "MAC", "Puerto Rico": "PRI",
-                        "Palestine": "PSE", "Kosovo": "XKX", "Taiwan": "TWN", "Réunion": "REU",
-                        "Guadeloupe": "GLP", "Martinique": "MTQ", "New Caledonia": "NCL"
-                    }
-                    custom_name = {v: k for k, v in custom_iso.items()}
-                    all_iso_codes = list(country_lookup.values()) + list(custom_name.keys())
-
-                    if "Country of seizure or shipment" in df_dashboard.columns:
-                        countries_raw = df_dashboard["Country of seizure or shipment"].dropna()
-                        iso_codes = []
-                        for name in countries_raw:
-                            name_clean = name.strip()
-                            try:
-                                match = pycountry.countries.lookup(name_clean)
-                                iso_codes.append(match.alpha_3)
-                            except:
-                                if name_clean in custom_iso:
-                                    iso_codes.append(custom_iso[name_clean])
-
-                        country_counts = Counter(iso_codes)
-                        df_map = pd.DataFrame({"ISO": all_iso_codes})
-                        df_map["Cases"] = df_map["ISO"].apply(lambda x: country_counts.get(x, 0))
-                        df_map["Country"] = df_map["ISO"].apply(lambda x: iso_to_name.get(x, custom_name.get(x, "Unknown")))
-
-                        color_scale = [
-                            [0.0, "#ffffff"],
-                            [0.01, "#a0c4e8"],
-                            [0.25, "#569fd6"],
-                            [0.5, "#2171b5"],
-                            [1.0, "#08306b"],
-                        ]
-
-                        fig_map = px.choropleth(
-                            df_map,
-                            locations="ISO",
-                            color="Cases",
-                            hover_name="Country",
-                            color_continuous_scale=color_scale,
-                            range_color=(0, max(df_map["Cases"].max(), 1)),
-                            height=450
-                        )
-
-                        fig_map.update_layout(
-                            geo=dict(showframe=False, showcoastlines=False, projection_type="natural earth"),
-                            coloraxis_colorbar=dict(title="Number of Cases"),
-                            margin=dict(l=10, r=10, t=30, b=0),
-                        )
-
-                        st.plotly_chart(fig_map, use_container_width=True)
+                    if "Latitude" not in df_dashboard.columns or "Longitude" not in df_dashboard.columns:
+                        st.warning("This analysis requires 'Latitude' and 'Longitude' columns in the dataset.")
                     else:
-                        st.info("No country information available to display the map.")
+                        df_geo = df_dashboard.dropna(subset=["Latitude", "Longitude"]).copy()
+                        if selected_species_dash != "All species":
+                            df_geo = df_geo[df_geo["Species"] == selected_species_dash]
+
+                        if df_geo.empty:
+                            st.info("No valid geolocation data found for the selected species.")
+                        else:
+                            import folium
+                            from folium.plugins import HeatMap
+                            import geopandas as gpd
+                            import tempfile
+                            import os
+
+                            gdf = gpd.GeoDataFrame(
+                                df_geo,
+                                geometry=gpd.points_from_xy(df_geo["Longitude"], df_geo["Latitude"]),
+                                crs="EPSG:4326"
+                            )
+
+                            bounds = gdf.total_bounds
+                            center_lat = (bounds[1] + bounds[3]) / 2
+                            center_lon = (bounds[0] + bounds[2]) / 2
+
+                            radius_val = st.slider("HeatMap radius (px)", 5, 50, 25, key="heatmap_radius")
+
+                            m = folium.Map(location=[center_lat, center_lon], zoom_start=2)
+                            m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+
+                            HeatMap(data=gdf[['Latitude', 'Longitude']].values, radius=radius_val).add_to(m)
+
+                            legend_html = '''
+                                <div style="
+                                    position: fixed;
+                                    bottom: 40px;
+                                    right: 20px;
+                                    z-index: 9999;
+                                    background-color: white;
+                                    padding: 10px;
+                                    border:2px solid gray;
+                                    border-radius:5px;
+                                    font-size:14px;
+                                    box-shadow: 2px 2px 6px rgba(0,0,0,0.3);">
+                                    <b>HeatMap Intensity</b>
+                                    <div style="height: 10px; width: 120px;
+                                        background: linear-gradient(to right, blue, cyan, lime, yellow, orange, red);
+                                        margin: 5px 0;"></div>
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <span>Low</span>
+                                        <span>Medium</span>
+                                        <span>High</span>
+                                    </div>
+                                    <div style="margin-top:6px; font-size:10px; color:gray;">Generated with Aurum</div>
+                                </div>
+                            '''
+                            m.get_root().html.add_child(folium.Element(legend_html))
+
+                            html_str = m.get_root().render()
+                            st.components.v1.html(html_str, height=700)
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
