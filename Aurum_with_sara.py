@@ -185,7 +185,7 @@ def display_public_alerts_section(sheet_id):
                 icon=Icon(color=color, icon="exclamation-sign")
             ).add_to(marker_cluster)
 
-        # 🔴 Adiciona legenda de risco no canto inferior direito
+        # 🔴 Legenda de risco com mesmas cores dos ícones
         legend_html = """
             <div style="
                 position: fixed;
@@ -193,16 +193,18 @@ def display_public_alerts_section(sheet_id):
                 right: 20px;
                 z-index:9999;
                 background-color: white;
-                padding: 10px;
+                padding: 10px 14px;
                 border-radius: 6px;
                 font-size: 13px;
-                box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
-                line-height: 1.4;
-                ">
+                box-shadow: 2px 2px 8px rgba(0,0,0,0.25);
+                line-height: 1.5;
+            ">
                 <strong>Risk Level</strong><br>
-                <span style='color:red;'>⬤ High</span><br>
-                <span style='color:orange;'>⬤ Medium</span><br>
-                <span style='color:blue;'>⬤ Low</span><br>
+                <div style="margin-left: 4px;">
+                    <span style='color:red;'>●</span> High<br>
+                    <span style='color:orange;'>●</span> Medium<br>
+                    <span style='color:blue;'>●</span> Low
+                </div>
                 <div style="margin-top: 6px; font-size: 11px; color: gray;">
                     Generated with <strong>Aurum</strong>
                 </div>
