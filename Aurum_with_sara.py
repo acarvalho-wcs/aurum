@@ -156,7 +156,7 @@ def display_public_alerts_section(sheet_id):
         center_lat = (bounds[1] + bounds[3]) / 2
         center_lon = (bounds[0] + bounds[2]) / 2
 
-        m = folium.Map(location=[0, 0], zoom_start=2)
+        m = folium.Map(location=[0, 0], zoom_start=3)
         marker_cluster = MarkerCluster().add_to(m)
 
         for _, row in df_alerts.iterrows():
