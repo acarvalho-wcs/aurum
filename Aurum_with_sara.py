@@ -2102,6 +2102,7 @@ if uploaded_file is None and st.session_state.get("user"):
 
                             from io import BytesIO
                             from streamlit_shadcn_ui import button
+                            import streamlit.components.v1 as components
 
                             # Gera HTML do mapa
                             map_html = m.get_root().render()
@@ -2114,21 +2115,29 @@ if uploaded_file is None and st.session_state.get("user"):
                             # Botão visual (shadcn_ui)
                             button("Download heatmap as HTML", variant="outline", id="custom-download")
 
-                            # Botão real invisível que será clicado via JavaScript
-                            download_button = st.download_button(
-                                label="Download heatmap as HTML",  # ícone neutro, será escondido
+                            # CSS para esconder o botão real
+                            components.html(f"""
+                                <style>
+                                    [data-testid="stDownloadButton"][title="{filename}"] {{
+                                        display: none !important;
+                                    }}
+                                </style>
+                            """, height=0)
+
+                            # Botão real (oculto) que será clicado via JS
+                            st.download_button(
+                                label="Download heatmap as HTML",
                                 data=map_bytes,
                                 file_name=filename,
                                 mime="text/html",
                                 key=f"real-download-{safe_species}"
                             )
 
-                            # Script que simula o clique do botão real ao pressionar o botão visual
-                            import streamlit.components.v1 as components
+                            # Script para simular clique
                             components.html(f"""
                                 <script>
                                     const visualButton = window.parent.document.querySelector('button[id="custom-download"]');
-                                    const realButton = window.parent.document.querySelector('button[title="{filename}"]');
+                                    const realButton = window.parent.document.querySelector('button[title='{filename}']");
                                     if (visualButton && realButton) {{
                                         visualButton.addEventListener('click', () => {{
                                             realButton.click();
