@@ -156,7 +156,7 @@ def display_public_alerts_section(sheet_id):
         center_lat = (bounds[1] + bounds[3]) / 2
         center_lon = (bounds[0] + bounds[2]) / 2
 
-        m = folium.Map(location=[center_lat, center_lon], zoom_start=3)
+        m = folium.Map(location=[0, 0], zoom_start=2)
         marker_cluster = MarkerCluster().add_to(m)
 
         for _, row in df_alerts.iterrows():
@@ -185,8 +185,6 @@ def display_public_alerts_section(sheet_id):
                 icon=Icon(color=color, icon="exclamation-sign")
             ).add_to(marker_cluster)
 
-        # Ajusta visualização ao conteúdo
-        m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
 
         # Renderiza o mapa como HTML embutido
         map_html = m.get_root().render()
