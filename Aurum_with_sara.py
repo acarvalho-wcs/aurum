@@ -185,6 +185,25 @@ def display_public_alerts_section(sheet_id):
                 icon=Icon(color=color, icon="exclamation-sign")
             ).add_to(marker_cluster)
 
+        # 🔵 Insere logotipo no canto inferior direito
+        try:
+            with open("logo.png", "rb") as f:
+                img_base64 = base64.b64encode(f.read()).decode()
+            logo_html = f"""
+                <div style="
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    z-index:9999;
+                    background-color: rgba(255, 255, 255, 0.8);
+                    padding: 4px;
+                    border-radius: 8px;">
+                    <img src="data:image/png;base64,{img_base64}" height="50">
+                </div>
+            """
+            m.get_root().html.add_child(folium.Element(logo_html))
+        except Exception as e:
+            st.warning("⚠️ Logo image not found or could not be loaded.")
 
         # Renderiza o mapa como HTML embutido
         map_html = m.get_root().render()
