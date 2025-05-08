@@ -1845,47 +1845,45 @@ if uploaded_file is None and st.session_state.get("user"):
                 for _, row in df.iterrows():
                     text = str(row.get('N seized specimens', ''))
 
+                    # 1. Extrai entradas com número + unidade (kg, parts etc) + espécie
                     matches = re.findall(
                         r'(\d+(?:\.\d+)?)\s*(kg|parts?|fangs?|claws?|feathers?|scales?|shells?)?\s*([A-Z][a-z]+(?:_[a-z]+)+)',
                         text,
                         flags=re.IGNORECASE
                     )
+                    matched_species = set()
 
-                    if matches:
-                        matched_species = set()
-                        for qty, unit, species in matches:
+                    for qty, unit, species in matches:
+                        new_row = row.copy()
+                        qty = float(qty)
+                        species = species.strip()
+                        matched_species.add(species)
+
+                        new_row["Species"] = species
+                        new_row["N_seized"] = 0
+                        new_row["Estimated weight (kg)"] = 0
+                        new_row["Animal parts seized"] = 0
+
+                        unit = (unit or "").lower()
+                        if unit == "kg":
+                            new_row["Estimated weight (kg)"] = qty
+                        elif unit in ["part", "parts", "fang", "fangs", "claw", "claws", "feather", "feathers", "scale", "scales", "shell", "shells"]:
+                            new_row["Animal parts seized"] = qty
+                        else:
+                            new_row["N_seized"] = qty
+
+                        expanded_rows.append(new_row)
+
+                    # 2. Garante inclusão de espécies mencionadas mesmo sem número
+                    all_species = re.findall(r'\b([A-Z][a-z]+(?:_[a-z]+)+)\b', text)
+                    for species in set(all_species):
+                        if species not in matched_species:
                             new_row = row.copy()
-                            qty = float(qty)
-                            species = species.strip()
-                            matched_species.add(species)
-
                             new_row["Species"] = species
                             new_row["N_seized"] = 0
                             new_row["Estimated weight (kg)"] = 0
                             new_row["Animal parts seized"] = 0
-
-                            unit = (unit or "").lower()
-                            if unit == "kg":
-                                new_row["Estimated weight (kg)"] = qty
-                            elif unit in ["part", "parts", "fang", "fangs", "claw", "claws", "feather", "feathers", "scale", "scales", "shell", "shells"]:
-                                new_row["Animal parts seized"] = qty
-                            else:
-                                new_row["N_seized"] = qty
-
                             expanded_rows.append(new_row)
-
-                        # Adiciona outras espécies mencionadas sem unidade explícita
-                        species_only = re.findall(r'\b([A-Z][a-z]+(?:_[a-z]+)+)\b', text)
-                        for species in species_only:
-                            if species not in matched_species:
-                                new_row = row.copy()
-                                new_row["Species"] = species
-                                new_row["N_seized"] = 0
-                                new_row["Estimated weight (kg)"] = 0
-                                new_row["Animal parts seized"] = 0
-                                expanded_rows.append(new_row)
-                    else:
-                        expanded_rows.append(row)
 
                 return pd.DataFrame(expanded_rows)
 
