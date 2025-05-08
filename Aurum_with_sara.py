@@ -2104,19 +2104,28 @@ if uploaded_file is None and st.session_state.get("user"):
                             from streamlit_shadcn_ui import button
                             button("Download heatmap as HTML", variant="outline", id="custom-download")
 
-                            # 🔽 Link oculto de download com clique programado
+                            # 🔘 Botão visual com streamlit_shadcn_ui
+                            from streamlit_shadcn_ui import button
+                            button("Download heatmap as HTML", variant="outline", id="custom-download")
+
+                            # 🔽 Link oculto + script de clique automático
+                            import urllib.parse
                             import streamlit.components.v1 as components
+
+                            encoded_html = urllib.parse.quote(map_html)
                             components.html(f"""
                                 <html>
                                     <body>
-                                        <a id="hidden-download" href="data:text/html;charset=utf-8,{html_str}" 
+                                        <a id="hidden-download" href="data:text/html;charset=utf-8,{encoded_html}" 
                                            download="aurum_heatmap.html" 
                                            style="display:none;">Download</a>
                                         <script>
                                             const trigger = window.parent.document.querySelector('button[id="custom-download"]');
-                                            trigger?.addEventListener('click', function() {{
-                                                document.getElementById('hidden-download').click();
-                                            }});
+                                            if (trigger) {{
+                                                trigger.addEventListener('click', function() {{
+                                                    document.getElementById('hidden-download').click();
+                                                }});
+                                            }}
                                         </script>
                                     </body>
                                 </html>
