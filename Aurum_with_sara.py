@@ -23,7 +23,8 @@ import os
 from uuid import uuid4
 from datetime import datetime
 import pytz
-from streamlit_shadcn_ui import tabs, button
+from streamlit_shadcn_ui import tabs
+from streamlit_shadcn_ui import button
 import streamlit.components.v1 as components
 brt = pytz.timezone("America/Sao_Paulo")
 
@@ -2101,7 +2102,7 @@ if uploaded_file is None and st.session_state.get("user"):
 
                             # 🔘 Botão visual com shadcn_ui
                             from shadcn_ui import button
-                            button("📥 Download heatmap as HTML", variant="outline", id="custom-download")
+                            button("Download heatmap as HTML", variant="outline", id="custom-download")
 
                             # 🔽 Link oculto de download com clique programado
                             import streamlit.components.v1 as components
