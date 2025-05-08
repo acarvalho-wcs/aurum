@@ -2111,7 +2111,7 @@ if uploaded_file is None and st.session_state.get("user"):
                             map_bytes = BytesIO(map_html.encode("utf-8"))
 
                             # Estiliza botão dentro de um container pequeno à direita
-                            col_btn1, col_btn2, col_btn3 = st.columns([6, 1.5, 1.5])
+                            col_btn1, col_btn2, col_btn3 = st.columns([5, 2, 2])
                             with col_btn3:
                                 st.download_button(
                                     label="Download HTML",
