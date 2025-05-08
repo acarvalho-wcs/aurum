@@ -120,7 +120,7 @@ def display_public_alerts_section(sheet_id):
 
     st.markdown("## 🌍 Alert Board")
     st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
-    st.markdown("### Wildlife Trafficking Alerts (Map View)")
+    st.markdown("### Wildlife Trafficking Alerts")
 
     # Acesso ao Google Sheets
     scope = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -206,7 +206,7 @@ def display_public_alerts_section(sheet_id):
                     <span style='color:blue;'>●</span> Low
                 </div>
                 <div style="margin-top: 6px; font-size: 11px; color: gray;">
-                    *Generated with <strong>Aurum</strong>*
+                    Generated with <strong>Aurum</strong>
                 </div>
             </div>
         """
