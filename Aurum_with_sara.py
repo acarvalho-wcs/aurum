@@ -2102,7 +2102,7 @@ if uploaded_file is None and st.session_state.get("user"):
                             map_html = m.get_root().render()
                             map_bytes = BytesIO(map_html.encode("utf-8"))
                             st.download_button(
-                                label="📥 Download heatmap as HTML",
+                                label="Download heatmap as HTML",
                                 data=map_bytes,
                                 file_name="aurum_heatmap.html",
                                 mime="text/html"
