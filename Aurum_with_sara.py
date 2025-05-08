@@ -2100,21 +2100,21 @@ if uploaded_file is None and st.session_state.get("user"):
                             html_str = m.get_root().render()
                             st.components.v1.html(html_str, height=300)
 
+                            from io import BytesIO
+
                             # Gera HTML do mapa
                             map_html = m.get_root().render()
 
-                            # Define nome de arquivo com base na espécie
+                            # Define nome do arquivo baseado na espécie
                             safe_species = selected_species_dash.replace(" ", "_").replace("/", "_")
                             filename = f"aurum_heatmap_{safe_species}.html"
-
-                            # Converte HTML para bytes
                             map_bytes = BytesIO(map_html.encode("utf-8"))
 
-                            # Exibe botão centralizado embaixo do mapa (coluna pequena no meio)
-                            spacer_left, col_button, spacer_right = st.columns([3, 1, 3])
-                            with col_button:
+                            # Estiliza botão dentro de um container pequeno à direita
+                            col_btn1, col_btn2, col_btn3 = st.columns([6, 1.5, 1.5])
+                            with col_btn3:
                                 st.download_button(
-                                    label="Download heatmap as HTML",
+                                    label="⬇️ Download HTML",
                                     data=map_bytes,
                                     file_name=filename,
                                     mime="text/html",
