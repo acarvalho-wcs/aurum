@@ -206,7 +206,7 @@ def display_public_alerts_section(sheet_id):
                     <span style='color:blue;'>●</span> Low
                 </div>
                 <div style="margin-top: 6px; font-size: 11px; color: gray;">
-                    Generated with <strong>Aurum</strong>
+                    *Generated with <strong>Aurum</strong>*
                 </div>
             </div>
         """
