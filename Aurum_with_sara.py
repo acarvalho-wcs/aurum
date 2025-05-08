@@ -1843,6 +1843,7 @@ if uploaded_file is None and st.session_state.get("user"):
             def expand_multi_species_rows(df):
                 expanded_rows = []
                 for _, row in df.iterrows():
+                    text = str(row.get('N seized specimens', ''))
                     matches = re.findall(r'(\d+(?:\.\d+)?)\s*(?:kg|parts?|fangs?|claws?|feathers?|scales?|shells?)?\s*([A-Z][a-z]+(?:_[a-z]+)+)', text)
                     if matches:
                         for qty, species in matches:
