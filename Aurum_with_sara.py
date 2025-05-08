@@ -2100,7 +2100,7 @@ if uploaded_file is None and st.session_state.get("user"):
                             html_str = m.get_root().render()
                             st.components.v1.html(html_str, height=300)
 
-                            # 🔘 Botão visual com shadcn_ui
+                            # 🔘 Botão visual com streamlit_shadcn_ui
                             from streamlit_shadcn_ui import button
                             button("Download heatmap as HTML", variant="outline", id="custom-download")
 
