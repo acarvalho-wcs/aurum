@@ -2099,6 +2099,14 @@ if uploaded_file is None and st.session_state.get("user"):
                             html_str = m.get_root().render()
                             st.components.v1.html(html_str, height=300)
 
+                            map_html = m.get_root().render()
+                            map_bytes = BytesIO(map_html.encode("utf-8"))
+                            st.download_button(
+                                label="📥 Download heatmap as HTML",
+                                data=map_bytes,
+                                file_name="aurum_heatmap.html",
+                                mime="text/html"
+                           )    
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
