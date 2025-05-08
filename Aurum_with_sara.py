@@ -1991,7 +1991,7 @@ if uploaded_file is None and st.session_state.get("user"):
 
                             radius_val = st.slider("HeatMap radius (px)", 5, 50, 25, key="heatmap_radius")
 
-                            m = folium.Map(location=[center_lat, center_lon], zoom_start=2)
+                            m = folium.Map(location=[center_lat, center_lon], zoom_start=4)
                             m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
 
                             HeatMap(data=gdf[['Latitude', 'Longitude']].values, radius=radius_val).add_to(m)
