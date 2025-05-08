@@ -2110,9 +2110,9 @@ if uploaded_file is None and st.session_state.get("user"):
                             # Converte HTML para bytes
                             map_bytes = BytesIO(map_html.encode("utf-8"))
 
-                            # Alinha e exibe botão em container visual
-                            with st.container():
-                                st.markdown(" ")
+                            # Exibe botão centralizado embaixo do mapa (coluna pequena no meio)
+                            spacer_left, col_button, spacer_right = st.columns([3, 1, 3])
+                            with col_button:
                                 st.download_button(
                                     label="Download heatmap as HTML",
                                     data=map_bytes,
