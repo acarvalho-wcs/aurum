@@ -192,7 +192,7 @@ def display_public_alerts_section(sheet_id):
 
         # Renderiza
         map_html = m.get_root().render()
-        html(map_html, height=600)
+        html(map_html, height=800)
 
     except Exception as e:
         st.error(f"❌ Failed to load public alerts: {e}")
