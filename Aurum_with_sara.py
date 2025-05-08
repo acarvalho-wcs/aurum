@@ -2114,7 +2114,7 @@ if uploaded_file is None and st.session_state.get("user"):
                             col_btn1, col_btn2, col_btn3 = st.columns([6, 1.5, 1.5])
                             with col_btn3:
                                 st.download_button(
-                                    label="⬇️ Download HTML",
+                                    label="Download HTML",
                                     data=map_bytes,
                                     file_name=filename,
                                     mime="text/html",
