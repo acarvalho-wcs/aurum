@@ -2108,16 +2108,19 @@ if uploaded_file is None and st.session_state.get("user"):
                             import urllib.parse
                             import streamlit.components.v1 as components
 
-                            # 🔤 Gera nome do arquivo com base na espécie
-                            species_safe = selected_species_dash.replace(" ", "_").replace("/", "_").lower()
-                            file_name = f"aurum_heatmap_{species_safe}.html"
+                            # Usa html_str gerado anteriormente
+                            encoded_html = urllib.parse.quote(html_str)
 
-                            encoded_html = urllib.parse.quote(map_html)
+                            # Define nome do arquivo com base na espécie selecionada
+                            safe_species = selected_species_dash.replace(" ", "_") if selected_species_dash != "All species" else "all_species"
+                            filename = f"aurum_heatmap_{safe_species}.html"
+
+                            # Insere HTML com link oculto e trigger JS
                             components.html(f"""
                                 <html>
                                     <body>
                                         <a id="hidden-download" href="data:text/html;charset=utf-8,{encoded_html}" 
-                                           download="{file_name}" 
+                                           download="{filename}" 
                                            style="display:none;">Download</a>
                                         <script>
                                             const trigger = window.parent.document.querySelector('button[id="custom-download"]');
@@ -2129,7 +2132,7 @@ if uploaded_file is None and st.session_state.get("user"):
                                         </script>
                                     </body>
                                 </html>
-                            """, height=0, key="heatmap-download")
+                            """, height=0, key=f"heatmap-download-{safe_species}")
                             
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
