@@ -1338,13 +1338,15 @@ def display_alert_submission_form(sheet_id):
         "species": "alert_species_input",
         "country": "alert_country_input",
         "source_link": "alert_source_input",
+        "latitude": "alert_lat_input",
+        "longitude": "alert_lon_input",
         "author_choice": "alert_author_choice"
     }
 
     categories = ["Species", "Country", "Marketplace", "Operation", "Policy", "Other"]
     risk_levels = ["Low", "Medium", "High"]
 
-    for key in ["title", "description", "species", "country", "source_link"]:
+    for key in ["title", "description", "species", "country", "source_link", "latitude", "longitude"]:
         st.session_state.setdefault(field_keys[key], "")
 
     if st.session_state.get(field_keys["category"]) not in categories:
@@ -1362,6 +1364,8 @@ def display_alert_submission_form(sheet_id):
         species = st.text_input("Species involved (optional)", key=field_keys["species"])
         country = st.text_input("Country or Region (optional)", key=field_keys["country"])
         source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
+        latitude = st.text_input("Latitude (optional)", key=field_keys["latitude"])
+        longitude = st.text_input("Longitude (optional)", key=field_keys["longitude"])
 
         author_choice = st.radio(
             "Choose how to display your name:",
@@ -1378,6 +1382,16 @@ def display_alert_submission_form(sheet_id):
         if not title or not description:
             st.warning("Title and Description are required.")
         else:
+            # Validação opcional de latitude/longitude
+            lat_val = st.session_state[field_keys["latitude"]].strip()
+            lon_val = st.session_state[field_keys["longitude"]].strip()
+            try:
+                lat = float(lat_val) if lat_val else ""
+                lon = float(lon_val) if lon_val else ""
+            except ValueError:
+                st.warning("Latitude and Longitude must be numeric.")
+                return
+
             alert_id = str(uuid4())
             created_at = datetime.now(brt).strftime("%Y-%m-%d %H:%M:%S (BRT)")
             public = True
@@ -1385,6 +1399,7 @@ def display_alert_submission_form(sheet_id):
             alert_row = [
                 alert_id, created_at, created_by, display_as, title, description,
                 category, species, country, risk_level, source_link,
+                lat, lon,  # inseridos na posição correta
                 str(public)
             ]
 
