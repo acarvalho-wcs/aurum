@@ -129,7 +129,7 @@ def display_public_alerts_section(sheet_id):
                 st.info("No public alerts available.")
                 return
 
-            df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
+            df_alerts = df_alerts[df_alerts["Public"].astype(str).strip().str.upper() == "TRUE"]
 
             if df_alerts.empty:
                 st.info("No public alerts available.")
@@ -154,29 +154,19 @@ def display_public_alerts_section(sheet_id):
                         if row.get("Country"):
                             st.markdown(f"**Country:** {row['Country']}")
 
-                        # ✅ Link visível (sem duplicacao)
                         if row.get("Source Link"):
                             link = row['Source Link']
-                            st.markdown(
-                                f"🔗 **Source:** <a href='{link}' target='_blank'>{link}</a>",
-                                unsafe_allow_html=True
-                            )
+                            st.markdown(f"🔗 **Source:** <a href='{link}' target='_blank'>{link}</a>", unsafe_allow_html=True)
 
-                        # Exibe o nome visível (pode ser Anonymous)
                         display_name = row.get("Display As", row.get("Created By", "Unknown"))
                         st.caption(f"Submitted on {row['Created At']} by *{display_name}*")
 
-                        # ✅ Rodapé institucional
-                        st.markdown(
-                            """
+                        st.markdown("""
                             <div style='font-size: 12px; color: #666; margin-top: 6px;'>
                                 <em>This alert was published by verified users on <strong>AURUM</strong>, the intelligence system against wildlife trafficking.</em>
                             </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
+                        """, unsafe_allow_html=True)
 
-                        # 🗑️ Botão de remoção (se for o criador real)
                         user_email = st.session_state.get("user_email", "").strip().lower()
                         creator = row.get("Created By", "").strip().lower()
                         if creator == user_email:
@@ -184,14 +174,13 @@ def display_public_alerts_section(sheet_id):
                                 try:
                                     sheet = sheets.worksheet("Alerts")
                                     cell = sheet.find(str(row["Alert ID"]))
-                                    public_col = df_alerts.columns.get_loc("Public") + 1  # gspread é 1-based
+                                    public_col = df_alerts.columns.get_loc("Public") + 1
                                     sheet.update_cell(cell.row, public_col, "FALSE")
                                     st.success("Alert removed from public board (still stored in the system).")
                                     st.rerun()
                                 except Exception as e:
                                     st.error(f"❌ Failed to update visibility: {e}")
 
-                        # Timeline (if any)
                         if not df_updates.empty and "Alert ID" in df_updates.columns:
                             updates = df_updates[df_updates["Alert ID"] == row["Alert ID"]].sort_values("Timestamp")
                             if not updates.empty:
@@ -199,8 +188,34 @@ def display_public_alerts_section(sheet_id):
                                 for _, upd in updates.iterrows():
                                     st.markdown(f"🕒 **{upd['Timestamp']}** – *{upd['User']}*: {upd['Update Text']}")
 
-        except Exception as e:
-            st.error(f"❌ Failed to load public alerts: {e}")
+            if "Latitude" in df_alerts.columns and "Longitude" in df_alerts.columns:
+                import folium
+                from folium.plugins import MarkerCluster
+                from streamlit_folium import st_folium
+
+                st.markdown("### 🗌 Geographic Distribution of Public Alerts")
+
+                map_center = [df_alerts["Latitude"].astype(float).mean(), df_alerts["Longitude"].astype(float).mean()]
+                m = folium.Map(location=map_center, zoom_start=3)
+                marker_cluster = MarkerCluster().add_to(m)
+
+                for _, row in df_alerts.dropna(subset=["Latitude", "Longitude"]).iterrows():
+                    popup_html = f"""
+                    <strong>{row['Title']} ({row['Risk Level']})</strong><br>
+                    <em>{row['Description']}</em><br>
+                    <strong>Category:</strong> {row['Category']}<br>
+                    <strong>Species:</strong> {row.get('Species', 'N/A')}<br>
+                    <strong>Country:</strong> {row.get('Country', 'N/A')}<br>
+                    <strong>Date:</strong> {row['Created At']}<br>
+                    <a href="{row.get('Source Link', '#')}" target="_blank">Source</a>
+                    """
+                    folium.Marker(
+                        location=[float(row["Latitude"]), float(row["Longitude"])],
+                        popup=folium.Popup(popup_html, max_width=300),
+                        tooltip=row["Title"]
+                    ).add_to(marker_cluster)
+
+                st_folium(m, height=400)
 
 # Executa antes do login
 if "user" in st.session_state:
