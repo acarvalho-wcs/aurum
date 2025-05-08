@@ -1583,8 +1583,16 @@ if "user" in st.session_state:
                     notes = st.text_area("Additional notes", key=field_keys["notes"])
                     latitude = st.text_input("Latitude", key=field_keys["latitude"])
                     longitude = st.text_input("Longitude", key=field_keys["longitude"])
-                    kg = st.text_input("Estimated weight (kg)", key=field_keys["kg"])
-                    parts = st.text_input("Animal parts seized", key=field_keys["parts"])
+
+                    # Extração automática de kg e partes
+                    import re
+                    kg_matches = re.findall(r"(\d+(?:\.\d+)?)\s*kg", n_seized)
+                    parts_matches = re.findall(r"(\d+(?:\.\d+)?)\s*(?:part|parts|fangs|horns|claws|feathers|scales|shells)", n_seized, re.IGNORECASE)
+                    total_kg = sum(float(k) for k in kg_matches)
+                    total_parts = sum(float(p) for p in parts_matches)
+
+                    kg = st.text_input("Estimated weight (kg)", value=str(total_kg) if total_kg else "", key=field_keys["kg"])
+                    parts = st.text_input("Animal parts seized", value=str(total_parts) if total_parts else "", key=field_keys["parts"])
 
                     submitted = st.form_submit_button("Submit Case")
 
@@ -1641,8 +1649,11 @@ if "user" in st.session_state:
                                 new_notes = st.text_area("Additional notes", value=current_row["Notes"])
                                 new_lat = st.text_input("Latitude", value=current_row.get("Latitude", ""))
                                 new_lon = st.text_input("Longitude", value=current_row.get("Longitude", ""))
-                                new_kg = st.text_input("Estimated weight (kg)", value=current_row.get("Estimated weight (kg)", ""))
-                                new_parts = st.text_input("Animal parts seized", value=current_row.get("Animal parts seized", ""))
+
+                                kg_matches_edit = re.findall(r"(\d+(?:\.\d+)?)\s*kg", new_n_seized)
+                                parts_matches_edit = re.findall(r"(\d+(?:\.\d+)?)\s*(?:part|parts|fangs|horns|claws|feathers|scales|shells)", new_n_seized, re.IGNORECASE)
+                                new_kg = st.text_input("Estimated weight (kg)", value=str(sum(float(k) for k in kg_matches_edit)) if kg_matches_edit else current_row.get("Estimated weight (kg)", ""))
+                                new_parts = st.text_input("Animal parts seized", value=str(sum(float(p) for p in parts_matches_edit)) if parts_matches_edit else current_row.get("Animal parts seized", ""))
 
                                 submitted_edit = st.form_submit_button("Save Changes")
 
