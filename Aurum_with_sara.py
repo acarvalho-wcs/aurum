@@ -1306,6 +1306,11 @@ def get_worksheet(sheet_name="Aurum_data"):
     sh = gc.open_by_key("1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic")
     return sh.worksheet(sheet_name)
 
+@st.cache_data(ttl=60)
+def load_all_records(sheet_name="Aurum_data"):
+    worksheet = get_worksheet(sheet_name)
+    return worksheet.get_all_records()
+    
 # --- Função para carregar dados de qualquer aba ---
 def load_sheet_data(sheet_name, sheets):
     try:
@@ -1625,8 +1630,7 @@ if "user" in st.session_state:
         with col4:
             with st.expander("**Edit My Cases**", expanded=False):
                 try:
-                    worksheet = get_worksheet()
-                    records = worksheet.get_all_records()
+                    records = load_all_records()
                     df_user = pd.DataFrame(records)
                     df_user = df_user[df_user["Author"] == st.session_state["user"]]
 
@@ -1739,8 +1743,7 @@ if "user" in st.session_state:
         # --- Visualização dos próprios casos ---
         st.markdown("## My Cases")
         try:
-            worksheet = get_worksheet()
-            records = worksheet.get_all_records()
+            records = load_all_records()
             if not records:
                 st.info("No data available at the moment.")
             else:
@@ -1833,8 +1836,7 @@ if "user" in st.session_state:
 
 if uploaded_file is None and st.session_state.get("user"):
     try:
-        worksheet = get_worksheet()
-        records = worksheet.get_all_records()
+        records = load_all_records()
         df_dashboard = pd.DataFrame(records)
 
         if not df_dashboard.empty and "N seized specimens" in df_dashboard.columns:
