@@ -1839,7 +1839,7 @@ if uploaded_file is None and st.session_state.get("user"):
             df_dashboard["N_seized"] = pd.to_numeric(df_dashboard["N_seized"], errors="coerce").fillna(0)
 
             dashboard_tab = tabs(
-                options=["Summary Dashboard", "Distribution of Seizures"],
+                options=["Summary Dashboard", "Distribution of Cases"],
                 default_value="",
                 key="dashboard_tabs"
             )
@@ -1934,7 +1934,7 @@ if uploaded_file is None and st.session_state.get("user"):
                         st.info("No other species recorded with the selected species.")
 
             elif dashboard_tab == "Distribution of Seizures":
-                st.markdown("## Temporal and Geographic Distribution of Recorded Seizures")
+                st.markdown("## Temporal and Geographic Distribution of Recorded Cases")
 
                 selected_species_dash = st.selectbox(
                     "Select a species to view:",
@@ -1966,7 +1966,7 @@ if uploaded_file is None and st.session_state.get("user"):
                         st.info("Year column not available in data.")
 
                 with col2:
-                    st.markdown("#### Heatmap of Recorded Seizures by Location")
+                    st.markdown("#### Heatmap of Recorded Cases by Location")
 
                     if "Latitude" not in df_dashboard.columns or "Longitude" not in df_dashboard.columns:
                         st.warning("This analysis requires 'Latitude' and 'Longitude' columns in the dataset.")
