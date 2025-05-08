@@ -2104,10 +2104,6 @@ if uploaded_file is None and st.session_state.get("user"):
                             from streamlit_shadcn_ui import button
                             button("Download heatmap as HTML", variant="outline", id="custom-download")
 
-                            # 🔘 Botão visual com streamlit_shadcn_ui
-                            from streamlit_shadcn_ui import button
-                            button("Download heatmap as HTML", variant="outline", id="custom-download")
-
                             # 🔽 Link oculto + script de clique automático
                             import urllib.parse
                             import streamlit.components.v1 as components
@@ -2129,7 +2125,7 @@ if uploaded_file is None and st.session_state.get("user"):
                                         </script>
                                     </body>
                                 </html>
-                            """, height=0)
+                            """, height=0, key="heatmap-download")
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
