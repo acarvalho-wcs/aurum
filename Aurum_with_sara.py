@@ -1844,7 +1844,15 @@ if uploaded_file is None and st.session_state.get("user"):
                 expanded_rows = []
                 for _, row in df.iterrows():
                     text = str(row.get('N seized specimens', ''))
-                    matches = re.findall(r'(\d+(?:\.\d+)?)\s*(?:kg|parts?|fangs?|claws?|feathers?|scales?|shells?)?\s*([A-Z][a-z]+(?:_[a-z]+)+)', text)
+
+                    # Extrai apenas indivíduos (ignora kg, partes, etc)
+                    matches = re.findall(
+                        r'(?<!kg\s)(?<!parts?\s)(?<!fangs?\s)(?<!horns?\s)(?<!claws?\s)(?<!feathers?\s)(?<!scales?\s)(?<!shells?\s)'
+                        r'(\d+)\s*([A-Z][a-z]+(?:_[a-z]+)+)',
+                        text,
+                        flags=re.IGNORECASE
+                    )
+
                     if matches:
                         for qty, species in matches:
                             new_row = row.copy()
