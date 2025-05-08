@@ -112,75 +112,90 @@ if uploaded_file is None:
 # --- ALERTAS PÚBLICOS (visível para todos, inclusive sem login) ---
 def display_public_alerts_section(sheet_id):
     import folium
+    from folium.map import Icon
+    from folium import Popup, Marker
     from folium.plugins import MarkerCluster
     import geopandas as gpd
-    import streamlit.components.v1 as components
+    from streamlit.components.v1 import html
 
-    def display_public_alerts_section(sheet_id):
-        with st.container():
-            st.markdown("## 🌍 Wildlife Trafficking Alerts (Map View)")
-            st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
+    st.markdown("## 🌍 Alert Board")
+    st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
+    st.markdown("### Wildlife Trafficking Alerts (Map View)")
 
-            # --- Carregamento dos dados ---
-            scope = ["https://www.googleapis.com/auth/spreadsheets"]
-            credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-            client = gspread.authorize(credentials)
-            sheets = client.open_by_key(sheet_id)
+    # Acesso ao Google Sheets
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+    client = gspread.authorize(credentials)
+    sheets = client.open_by_key(sheet_id)
 
-            try:
-                df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
-                df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
+    try:
+        df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
 
-                if df_alerts.empty:
-                    st.info("No public alerts available.")
-                    return
+        if df_alerts.empty or "Public" not in df_alerts.columns:
+            st.info("No public alerts available.")
+            return
 
-                df_alerts["Latitude"] = pd.to_numeric(df_alerts["Latitude"], errors="coerce")
-                df_alerts["Longitude"] = pd.to_numeric(df_alerts["Longitude"], errors="coerce")
-                df_geo = df_alerts.dropna(subset=["Latitude", "Longitude"])
+        df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
 
-                if df_geo.empty:
-                    st.warning("No alerts have valid coordinates.")
-                    return
+        if df_alerts.empty:
+            st.info("No public alerts available.")
+            return
 
-                # --- Centraliza o mapa dinamicamente ---
-                gdf = gpd.GeoDataFrame(
-                    df_geo,
-                    geometry=gpd.points_from_xy(df_geo["Longitude"], df_geo["Latitude"]),
-                    crs="EPSG:4326"
-                )
-                bounds = gdf.total_bounds
-                center_lat = (bounds[1] + bounds[3]) / 2
-                center_lon = (bounds[0] + bounds[2]) / 2
+        # Filtra alertas com coordenadas válidas
+        df_alerts = df_alerts.dropna(subset=["Latitude", "Longitude"])
+        df_alerts = df_alerts[df_alerts["Latitude"].astype(str).str.strip() != ""]
+        df_alerts = df_alerts[df_alerts["Longitude"].astype(str).str.strip() != ""]
 
-                m = folium.Map(location=[center_lat, center_lon], zoom_start=3)
-                marker_cluster = MarkerCluster().add_to(m)
+        # Converte para float
+        df_alerts["Latitude"] = pd.to_numeric(df_alerts["Latitude"], errors="coerce")
+        df_alerts["Longitude"] = pd.to_numeric(df_alerts["Longitude"], errors="coerce")
+        df_alerts = df_alerts.dropna(subset=["Latitude", "Longitude"])
 
-                for _, row in df_geo.iterrows():
-                    popup_html = f"""
-                        <b>{row['Title']}</b><br>
-                        <b>Description:</b> {row['Description']}<br>
-                        <b>Category:</b> {row['Category']}<br>
-                        <b>Risk Level:</b> {row['Risk Level']}<br>
-                        <b>Species:</b> {row['Species']}<br>
-                        <b>Country:</b> {row['Country']}<br>
-                        <b>Submitted by:</b> {row['Display As']}<br>
-                        <b>At:</b> {row['Created At']}<br>
-                        <b>Source:</b> <a href="{row['Source Link']}" target="_blank">Link</a>
-                    """
-                    folium.Marker(
-                        location=[row["Latitude"], row["Longitude"]],
-                        popup=folium.Popup(popup_html, max_width=350),
-                        icon=folium.Icon(color="red" if row["Risk Level"] == "High" else "blue", icon="info-sign")
-                    ).add_to(marker_cluster)
+        if df_alerts.empty:
+            st.info("No georeferenced alerts to display on the map.")
+            return
 
-                m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+        # Cria GeoDataFrame
+        gdf = gpd.GeoDataFrame(df_alerts, geometry=gpd.points_from_xy(df_alerts["Longitude"], df_alerts["Latitude"]), crs="EPSG:4326")
+        bounds = gdf.total_bounds
+        center_lat = (bounds[1] + bounds[3]) / 2
+        center_lon = (bounds[0] + bounds[2]) / 2
 
-                html_str = m.get_root().render()
-                components.html(html_str, height=600)
+        m = folium.Map(location=[center_lat, center_lon], zoom_start=3)
+        marker_cluster = MarkerCluster().add_to(m)
 
-            except Exception as e:
-                st.error(f"❌ Failed to load public alerts: {e}")
+        for _, row in df_alerts.iterrows():
+            popup_html = f"""
+                <b>{row['Title']}</b><br>
+                <b>Risk:</b> {row['Risk Level']}<br>
+                <b>Category:</b> {row['Category']}<br>
+                <b>Species:</b> {row.get('Species', '—')}<br>
+                <b>Country:</b> {row.get('Country', '—')}<br>
+                <b>Submitted by:</b> {row.get('Display As', 'Anonymous')}<br>
+                <b>Date:</b> {row['Created At']}<br>
+                <p style='margin-top:5px'><b>Description:</b><br>{row['Description']}</p>
+            """
+            if row.get("Source Link"):
+                popup_html += f"<p><a href='{row['Source Link']}' target='_blank'>🔗 Source Link</a></p>"
+
+            color = {
+                "High": "red",
+                "Medium": "orange",
+                "Low": "blue"
+            }.get(row["Risk Level"], "gray")
+
+            Marker(
+                location=[row["Latitude"], row["Longitude"]],
+                popup=Popup(popup_html, max_width=350),
+                icon=Icon(color=color, icon="exclamation-sign")
+            ).add_to(marker_cluster)
+
+        # Renderiza
+        map_html = m.get_root().render()
+        html(map_html, height=600)
+
+    except Exception as e:
+        st.error(f"❌ Failed to load public alerts: {e}")
 
 # Executa antes do login
 if "user" in st.session_state:
