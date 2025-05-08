@@ -1960,70 +1960,86 @@ if uploaded_file is None and st.session_state.get("user"):
                     else:
                         st.info("Year column not available in data.")
 
-                with col2:
-                    st.markdown("#### Heatmap of Recorded Seizures by Location")
+        with col2:
+            st.markdown("#### Heatmap of Recorded Seizures by Location")
 
-                    if "Latitude" not in df_dashboard.columns or "Longitude" not in df_dashboard.columns:
-                        st.warning("This analysis requires 'Latitude' and 'Longitude' columns in the dataset.")
-                    else:
-                        df_geo = df_dashboard.dropna(subset=["Latitude", "Longitude"]).copy()
-                        if selected_species_dash != "All species":
-                            df_geo = df_geo[df_geo["Species"] == selected_species_dash]
+            if "Latitude" not in df_dashboard.columns or "Longitude" not in df_dashboard.columns:
+                st.warning("This analysis requires 'Latitude' and 'Longitude' columns in the dataset.")
+            else:
+                df_geo = df_dashboard.dropna(subset=["Latitude", "Longitude"]).copy()
 
-                        if df_geo.empty:
-                            st.info("No valid geolocation data found for the selected species.")
-                        else:
-                            import folium
-                            from folium.plugins import HeatMap
-                            import geopandas as gpd
-                            import tempfile
-                            import os
+                # --- Corrigir separadores e converter para float com 3 casas decimais ---
+                df_geo["Latitude"] = (
+                    df_geo["Latitude"]
+                    .astype(str)
+                    .str.replace(",", ".", regex=False)
+                    .astype(float)
+                    .round(3)
+                )
+                df_geo["Longitude"] = (
+                    df_geo["Longitude"]
+                    .astype(str)
+                    .str.replace(",", ".", regex=False)
+                    .astype(float)
+                    .round(3)
+                )
 
-                            gdf = gpd.GeoDataFrame(
-                                df_geo,
-                                geometry=gpd.points_from_xy(df_geo["Longitude"], df_geo["Latitude"]),
-                                crs="EPSG:4326"
-                            )
+                if selected_species_dash != "All species":
+                    df_geo = df_geo[df_geo["Species"] == selected_species_dash]
 
-                            bounds = gdf.total_bounds
-                            center_lat = (bounds[1] + bounds[3]) / 2
-                            center_lon = (bounds[0] + bounds[2]) / 2
+                if df_geo.empty:
+                    st.info("No valid geolocation data found for the selected species.")
+                else:
+                    import folium
+                    from folium.plugins import HeatMap
+                    import geopandas as gpd
 
-                            radius_val = st.slider("HeatMap radius (px)", 5, 50, 25, key="heatmap_radius")
+                    gdf = gpd.GeoDataFrame(
+                        df_geo,
+                        geometry=gpd.points_from_xy(df_geo["Longitude"], df_geo["Latitude"]),
+                        crs="EPSG:4326"
+                    )
 
-                            m = folium.Map(location=[center_lat, center_lon], zoom_start=4)
-                            m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+                    bounds = gdf.total_bounds
+                    center_lat = (bounds[1] + bounds[3]) / 2
+                    center_lon = (bounds[0] + bounds[2]) / 2
 
-                            HeatMap(data=gdf[['Latitude', 'Longitude']].values, radius=radius_val).add_to(m)
+                    radius_val = st.slider("HeatMap radius (px)", 5, 50, 25, key="heatmap_radius")
 
-                            legend_html = '''
-                                <div style="
-                                    position: fixed;
-                                    bottom: 40px;
-                                    right: 20px;
-                                    z-index: 9999;
-                                    background-color: white;
-                                    padding: 10px;
-                                    border:2px solid gray;
-                                    border-radius:5px;
-                                    font-size:14px;
-                                    box-shadow: 2px 2px 6px rgba(0,0,0,0.3);">
-                                    <b>HeatMap Intensity</b>
-                                    <div style="height: 10px; width: 120px;
-                                        background: linear-gradient(to right, blue, cyan, lime, yellow, orange, red);
-                                        margin: 5px 0;"></div>
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <span>Low</span>
-                                        <span>Medium</span>
-                                        <span>High</span>
-                                    </div>
-                                    <div style="margin-top:6px; font-size:10px; color:gray;">Generated with Aurum</div>
-                                </div>
-                            '''
-                            m.get_root().html.add_child(folium.Element(legend_html))
+                    m = folium.Map(location=[center_lat, center_lon], zoom_start=4)
+                    m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
 
-                            html_str = m.get_root().render()
-                            st.components.v1.html(html_str, height=300)
+                    heat_data = gdf[["Latitude", "Longitude"]].dropna().values.tolist()
+                    HeatMap(data=heat_data, radius=radius_val).add_to(m)
+
+                    legend_html = '''
+                        <div style="
+                            position: fixed;
+                            bottom: 40px;
+                            right: 20px;
+                            z-index: 9999;
+                            background-color: white;
+                            padding: 10px;
+                            border:2px solid gray;
+                            border-radius:5px;
+                            font-size:14px;
+                            box-shadow: 2px 2px 6px rgba(0,0,0,0.3);">
+                            <b>HeatMap Intensity</b>
+                            <div style="height: 10px; width: 120px;
+                                background: linear-gradient(to right, blue, cyan, lime, yellow, orange, red);
+                                margin: 5px 0;"></div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Low</span>
+                                <span>Medium</span>
+                                <span>High</span>
+                            </div>
+                            <div style="margin-top:6px; font-size:10px; color:gray;">Generated with Aurum</div>
+                        </div>
+                    '''
+                    m.get_root().html.add_child(folium.Element(legend_html))
+
+                    html_str = m.get_root().render()
+                    st.components.v1.html(html_str, height=300)
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
