@@ -2100,39 +2100,47 @@ if uploaded_file is None and st.session_state.get("user"):
                             html_str = m.get_root().render()
                             st.components.v1.html(html_str, height=300)
 
-                            # 🔘 Botão visual com streamlit_shadcn_ui
+                            from io import BytesIO
                             from streamlit_shadcn_ui import button
-                            button("Download heatmap as HTML", variant="outline", id="custom-download")
 
-                            # 🔽 Link oculto + script de clique automático
-                            import urllib.parse
-                            import streamlit.components.v1 as components
-
-                            # Usa html_str gerado anteriormente
-                            encoded_html = urllib.parse.quote(html_str)
+                            # Gera HTML do mapa
+                            map_html = m.get_root().render()
 
                             # Define nome do arquivo com base na espécie selecionada
-                            safe_species = selected_species_dash.replace(" ", "_") if selected_species_dash != "All species" else "all_species"
+                            safe_species = selected_species_dash.replace(" ", "_").replace("/", "_")
                             filename = f"aurum_heatmap_{safe_species}.html"
+                            map_bytes = BytesIO(map_html.encode("utf-8"))
 
-                            # Insere HTML com link oculto e trigger JS
+                            # 🔘 Botão visual usando shadcn_ui
+                            button("Download heatmap as HTML", variant="outline", id="custom-download")
+
+                            # 🔽 Componente invisível de download real
+                            import streamlit.components.v1 as components
                             components.html(f"""
                                 <html>
                                     <body>
-                                        <a id="hidden-download" href="data:text/html;charset=utf-8,{encoded_html}" 
-                                           download="{filename}" 
-                                           style="display:none;">Download</a>
+                                        <form method="post">
+                                            <button id="fake-download-trigger" style="display:none;"></button>
+                                        </form>
                                         <script>
                                             const trigger = window.parent.document.querySelector('button[id="custom-download"]');
-                                            if (trigger) {{
-                                                trigger.addEventListener('click', function() {{
-                                                    document.getElementById('hidden-download').click();
-                                                }});
+                                            const realDownload = window.parent.document.querySelector('button[title="{filename}"]');
+                                            if (trigger && realDownload) {{
+                                                trigger.addEventListener('click', () => realDownload.click());
                                             }}
                                         </script>
                                     </body>
                                 </html>
                             """, height=0)
+
+                            # 🔽 Botão real oculto
+                            st.download_button(
+                                label="⚪",  # rótulo irrelevante pois será clicado via JS
+                                data=map_bytes,
+                                file_name=filename,
+                                mime="text/html",
+                                key=f"hidden-download-{safe_species}"
+                            )
                             
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
