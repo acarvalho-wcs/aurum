@@ -161,7 +161,7 @@ def display_public_alerts_section(sheet_id):
         center_lat = (bounds[1] + bounds[3]) / 2
         center_lon = (bounds[0] + bounds[2]) / 2
 
-        m = folium.Map(location=[center_lat, center_lon], zoom_start=3)
+        m = folium.Map(location=[center_lat, center_lon], zoom_start=2)
         marker_cluster = MarkerCluster().add_to(m)
 
         for _, row in df_alerts.iterrows():
@@ -192,7 +192,7 @@ def display_public_alerts_section(sheet_id):
 
         # Renderiza
         map_html = m.get_root().render()
-        html(map_html, height=800)
+        html(map_html, height=400)
 
     except Exception as e:
         st.error(f"❌ Failed to load public alerts: {e}")
