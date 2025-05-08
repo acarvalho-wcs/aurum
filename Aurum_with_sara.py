@@ -2100,51 +2100,26 @@ if uploaded_file is None and st.session_state.get("user"):
                             html_str = m.get_root().render()
                             st.components.v1.html(html_str, height=300)
 
-                            from io import BytesIO
-                            from streamlit_shadcn_ui import button
-                            import streamlit.components.v1 as components
-
                             # Gera HTML do mapa
                             map_html = m.get_root().render()
 
-                            # Nome do arquivo baseado na espécie
+                            # Define nome de arquivo com base na espécie
                             safe_species = selected_species_dash.replace(" ", "_").replace("/", "_")
                             filename = f"aurum_heatmap_{safe_species}.html"
+
+                            # Converte HTML para bytes
                             map_bytes = BytesIO(map_html.encode("utf-8"))
 
-                            # Botão visual (shadcn_ui)
-                            button("Download heatmap as HTML", variant="outline", id="custom-download")
-
-                            # CSS para esconder o botão real
-                            components.html(f"""
-                                <style>
-                                    [data-testid="stDownloadButton"][title="{filename}"] {{
-                                        display: none !important;
-                                    }}
-                                </style>
-                            """, height=0)
-
-                            # Botão real (oculto) que será clicado via JS
-                            st.download_button(
-                                label="Download heatmap as HTML",
-                                data=map_bytes,
-                                file_name=filename,
-                                mime="text/html",
-                                key=f"real-download-{safe_species}"
-                            )
-
-                            # Script para simular clique
-                            components.html(f"""
-                                <script>
-                                    const visualButton = window.parent.document.querySelector('button[id="custom-download"]');
-                                    const realButton = window.parent.document.querySelector('button[title='{filename}']");
-                                    if (visualButton && realButton) {{
-                                        visualButton.addEventListener('click', () => {{
-                                            realButton.click();
-                                        }});
-                                    }}
-                                </script>
-                            """, height=0)
+                            # Alinha e exibe botão em container visual
+                            with st.container():
+                                st.markdown(" ")
+                                st.download_button(
+                                    label="Download heatmap as HTML",
+                                    data=map_bytes,
+                                    file_name=filename,
+                                    mime="text/html",
+                                    use_container_width=True
+                                )
                             
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
