@@ -194,7 +194,8 @@ def display_public_alerts_section(sheet_id):
                     position: fixed;
                     bottom: 20px;
                     right: 20px;
-                    z-index:9999;
+                    z-index: 9999;
+                ">
                     <img src="data:image/png;base64,{img_base64}" height="70">
                 </div>
             """
