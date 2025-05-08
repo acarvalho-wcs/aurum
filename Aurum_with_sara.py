@@ -195,10 +195,7 @@ def display_public_alerts_section(sheet_id):
                     bottom: 20px;
                     right: 20px;
                     z-index:9999;
-                    background-color: rgba(255, 255, 255, 0.8);
-                    padding: 4px;
-                    border-radius: 8px;">
-                    <img src="data:image/png;base64,{img_base64}" height="50">
+                    <img src="data:image/png;base64,{img_base64}" height="70">
                 </div>
             """
             m.get_root().html.add_child(folium.Element(logo_html))
