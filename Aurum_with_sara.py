@@ -185,23 +185,30 @@ def display_public_alerts_section(sheet_id):
                 icon=Icon(color=color, icon="exclamation-sign")
             ).add_to(marker_cluster)
 
-        # 🔵 Insere logotipo no canto inferior direito
-        try:
-            with open("logo.png", "rb") as f:
-                img_base64 = base64.b64encode(f.read()).decode()
-            logo_html = f"""
-                <div style="
-                    position: fixed;
-                    bottom: 20px;
-                    right: 20px;
-                    z-index: 9999;
+        # 🔴 Adiciona legenda de risco no canto inferior direito
+        legend_html = """
+            <div style="
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index:9999;
+                background-color: white;
+                padding: 10px;
+                border-radius: 6px;
+                font-size: 13px;
+                box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+                line-height: 1.4;
                 ">
-                    <img src="data:image/png;base64,{img_base64}" height="70">
+                <strong>Risk Level</strong><br>
+                <span style='color:red;'>⬤ High</span><br>
+                <span style='color:orange;'>⬤ Medium</span><br>
+                <span style='color:blue;'>⬤ Low</span><br>
+                <div style="margin-top: 6px; font-size: 11px; color: gray;">
+                    Generated with <strong>Aurum</strong>
                 </div>
-            """
-            m.get_root().html.add_child(folium.Element(logo_html))
-        except Exception as e:
-            st.warning("⚠️ Logo image not found or could not be loaded.")
+            </div>
+        """
+        m.get_root().html.add_child(folium.Element(legend_html))
 
         # Renderiza o mapa como HTML embutido
         map_html = m.get_root().render()
