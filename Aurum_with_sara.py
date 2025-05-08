@@ -2101,7 +2101,7 @@ if uploaded_file is None and st.session_state.get("user"):
                             st.components.v1.html(html_str, height=300)
 
                             # 🔘 Botão visual com shadcn_ui
-                            from shadcn_ui import button
+                            from streamlit_shadcn_ui import button
                             button("Download heatmap as HTML", variant="outline", id="custom-download")
 
                             # 🔽 Link oculto de download com clique programado
