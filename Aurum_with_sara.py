@@ -1541,17 +1541,25 @@ if "user" in st.session_state:
                     "country": "country_input",
                     "seizure_status": "seizure_status_input",
                     "transit": "transit_input",
-                    "notes": "notes_input"
+                    "notes": "notes_input",
+                    "latitude": "latitude_input",
+                    "longitude": "longitude_input",
+                    "kg": "kg_input",
+                    "parts": "parts_input"
                 }
 
                 default_values = {
                     "case_id": "",
                     "n_seized": "",
-                    "year": 2024,
+                    "year": "",
                     "country": "",
                     "seizure_status": "",
                     "transit": "",
-                    "notes": ""
+                    "notes": "",
+                    "latitude": "",
+                    "longitude": "",
+                    "kg": "",
+                    "parts": ""
                 }
 
                 for key, default in default_values.items():
@@ -1566,6 +1574,10 @@ if "user" in st.session_state:
                     seizure_status = st.text_input("Seizure status", key=field_keys["seizure_status"])
                     transit = st.text_input("Transit feature", key=field_keys["transit"])
                     notes = st.text_area("Additional notes", key=field_keys["notes"])
+                    latitude = st.text_input("Latitude", key=field_keys["latitude"])
+                    longitude = st.text_input("Longitude", key=field_keys["longitude"])
+                    kg = st.text_input("Estimated weight (kg)", key=field_keys["kg"])
+                    parts = st.text_input("Animal parts seized", key=field_keys["parts"])
 
                     submitted = st.form_submit_button("Submit Case")
 
@@ -1580,6 +1592,10 @@ if "user" in st.session_state:
                         seizure_status,
                         transit,
                         notes,
+                        latitude,
+                        longitude,
+                        kg,
+                        parts,
                         st.session_state["user"]
                     ]
                     worksheet = get_worksheet()
@@ -1616,6 +1632,10 @@ if "user" in st.session_state:
                                 new_status = st.text_input("Seizure status", value=current_row["Seizure status"])
                                 new_transit = st.text_input("Transit feature", value=current_row["Transit feature"])
                                 new_notes = st.text_area("Additional notes", value=current_row["Notes"])
+                                new_lat = st.text_input("Latitude", value=current_row.get("Latitude", ""))
+                                new_lon = st.text_input("Longitude", value=current_row.get("Longitude", ""))
+                                new_kg = st.text_input("Estimated weight (kg)", value=current_row.get("Estimated weight (kg)", ""))
+                                new_parts = st.text_input("Animal parts seized", value=current_row.get("Animal parts seized", ""))
 
                                 submitted_edit = st.form_submit_button("Save Changes")
 
@@ -1630,9 +1650,13 @@ if "user" in st.session_state:
                                     new_status,
                                     new_transit,
                                     new_notes,
+                                    new_lat,
+                                    new_lon,
+                                    new_kg,
+                                    new_parts,
                                     st.session_state["user"]
                                 ]
-                                worksheet.update(f"A{row_index}:J{row_index}", [updated_row])
+                                worksheet.update(f"A{row_index}:N{row_index}", [updated_row])
                                 st.success("✅ Case updated successfully!")
                                 st.rerun()
                 except Exception as e:
@@ -1664,7 +1688,8 @@ if "user" in st.session_state:
 
                     required_cols_original = [
                         "Case #", "Country of seizure or shipment", "N seized specimens", "Year",
-                        "Country of offenders", "Seizure status", "Transit feature", "Notes"
+                        "Country of offenders", "Seizure status", "Transit feature", "Notes",
+                        "Latitude", "Longitude", "Estimated weight (kg)", "Animal parts seized"
                     ]
                     required_cols_normalized = [col.lower() for col in required_cols_original]
 
@@ -1702,6 +1727,7 @@ if "user" in st.session_state:
                 st.info("No data available at the moment.")
             else:
                 data = pd.DataFrame(records)
+
                 if not st.session_state.get("is_admin"):
                     data = data[data["Author"] == st.session_state["user"]]
 
@@ -1711,6 +1737,11 @@ if "user" in st.session_state:
                     selected_species = st.multiselect("Filter by species:", species_list)
                     if selected_species:
                         data = data[data["N seized specimens"].str.contains("|".join(selected_species))]
+
+                # Garante que as novas colunas existam (caso contrário, cria vazias para evitar erros)
+                for col in ["Latitude", "Longitude", "Estimated weight (kg)", "Animal parts seized"]:
+                    if col not in data.columns:
+                        data[col] = ""
 
                 st.dataframe(data)
 
