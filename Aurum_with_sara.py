@@ -2047,8 +2047,8 @@ if uploaded_file is None and st.session_state.get("user"):
                             st.components.v1.html(html_str, height=300)
 
 
-        except Exception as e:
-            st.error(f"❌ Failed to load dashboard summary: {e}")
+    except Exception as e:
+        st.error(f"❌ Failed to load dashboard summary: {e}")
 
 # --- SUGGESTIONS AND COMMENTS (SIDEBAR) ---
 if "show_sidebar_feedback" not in st.session_state:
