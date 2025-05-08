@@ -1868,11 +1868,9 @@ if uploaded_file is None and st.session_state.get("user"):
                     total_individuals_all = int(df_dashboard["N_seized"].sum())
                     total_countries_all = df_dashboard["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in df_dashboard.columns else 0
 
-                    df_dashboard["kg_seized"] = df_dashboard["N seized specimens"].str.extract(r'(\d+(?:\.\d+)?)\s*kg', expand=False)[0]
-                    total_kg = pd.to_numeric(df_dashboard["kg_seized"], errors="coerce").fillna(0).sum()
-
-                    df_dashboard["parts_seized"] = df_dashboard["N seized specimens"].str.extract(r'(\d+(?:\.\d+)?)\s*(part|parts)', expand=False)[0]
-                    total_parts = pd.to_numeric(df_dashboard["parts_seized"], errors="coerce").fillna(0).sum()
+                    # ✅ Usa colunas diretas da planilha Aurum_data
+                    total_kg = pd.to_numeric(df_dashboard.get("Estimated weight (kg)", 0), errors="coerce").fillna(0).sum()
+                    total_parts = pd.to_numeric(df_dashboard.get("Animal parts seized", 0), errors="coerce").fillna(0).sum()
 
                     st.markdown("### Global Summary")
                     col1, col2, col3 = st.columns(3)
