@@ -2108,12 +2108,16 @@ if uploaded_file is None and st.session_state.get("user"):
                             import urllib.parse
                             import streamlit.components.v1 as components
 
+                            # 🔤 Gera nome do arquivo com base na espécie
+                            species_safe = selected_species_dash.replace(" ", "_").replace("/", "_").lower()
+                            file_name = f"aurum_heatmap_{species_safe}.html"
+
                             encoded_html = urllib.parse.quote(map_html)
                             components.html(f"""
                                 <html>
                                     <body>
                                         <a id="hidden-download" href="data:text/html;charset=utf-8,{encoded_html}" 
-                                           download="aurum_heatmap.html" 
+                                           download="{file_name}" 
                                            style="display:none;">Download</a>
                                         <script>
                                             const trigger = window.parent.document.querySelector('button[id="custom-download"]');
@@ -2126,7 +2130,7 @@ if uploaded_file is None and st.session_state.get("user"):
                                     </body>
                                 </html>
                             """, height=0, key="heatmap-download")
-
+                            
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
 
