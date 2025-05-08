@@ -1846,7 +1846,7 @@ if uploaded_file is None and st.session_state.get("user"):
                     text = str(row.get('N seized specimens', ''))
 
                     matches = re.findall(
-                        r'(\d+(?:\.\d+)?)\s*(parts?|fangs?|claws?|feathers?|scales?|shells?)?\s*([A-Z][a-z]+(?:_[a-z]+)+)',
+                        r'(\d+(?:\.\d+)?)\s*(kg|parts?|fangs?|claws?|feathers?|scales?|shells?)?\s*([A-Z][a-z]+(?:_[a-z]+)+)',
                         text,
                         flags=re.IGNORECASE
                     )
@@ -1859,10 +1859,13 @@ if uploaded_file is None and st.session_state.get("user"):
 
                             new_row["Species"] = species
                             new_row["N_seized"] = 0
+                            new_row["Estimated weight (kg)"] = 0
                             new_row["Animal parts seized"] = 0
 
                             unit = (unit or "").lower()
-                            if unit in ["part", "parts", "fang", "fangs", "claw", "claws", "feather", "feathers", "scale", "scales", "shell", "shells"]:
+                            if unit == "kg":
+                                new_row["Estimated weight (kg)"] = qty
+                            elif unit in ["part", "parts", "fang", "fangs", "claw", "claws", "feather", "feathers", "scale", "scales", "shell", "shells"]:
                                 new_row["Animal parts seized"] = qty
                             else:
                                 new_row["N_seized"] = qty
