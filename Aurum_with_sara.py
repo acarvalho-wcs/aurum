@@ -137,16 +137,11 @@ def display_public_alerts_section(sheet_id):
 
         df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
 
-        if df_alerts.empty:
-            st.info("No public alerts available.")
-            return
-
         # Filtra alertas com coordenadas válidas
         df_alerts = df_alerts.dropna(subset=["Latitude", "Longitude"])
         df_alerts = df_alerts[df_alerts["Latitude"].astype(str).str.strip() != ""]
         df_alerts = df_alerts[df_alerts["Longitude"].astype(str).str.strip() != ""]
 
-        # Converte para float
         df_alerts["Latitude"] = pd.to_numeric(df_alerts["Latitude"], errors="coerce")
         df_alerts["Longitude"] = pd.to_numeric(df_alerts["Longitude"], errors="coerce")
         df_alerts = df_alerts.dropna(subset=["Latitude", "Longitude"])
@@ -155,7 +150,7 @@ def display_public_alerts_section(sheet_id):
             st.info("No georeferenced alerts to display on the map.")
             return
 
-        # Cria GeoDataFrame
+        # Cria GeoDataFrame e centraliza o mapa
         gdf = gpd.GeoDataFrame(df_alerts, geometry=gpd.points_from_xy(df_alerts["Longitude"], df_alerts["Latitude"]), crs="EPSG:4326")
         bounds = gdf.total_bounds
         center_lat = (bounds[1] + bounds[3]) / 2
@@ -190,7 +185,10 @@ def display_public_alerts_section(sheet_id):
                 icon=Icon(color=color, icon="exclamation-sign")
             ).add_to(marker_cluster)
 
-        # Renderiza
+        # Ajusta visualização ao conteúdo
+        m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+
+        # Renderiza o mapa como HTML embutido
         map_html = m.get_root().render()
         html(map_html, height=600)
 
