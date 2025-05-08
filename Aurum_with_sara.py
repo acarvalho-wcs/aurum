@@ -1844,20 +1844,43 @@ if uploaded_file is None and st.session_state.get("user"):
                 expanded_rows = []
                 for _, row in df.iterrows():
                     text = str(row.get('N seized specimens', ''))
-                    matches = re.findall(r'(\d+(?:\.\d+)?)\s*(?:kg|parts?|fangs?|claws?|feathers?|scales?|shells?)?\s*([A-Z][a-z]+(?:_[a-z]+)+)', text)
+
+                    matches = re.findall(
+                        r'(\d+(?:\.\d+)?)\s*(kg|parts?|fangs?|claws?|feathers?|scales?|shells?)?\s*([A-Z][a-z]+(?:_[a-z]+)+)',
+                        text,
+                        flags=re.IGNORECASE
+                    )
+
                     if matches:
-                        for qty, species in matches:
+                        for qty, unit, species in matches:
                             new_row = row.copy()
-                            new_row['N_seized'] = float(qty)
-                            new_row['Species'] = species
+                            qty = float(qty)
+                            species = species.strip()
+
+                            new_row["Species"] = species
+                            new_row["N_seized"] = 0
+                            new_row["Estimated weight (kg)"] = 0
+                            new_row["Animal parts seized"] = 0
+
+                            unit = (unit or "").lower()
+                            if unit == "kg":
+                                new_row["Estimated weight (kg)"] = qty
+                            elif unit in ["part", "parts", "fang", "fangs", "claw", "claws", "feather", "feathers", "scale", "scales", "shell", "shells"]:
+                                new_row["Animal parts seized"] = qty
+                            else:
+                                new_row["N_seized"] = qty
+
                             expanded_rows.append(new_row)
                     else:
                         expanded_rows.append(row)
+
                 return pd.DataFrame(expanded_rows)
 
             df_dashboard = expand_multi_species_rows(df_dashboard)
             df_dashboard = df_dashboard[df_dashboard["Species"].notna()]
             df_dashboard["N_seized"] = pd.to_numeric(df_dashboard["N_seized"], errors="coerce").fillna(0)
+            df_dashboard["Estimated weight (kg)"] = pd.to_numeric(df_dashboard["Estimated weight (kg)"], errors="coerce").fillna(0)
+            df_dashboard["Animal parts seized"] = pd.to_numeric(df_dashboard["Animal parts seized"], errors="coerce").fillna(0)
 
             dashboard_tab = tabs(
                 options=["Summary Dashboard", "Distribution of Cases"],
