@@ -1127,7 +1127,7 @@ def place_logo_bottom_right(image_path, width=70, link_url="https://brasil.wcs.o
     )
 
 # Chamada da função para exibir a logo com link
-place_logo_bottom_right("wcs.jpg")
+place_logo_bottom_right("wcs.png")
 
 st.sidebar.markdown("## Export Options")
 export_xlsx = st.sidebar.button("Export Cleaned data.xlsx")
