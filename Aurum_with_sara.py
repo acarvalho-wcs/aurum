@@ -1105,7 +1105,7 @@ def get_base64_image(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
 
-def place_logo_bottom_right(image_path, width=70, link_url="https://brasil.wcs.org/"):
+def place_logo_bottom_right(image_path, width=70, link_url="https://wcs.org/"):
     img_base64 = get_base64_image(image_path)
     st.markdown(
         f"""
