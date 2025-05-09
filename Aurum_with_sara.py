@@ -1433,8 +1433,9 @@ def display_alert_submission_form(sheet_id):
 
                 for k in field_keys.values():
                     if k in st.session_state:
-                        del st.session_state[k]
-                rerun
+                        del st.session_state[k]                
+                st.rerun()
+                st.stop()
 
             except Exception as e:
                 st.error(f"❌ Failed to submit alert: {e}")
