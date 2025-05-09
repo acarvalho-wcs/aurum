@@ -52,21 +52,32 @@ if about_toggle:
 
 # Exibe o conteúdo "About Aurum" se ativado
 if st.session_state["show_sidebar_about"]:
-    st.markdown("## About Aurum")
-    st.markdown("""
-**Aurum** is a modular and interactive platform for **criminal intelligence in wildlife trafficking**. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly interface.
+    import base64
 
-The platform enables the upload and processing of case-level data and provides a suite of analytical tools, including:
+    def get_base64_image(image_path):
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
 
-- **Interactive Visualization**: Build customized plots and dashboards based on selected variables to support real-time analysis and reporting.
-- **Trend Analysis**: Explore directional changes in seizure patterns using segmented regression (TCS) and detect significant deviations from historical averages with cumulative sum control charts (CUSUM).
-- **Species Co-occurrence**: Identify statistically significant co-trafficking relationships between species using chi-square tests and network-based visualizations.
-- **Anomaly Detection**: Detect atypical or high-impact cases using multiple outlier detection methods (Isolation Forest, LOF, DBSCAN, Mahalanobis distance, and Z-Score).
-- **Criminal Network Analysis**: Reveal connections between cases based on shared attributes such as species or offender countries to infer coordination and logistical convergence.
-- **Geospatial Analysis**: Map the spatial distribution of trafficking activity using Kernel Density Estimation (KDE) and interactive heatmaps. Analysts can filter by species and time periods to detect spatial hotspots, regional trends, and high-risk corridors.
+    img_base64 = get_base64_image("WCS-Brasil.jpeg")
 
-**Aurum** bridges conservation data and investigative workflows, offering a scalable and field-ready platform for intelligence-led responses to wildlife crime.
-    """)
+    st.markdown(f"""
+    <div style="position: relative; padding-top: 10px;">
+        <img src="data:image/jpeg;base64,{img_base64}" 
+             style="position: absolute; top: 10px; right: 10px; width: 120px; border-radius: 8px;" />
+        <h2>About Aurum</h2>
+        <p><strong>Aurum</strong> is a modular and interactive platform for <strong>criminal intelligence in wildlife trafficking</strong>. Developed by the Wildlife Conservation Society (WCS) – Brazil, it empowers analysts, researchers, and enforcement professionals with data-driven insights through a user-friendly interface.</p>
+        <p>The platform enables the upload and processing of case-level data and provides a suite of analytical tools, including:</p>
+        <ul>
+            <li><strong>Interactive Visualization</strong>: Build customized plots and dashboards based on selected variables to support real-time analysis and reporting.</li>
+            <li><strong>Trend Analysis</strong>: Explore directional changes in seizure patterns using segmented regression (TCS) and detect significant deviations from historical averages with cumulative sum control charts (CUSUM).</li>
+            <li><strong>Species Co-occurrence</strong>: Identify statistically significant co-trafficking relationships between species using chi-square tests and network-based visualizations.</li>
+            <li><strong>Anomaly Detection</strong>: Detect atypical or high-impact cases using multiple outlier detection methods (Isolation Forest, LOF, DBSCAN, Mahalanobis distance, and Z-Score).</li>
+            <li><strong>Criminal Network Analysis</strong>: Reveal connections between cases based on shared attributes such as species or offender countries to infer coordination and logistical convergence.</li>
+            <li><strong>Geospatial Analysis</strong>: Map the spatial distribution of trafficking activity using Kernel Density Estimation (KDE) and interactive heatmaps. Analysts can filter by species and time periods to detect spatial hotspots, regional trends, and high-risk corridors.</li>
+        </ul>
+        <p><strong>Aurum</strong> bridges conservation data and investigative workflows, offering a scalable and field-ready platform for intelligence-led responses to wildlife crime.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.sidebar.markdown("## 📂 Upload IWT Data")
 uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx) containing wildlife trafficking data.**", type=["xlsx"])
