@@ -1000,9 +1000,10 @@ if uploaded_file is not None:
 
 
                         # Mapa Interativo
+                        df_geo_unique = df_geo.drop_duplicates(subset=["Case #", "Latitude", "Longitude"])
                         gdf = gpd.GeoDataFrame(
-                            df_geo,
-                            geometry=gpd.points_from_xy(df_geo['Longitude'], df_geo['Latitude']),
+                            df_geo_unique,
+                            geometry=gpd.points_from_xy(df_geo_unique["Longitude"], df_geo_unique["Latitude"]),
                             crs="EPSG:4326"
                         )
 
@@ -2092,9 +2093,10 @@ if uploaded_file is None and st.session_state.get("user"):
                             from folium.plugins import HeatMap
                             import geopandas as gpd
 
+                            df_geo_unique = df_geo.drop_duplicates(subset=["Case #", "Latitude", "Longitude"])
                             gdf = gpd.GeoDataFrame(
-                                df_geo,
-                                geometry=gpd.points_from_xy(df_geo["Longitude"], df_geo["Latitude"]),
+                                df_geo_unique,
+                                geometry=gpd.points_from_xy(df_geo_unique["Longitude"], df_geo_unique["Latitude"]),
                                 crs="EPSG:4326"
                             )
 
