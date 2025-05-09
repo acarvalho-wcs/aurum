@@ -82,6 +82,8 @@ The platform enables the upload and processing of case-level data and provides a
     with col2:
         st.image("WCS-Brasil.jpeg", width=120)
 
+    st.markdown("---")
+    
 st.sidebar.markdown("## 📂 Upload IWT Data")
 uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx) containing wildlife trafficking data.**", type=["xlsx"])
 
