@@ -58,7 +58,7 @@ if st.session_state["show_sidebar_about"]:
         with open(image_path, "rb") as img_file:
             return base64.b64encode(img_file.read()).decode()
 
-    img_base64 = get_base64_image("WCS-Brasil.jpg")  # Certifique-se de que está no mesmo diretório
+    img_base64 = get_base64_image("WCS-Brasil.jpeg")  # Certifique-se de que está no mesmo diretório
 
     col1, col2 = st.columns([4, 1])  # Proporção de espaço entre texto e imagem
 
@@ -80,7 +80,7 @@ The platform enables the upload and processing of case-level data and provides a
         """)
 
     with col2:
-        st.image("WCS-Brasil.jpg", width=120)
+        st.image("WCS-Brasil.jpeg", width=120)
 
 st.sidebar.markdown("## 📂 Upload IWT Data")
 uploaded_file = st.sidebar.file_uploader("**Upload your Excel file (.xlsx) containing wildlife trafficking data.**", type=["xlsx"])
