@@ -1954,7 +1954,7 @@ if uploaded_file is None and st.session_state.get("user"):
             df_dashboard["Animal parts seized"] = pd.to_numeric(df_dashboard["Animal parts seized"], errors="coerce").fillna(0)
 
             dashboard_tab = tabs(
-                options=["Summary Dashboard", "Distribution of Cases", "Visual Species Identification (iNaturalist)"],
+                options=["Summary Dashboard", "Distribution of Cases", "Visual Species Identification"],
                 default_value="",
                 key="dashboard_tabs"
             )
@@ -2180,7 +2180,7 @@ if uploaded_file is None and st.session_state.get("user"):
                                     use_container_width=True
                                 )
 
-            elif dashboard_tab == "Visual Species Identification (iNaturalist)":
+            elif dashboard_tab == "Visual Species Identification":
                 st.markdown("## Visual Species Identification (Bing Visual Search)")
                 st.markdown("Upload a photo of a wild animal or plant to identify it using AI.")
 
