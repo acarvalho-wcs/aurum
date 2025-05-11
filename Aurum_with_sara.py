@@ -2184,65 +2184,57 @@ if uploaded_file is None and st.session_state.get("user"):
                 st.markdown("## Visual Species Identification")
                 st.markdown("Upload a photo of a wild animal or plant to analyze using Azure Computer Vision.")
 
-                file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
-                if file:
-                    bing_api_key = st.secrets["bing_api_key"]
-                    if not bing_api_key:
-                        st.error("API key not found. Please set 'bing_api_key' in Streamlit secrets.")
-                    else:
+            elif dashboard_tab == "Visual Species Identification":
+                st.markdown("## Visual Species Identification")
+                st.markdown("Upload a photo of a wild animal or plant to identify it using AI (Azure Computer Vision).")
+
+                # Carrega a chave do arquivo .streamlit/secrets.toml
+                bing_api_key = st.secrets.get("bing_api_key")
+                if not bing_api_key:
+                    st.error("API key not found. Please set 'bing_api_key' in .streamlit/secrets.toml.")
+                else:
+                    file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
+                    if file:
                         st.image(file, caption="Uploaded Image", use_container_width=True)
                         st.info("Sending image to Azure Computer Vision...")
 
                         try:
                             endpoint = "https://aurum-image.cognitiveservices.azure.com/vision/v3.2/analyze"
                             params = {
-                                "visualFeatures": "Description,Tags,Objects",
+                                "visualFeatures": "Categories,Description,Tags",
+                                "details": "",
                                 "language": "en"
                             }
                             headers = {
                                 "Ocp-Apim-Subscription-Key": bing_api_key,
                                 "Content-Type": "application/octet-stream"
                             }
-                            image_data = file.getvalue()
 
                             response = requests.post(
-                                endpoint,
+                                url=endpoint,
                                 headers=headers,
                                 params=params,
-                                data=image_data,
+                                data=file.getvalue(),
                                 timeout=10
                             )
 
                             if response.status_code == 200:
-                                data = response.json()
+                                result = response.json()
+                                st.success("✅ Image processed successfully!")
+                                st.markdown("### Description")
+                                captions = result.get("description", {}).get("captions", [])
+                                for caption in captions:
+                                    st.markdown(f"- **{caption['text'].capitalize()}** (confidence: `{caption['confidence']:.2%}`)")
 
-                                st.markdown("### Detected Description")
-                                for caption in data.get("description", {}).get("captions", []):
-                                    text = caption.get("text", "")
-                                    confidence = caption.get("confidence", 0)
-                                    st.markdown(f"📝 **{text}** ({confidence:.1%} confidence)")
-
-                                st.markdown("### Detected Tags")
-                                tags = data.get("tags", [])
+                                tags = result.get("description", {}).get("tags", [])
                                 if tags:
-                                    tag_list = [f"`{tag['name']}` ({tag['confidence']:.0%})" for tag in tags]
-                                    st.write(", ".join(tag_list))
-                                else:
-                                    st.info("No tags detected.")
-
-                                st.markdown("### Detected Objects")
-                                objects = data.get("objects", [])
-                                if objects:
-                                    for obj in objects:
-                                        name = obj.get("object", "unknown")
-                                        confidence = obj.get("confidence", 0)
-                                        st.markdown(f"- **{name}** ({confidence:.1%})")
-                                else:
-                                    st.info("No objects detected.")
-
+                                    st.markdown("### Tags")
+                                    st.write(", ".join(tags))
                             else:
                                 st.error(f"❌ Azure API returned {response.status_code}: {response.text}")
 
+                        except requests.exceptions.Timeout:
+                            st.error("❌ The request timed out. Please try again.")
                         except Exception as e:
                             st.error(f"❌ Error while processing the image: {e}")
 
