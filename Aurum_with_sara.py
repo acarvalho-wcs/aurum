@@ -2182,54 +2182,59 @@ if uploaded_file is None and st.session_state.get("user"):
 
             elif dashboard_tab == "Visual Species Identification":
                 st.markdown("## Visual Species Identification")
-                st.markdown("Upload a photo of a wild animal or plant to identify it using AI (Azure Computer Vision).")
+                st.markdown("Upload a photo of a wild animal or plant to identify it using iNaturalist AI (no login required).")
 
-                bing_api_key = st.secrets["bing_api_key"]
-                endpoint = "https://aurum-image.cognitiveservices.azure.com/vision/v3.2/analyze"
+                def upload_to_transfersh(file):
+                    try:
+                        response = requests.put("https://transfer.sh/image.jpg", data=file.getvalue())
+                        if response.status_code == 200:
+                            return response.text.strip()
+                        else:
+                            st.error("❌ Failed to upload image to transfer.sh")
+                            return None
+                    except Exception as e:
+                        st.error(f"❌ Error during image upload: {e}")
+                        return None
+
+                def query_inaturalist(image_url):
+                    try:
+                        endpoint = f"https://api.inaturalist.org/v1/computervision/score_image?image_url={image_url}"
+                        response = requests.get(endpoint, timeout=15)
+                        if response.status_code == 200:
+                            return response.json().get("results", [])
+                        else:
+                            st.error(f"❌ iNaturalist API returned {response.status_code}: {response.text}")
+                            return []
+                    except Exception as e:
+                        st.error(f"❌ Failed to contact iNaturalist: {e}")
+                        return []
 
                 file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
                 if file:
                     st.image(file, caption="Uploaded Image", use_container_width=True)
-                    st.info("Sending image to Azure Computer Vision...")
+                    st.info("Uploading image and contacting iNaturalist...")
 
-                    headers = {
-                        "Ocp-Apim-Subscription-Key": bing_api_key,
-                        "Content-Type": "application/octet-stream"
-                    }
-                    params = {
-                        "visualFeatures": "Categories,Description,Tags",
-                        "details": "",
-                        "language": "en"
-                    }
+                    image_url = upload_to_transfersh(file)
+                    if image_url:
+                        results = query_inaturalist(image_url)
+                        if results:
+                            st.success("✅ Species identification completed")
+                            for result in results[:3]:  # mostra os 3 primeiros resultados
+                                taxon = result.get("taxon", {})
+                                name = taxon.get("preferred_common_name", "Unknown")
+                                sci_name = taxon.get("name", "Unknown")
+                                score = result.get("score", 0.0)
 
-                    try:
-                        response = requests.post(
-                            url=endpoint,
-                            headers=headers,
-                            params=params,
-                            data=file.getvalue(),
-                            timeout=10
-                        )
+                                st.markdown(f"### {name}")
+                                st.markdown(f"**Scientific name:** `{sci_name}`")
+                                st.markdown(f"**Confidence:** `{score:.1%}`")
 
-                        if response.status_code == 200:
-                            result = response.json()
-                            st.success("✅ Image processed successfully!")
-
-                            st.markdown("### Description")
-                            for caption in result.get("description", {}).get("captions", []):
-                                st.markdown(f"- **{caption['text'].capitalize()}** (confidence: `{caption['confidence']:.2%}`)")
-
-                            tags = result.get("description", {}).get("tags", [])
-                            if tags:
-                                st.markdown("### Tags")
-                                st.write(", ".join(tags))
+                                photo = taxon.get("default_photo", {})
+                                if photo.get("medium_url"):
+                                    st.image(photo["medium_url"], width=300)
+                                st.markdown("---")
                         else:
-                            st.error(f"❌ Azure API returned {response.status_code}: {response.text}")
-
-                    except requests.exceptions.Timeout:
-                        st.error("❌ Request timed out.")
-                    except Exception as e:
-                        st.error(f"❌ Error: {e}")
+                            st.warning("⚠️ No species could be identified.")
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
