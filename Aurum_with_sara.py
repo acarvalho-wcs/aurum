@@ -2184,55 +2184,52 @@ if uploaded_file is None and st.session_state.get("user"):
                 st.markdown("## Visual Species Identification")
                 st.markdown("Upload a photo of a wild animal or plant to identify it using AI (Azure Computer Vision).")
 
-                # Carrega a chave do arquivo .streamlit/secrets.toml
-                bing_api_key = st.secrets.get("bing_api_key")
-                if not bing_api_key:
-                    st.error("API key not found. Please set 'bing_api_key' in .streamlit/secrets.toml.")
-                else:
-                    file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
-                    if file:
-                        st.image(file, caption="Uploaded Image", use_container_width=True)
-                        st.info("Sending image to Azure Computer Vision...")
+                bing_api_key = st.secrets["bing_api_key"]
+                endpoint = "https://aurum-image.cognitiveservices.azure.com/vision/v3.2/analyze"
 
-                        try:
-                            endpoint = "https://aurum-image.cognitiveservices.azure.com/vision/v3.2/analyze"
-                            params = {
-                                "visualFeatures": "Categories,Description,Tags",
-                                "details": "",
-                                "language": "en"
-                            }
-                            headers = {
-                                "Ocp-Apim-Subscription-Key": bing_api_key,
-                                "Content-Type": "application/octet-stream"
-                            }
+                file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
+                if file:
+                    st.image(file, caption="Uploaded Image", use_container_width=True)
+                    st.info("Sending image to Azure Computer Vision...")
 
-                            response = requests.post(
-                                url=endpoint,
-                                headers=headers,
-                                params=params,
-                                data=file.getvalue(),
-                                timeout=10
-                            )
+                    headers = {
+                        "Ocp-Apim-Subscription-Key": bing_api_key,
+                        "Content-Type": "application/octet-stream"
+                    }
+                    params = {
+                        "visualFeatures": "Categories,Description,Tags",
+                        "details": "",
+                        "language": "en"
+                    }
 
-                            if response.status_code == 200:
-                                result = response.json()
-                                st.success("✅ Image processed successfully!")
-                                st.markdown("### Description")
-                                captions = result.get("description", {}).get("captions", [])
-                                for caption in captions:
-                                    st.markdown(f"- **{caption['text'].capitalize()}** (confidence: `{caption['confidence']:.2%}`)")
+                    try:
+                        response = requests.post(
+                            url=endpoint,
+                            headers=headers,
+                            params=params,
+                            data=file.getvalue(),
+                            timeout=10
+                        )
 
-                                tags = result.get("description", {}).get("tags", [])
-                                if tags:
-                                    st.markdown("### Tags")
-                                    st.write(", ".join(tags))
-                            else:
-                                st.error(f"❌ Azure API returned {response.status_code}: {response.text}")
+                        if response.status_code == 200:
+                            result = response.json()
+                            st.success("✅ Image processed successfully!")
 
-                        except requests.exceptions.Timeout:
-                            st.error("❌ The request timed out. Please try again.")
-                        except Exception as e:
-                            st.error(f"❌ Error while processing the image: {e}")
+                            st.markdown("### Description")
+                            for caption in result.get("description", {}).get("captions", []):
+                                st.markdown(f"- **{caption['text'].capitalize()}** (confidence: `{caption['confidence']:.2%}`)")
+
+                            tags = result.get("description", {}).get("tags", [])
+                            if tags:
+                                st.markdown("### Tags")
+                                st.write(", ".join(tags))
+                        else:
+                            st.error(f"❌ Azure API returned {response.status_code}: {response.text}")
+
+                    except requests.exceptions.Timeout:
+                        st.error("❌ Request timed out.")
+                    except Exception as e:
+                        st.error(f"❌ Error: {e}")
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
