@@ -2182,6 +2182,60 @@ if uploaded_file is None and st.session_state.get("user"):
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
 
+import streamlit as st
+import requests
+
+# ----- Função principal -----
+
+def identify_species_with_inaturalist(uploaded_file):
+    """Send an image to iNaturalist and display identification results."""
+    if not uploaded_file:
+        st.warning("Please upload an image to start the identification.")
+        return
+    
+    st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
+    st.info("Sending image to iNaturalist for analysis...")
+
+    files = {'image': uploaded_file.getvalue()}
+    try:
+        response = requests.post(
+            "https://api.inaturalist.org/v1/computervision/score_image",
+            files=files
+        )
+        if response.status_code == 200:
+            results = response.json().get("results", [])
+            if not results:
+                st.warning("No species could be identified.")
+                return
+            for result in results:
+                taxon = result["taxon"]
+                common_name = taxon.get('preferred_common_name', 'Unknown species')
+                scientific_name = taxon.get('name', 'Unknown')
+                confidence = result.get('score', 0)
+
+                st.markdown(f"### {common_name}")
+                st.markdown(f"**Scientific name:** `{scientific_name}`")
+                st.markdown(f"**Confidence:** `{confidence:.2%}`")
+
+                if "default_photo" in taxon:
+                    st.image(taxon["default_photo"]["medium_url"], width=300)
+        else:
+            st.error(f"API Error: {response.status_code}")
+    except Exception as e:
+        st.error(f"Image processing failed: {e}")
+
+# ----- Tab única do Dashboard -----
+
+tab1, = st.tabs(["Visual Species Identification (iNaturalist)"])
+
+with tab1:
+    st.markdown("## Visual Species Identification (iNaturalist)")
+    st.markdown("Upload a photo of a wild animal or plant to identify it using AI.")
+
+    file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
+    if file:
+        identify_species_with_inaturalist(file)
+
 # --- SUGGESTIONS AND COMMENTS (SIDEBAR) ---
 if "show_sidebar_feedback" not in st.session_state:
     st.session_state["show_sidebar_feedback"] = False
