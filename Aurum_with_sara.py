@@ -2195,7 +2195,7 @@ if uploaded_file is None and st.session_state.get("user"):
                         st.info("Sending image to Bing Visual Search...")
 
                         try:
-                            endpoint = "https://brazilsouth.api.cognitive.microsoft.com/bing/v7.0/images/visualsearch"
+                            endpoint = "https://aurum-image.cognitiveservices.azure.com/bing/v7.0/images/visualsearch"
                             headers = {"Ocp-Apim-Subscription-Key": bing_api_key}
                             files = {"image": ("image.jpg", file.getvalue(), "multipart/form-data")}
 
