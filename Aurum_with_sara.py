@@ -2182,10 +2182,6 @@ if uploaded_file is None and st.session_state.get("user"):
 
             elif dashboard_tab == "Visual Species Identification":
                 st.markdown("## Visual Species Identification")
-                st.markdown("Upload a photo of a wild animal or plant to analyze using Azure Computer Vision.")
-
-            elif dashboard_tab == "Visual Species Identification":
-                st.markdown("## Visual Species Identification")
                 st.markdown("Upload a photo of a wild animal or plant to identify it using AI (Azure Computer Vision).")
 
                 # Carrega a chave do arquivo .streamlit/secrets.toml
