@@ -2184,61 +2184,57 @@ if uploaded_file is None and st.session_state.get("user"):
                 st.markdown("## Visual Species Identification")
                 st.markdown("Upload a photo of a wild animal or plant to identify it using AI (via Bing Visual Search).")
 
-                bing_api_key = st.text_input(
-                    "Enter your Bing Visual Search API Key",
-                    type="password",
-                    placeholder="Your Bing API Key here..."
-                )
-
                 file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
-                if file and bing_api_key:
-                    st.image(file, caption="Uploaded Image", use_container_width=True)
-                    st.info("Sending image to Bing Visual Search...")
+                if file:
+                    bing_api_key = st.secrets.get("bing_api_key")
+                    if not bing_api_key:
+                        st.error("API key not found. Please set 'bing_api_key' in Streamlit secrets.")
+                    else:
+                        st.image(file, caption="Uploaded Image", use_container_width=True)
+                        st.info("Sending image to Bing Visual Search...")
 
-                    try:
-                        endpoint = "https://api.bing.microsoft.com/v7.0/images/visualsearch"
-                        headers = {"Ocp-Apim-Subscription-Key": bing_api_key}
-                        files = {"image": ("image.jpg", file.getvalue(), "multipart/form-data")}
+                        try:
+                            endpoint = "https://api.bing.microsoft.com/v7.0/images/visualsearch"
+                            headers = {"Ocp-Apim-Subscription-Key": bing_api_key}
+                            files = {"image": ("image.jpg", file.getvalue(), "multipart/form-data")}
 
-                        response = requests.post(
-                            endpoint,
-                            headers=headers,
-                            files=files,
-                            timeout=10
-                        )
+                            response = requests.post(
+                                endpoint,
+                                headers=headers,
+                                files=files,
+                                timeout=10
+                            )
 
-                        if response.status_code == 200:
-                            try:
-                                data = response.json()
-                                tags = data.get("tags", [])
-                                if not tags:
-                                    st.warning("No species or matches were found.")
-                                else:
-                                    st.markdown("### Detected Visual Matches")
-                                    for tag in tags:
-                                        for action in tag.get("actions", []):
-                                            if action.get("actionType") == "VisualSearch":
-                                                for result in action.get("data", {}).get("value", []):
-                                                    title = result.get("name", "Unnamed")
-                                                    host = result.get("hostPageDisplayUrl", "")
-                                                    thumbnail = result.get("thumbnailUrl")
+                            if response.status_code == 200:
+                                try:
+                                    data = response.json()
+                                    tags = data.get("tags", [])
+                                    if not tags:
+                                        st.warning("No species or matches were found.")
+                                    else:
+                                        st.markdown("### Detected Visual Matches")
+                                        for tag in tags:
+                                            for action in tag.get("actions", []):
+                                                if action.get("actionType") == "VisualSearch":
+                                                    for result in action.get("data", {}).get("value", []):
+                                                        title = result.get("name", "Unnamed")
+                                                        host = result.get("hostPageDisplayUrl", "")
+                                                        thumbnail = result.get("thumbnailUrl")
 
-                                                    st.markdown(f"**{title}**")
-                                                    if thumbnail:
-                                                        st.image(thumbnail, use_container_width=True)
-                                                    if host:
-                                                        st.caption(f"[Source]({host})")
-                                                    st.markdown("---")
-                            except Exception as parse_err:
-                                st.error(f"❌ Failed to parse API response: {parse_err}")
-                        else:
-                            st.error(f"❌ Bing API returned {response.status_code}: {response.text}")
-                    except requests.exceptions.Timeout:
-                        st.error("❌ The request to Bing Visual Search timed out. Please try again.")
-                    except requests.exceptions.RequestException as req_err:
-                        st.error(f"❌ Failed to reach Bing API: {req_err}")
-                elif file and not bing_api_key:
-                    st.warning("Please enter your Bing Visual Search API key.")
+                                                        st.markdown(f"**{title}**")
+                                                        if thumbnail:
+                                                            st.image(thumbnail, use_container_width=True)
+                                                        if host:
+                                                            st.caption(f"[Source]({host})")
+                                                        st.markdown("---")
+                                except Exception as parse_err:
+                                    st.error(f"❌ Failed to parse API response: {parse_err}")
+                            else:
+                                st.error(f"❌ Bing API returned {response.status_code}: {response.text}")
+                        except requests.exceptions.Timeout:
+                            st.error("❌ The request to Bing Visual Search timed out. Please try again.")
+                        except requests.exceptions.RequestException as req_err:
+                            st.error(f"❌ Failed to reach Bing API: {req_err}")
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
