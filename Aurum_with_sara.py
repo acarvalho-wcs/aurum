@@ -3,6 +3,7 @@ import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 import re
+import requests
 import unicodedata
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
