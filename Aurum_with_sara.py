@@ -2182,59 +2182,60 @@ if uploaded_file is None and st.session_state.get("user"):
 
             elif dashboard_tab == "Visual Species Identification":
                 st.markdown("## Visual Species Identification")
-                st.markdown("Upload a photo of a wild animal or plant to identify it using iNaturalist AI (no login required).")
+                st.markdown("Upload a photo of a wild animal or plant to identify it using AI (iNaturalist API via Imgbb).")
 
-                def upload_to_transfersh(file):
-                    try:
-                        response = requests.put("https://transfer.sh/image.jpg", data=file.getvalue())
-                        if response.status_code == 200:
-                            return response.text.strip()
-                        else:
-                            st.error("❌ Failed to upload image to transfer.sh")
-                            return None
-                    except Exception as e:
-                        st.error(f"❌ Error during image upload: {e}")
-                        return None
+                imgbb_api_key = st.secrets.get("imgbb_api_key")
+                if not imgbb_api_key:
+                    st.error("❌ API key for Imgbb not found. Please set 'imgbb_api_key' in .streamlit/secrets.toml.")
+                else:
+                    file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
+                    if file:
+                        st.image(file, caption="Uploaded Image", use_container_width=True)
+                        st.info("Uploading image and contacting iNaturalist...")
 
-                def query_inaturalist(image_url):
-                    try:
-                        endpoint = f"https://api.inaturalist.org/v1/computervision/score_image?image_url={image_url}"
-                        response = requests.get(endpoint, timeout=15)
-                        if response.status_code == 200:
-                            return response.json().get("results", [])
-                        else:
-                            st.error(f"❌ iNaturalist API returned {response.status_code}: {response.text}")
-                            return []
-                    except Exception as e:
-                        st.error(f"❌ Failed to contact iNaturalist: {e}")
-                        return []
+                        try:
+                            import base64
+                            image_base64 = base64.b64encode(file.getvalue()).decode("utf-8")
 
-                file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
-                if file:
-                    st.image(file, caption="Uploaded Image", use_container_width=True)
-                    st.info("Uploading image and contacting iNaturalist...")
+                            # Upload to imgbb
+                            upload_url = "https://api.imgbb.com/1/upload"
+                            payload = {
+                                "key": imgbb_api_key,
+                                "image": image_base64
+                            }
+                            imgbb_response = requests.post(upload_url, data=payload)
+                            imgbb_response.raise_for_status()
+                            image_url = imgbb_response.json()["data"]["url"]
 
-                    image_url = upload_to_transfersh(file)
-                    if image_url:
-                        results = query_inaturalist(image_url)
-                        if results:
-                            st.success("✅ Species identification completed")
-                            for result in results[:3]:  # mostra os 3 primeiros resultados
-                                taxon = result.get("taxon", {})
-                                name = taxon.get("preferred_common_name", "Unknown")
-                                sci_name = taxon.get("name", "Unknown")
-                                score = result.get("score", 0.0)
+                            # Send to iNaturalist
+                            inat_url = "https://api.inaturalist.org/v1/computervision/score_image"
+                            inat_response = requests.get(inat_url, params={"image_url": image_url})
+                            inat_response.raise_for_status()
+                            data = inat_response.json()
 
-                                st.markdown(f"### {name}")
-                                st.markdown(f"**Scientific name:** `{sci_name}`")
-                                st.markdown(f"**Confidence:** `{score:.1%}`")
+                            results = data.get("results", [])
+                            if results:
+                                best = results[0]
+                                taxon = best.get("taxon", {})
+                                name = taxon.get("name", "Unknown")
+                                common = taxon.get("preferred_common_name", "No common name")
+                                score = best.get("score", 0)
+
+                                st.success("✅ Image processed successfully via iNaturalist!")
+                                st.markdown(f"### {common}")
+                                st.markdown(f"**Scientific name:** `{name}`")
+                                st.markdown(f"**Confidence:** `{score:.2%}`")
 
                                 photo = taxon.get("default_photo", {})
                                 if photo.get("medium_url"):
                                     st.image(photo["medium_url"], width=300)
-                                st.markdown("---")
-                        else:
-                            st.warning("⚠️ No species could be identified.")
+                            else:
+                                st.warning("⚠️ No prediction returned by iNaturalist.")
+
+                        except requests.exceptions.RequestException as err:
+                            st.error(f"❌ Error during image upload or prediction: {err}")
+                        except Exception as e:
+                            st.error(f"❌ Unexpected error: {e}")
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
