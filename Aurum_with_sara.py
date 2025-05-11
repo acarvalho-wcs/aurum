@@ -1955,7 +1955,7 @@ if uploaded_file is None and st.session_state.get("user"):
             df_dashboard["Animal parts seized"] = pd.to_numeric(df_dashboard["Animal parts seized"], errors="coerce").fillna(0)
 
             dashboard_tab = tabs(
-                options=["Summary Dashboard", "Distribution of Cases", "Visual Species Identification"],
+                options=["Summary Dashboard", "Distribution of Cases"],
                 default_value="",
                 key="dashboard_tabs"
             )
@@ -2180,73 +2180,6 @@ if uploaded_file is None and st.session_state.get("user"):
                                     mime="text/html",
                                     use_container_width=True
                                 )
-
-            elif dashboard_tab == "Visual Species Identification":
-                st.markdown("## Visual Species Identification")
-                st.markdown("Upload a photo of a wild animal or plant to identify it using AI (Azure Computer Vision).")
-
-                azure_key = st.secrets["bing_api_key"]
-                endpoint = "https://aurum-image.cognitiveservices.azure.com/vision/v3.2/analyze"
-
-                file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
-                if file:
-                    st.image(file, caption="Uploaded Image", use_container_width=True)
-                    st.info("Sending image to Azure Computer Vision...")
-
-                    headers = {
-                        "Ocp-Apim-Subscription-Key": azure_key,
-                        "Content-Type": "application/octet-stream"
-                    }
-                    params = {
-                        "visualFeatures": "Categories,Description,Tags",
-                        "details": "",
-                        "language": "en"
-                    }
-
-                    try:
-                        response = requests.post(
-                            url=endpoint,
-                            headers=headers,
-                            params=params,
-                            data=file.getvalue(),
-                            timeout=10
-                        )
-
-                        if response.status_code == 200:
-                            result = response.json()
-                            st.success("✅ Image processed successfully!")
-
-                            st.markdown("### Description")
-                            captions = result.get("description", {}).get("captions", [])
-                            tags = result.get("description", {}).get("tags", [])
-
-                            if captions:
-                                best_caption = captions[0].get("text", "").capitalize()
-                                confidence = captions[0].get("confidence", 0.0)
-                                st.markdown(f"- **{best_caption}** (confidence: `{confidence:.2%}`)")
-                            else:
-                                best_caption = None
-
-                            if tags:
-                                st.markdown("### Tags")
-                                st.write(", ".join(tags))
-                            else:
-                                tags = []
-
-                            # Escolhe um nome de espécie possível
-                            possible_species = tags[0] if tags else best_caption
-                            if possible_species:
-                                encoded_species = urllib.parse.quote(possible_species)
-                                url = f"https://www.inaturalist.org/search?q={encoded_species}"
-                                st.markdown(f"[🔍 Search on iNaturalist]({url})")
-
-                        else:
-                            st.error(f"❌ Azure API returned {response.status_code}: {response.text}")
-
-                    except requests.exceptions.Timeout:
-                        st.error("❌ Request timed out.")
-                    except Exception as e:
-                        st.error(f"❌ Error: {e}")
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
