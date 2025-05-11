@@ -2181,7 +2181,7 @@ if uploaded_file is None and st.session_state.get("user"):
                                 )
 
             elif dashboard_tab == "Visual Species Identification":
-                st.markdown("## Visual Species Identification (Bing Visual Search)")
+                st.markdown("## Visual Species Identification")
                 st.markdown("Upload a photo of a wild animal or plant to identify it using AI.")
 
                 bing_api_key = st.text_input(
