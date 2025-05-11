@@ -1953,7 +1953,7 @@ if uploaded_file is None and st.session_state.get("user"):
             df_dashboard["Animal parts seized"] = pd.to_numeric(df_dashboard["Animal parts seized"], errors="coerce").fillna(0)
 
             dashboard_tab = tabs(
-                options=["Summary Dashboard", "Distribution of Cases"],
+                options=["Summary Dashboard", "Distribution of Cases", "Visual Species Identification (iNaturalist)"],
                 default_value="",
                 key="dashboard_tabs"
             )
@@ -2178,65 +2178,45 @@ if uploaded_file is None and st.session_state.get("user"):
                                     mime="text/html",
                                     use_container_width=True
                                 )
+
+            elif dashboard_tab == "Visual Species Identification (iNaturalist)":
+                st.markdown("## Visual Species Identification (iNaturalist)")
+                st.markdown("Upload a photo of a wild animal or plant to identify it using AI.")
+
+                file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
+                if file:
+                    files = {'image': file.getvalue()}
+                    st.image(file, caption="Uploaded Image", use_column_width=True)
+                    st.info("Sending image to iNaturalist...")
+
+                    try:
+                        response = requests.post(
+                            "https://api.inaturalist.org/v1/computervision/score_image",
+                            files=files
+                        )
+                        if response.status_code == 200:
+                            results = response.json().get("results", [])
+                            if not results:
+                                st.warning("No species could be identified.")
+                            for result in results:
+                                taxon = result["taxon"]
+                                common_name = taxon.get('preferred_common_name', 'Unknown species')
+                                scientific_name = taxon.get('name', 'Unknown')
+                                confidence = result.get('score', 0)
+
+                                st.markdown(f"### {common_name}")
+                                st.markdown(f"**Scientific name:** `{scientific_name}`")
+                                st.markdown(f"**Confidence:** `{confidence:.2%}`")
+
+                                if "default_photo" in taxon:
+                                    st.image(taxon["default_photo"]["medium_url"], width=300)
+                        else:
+                            st.error(f"API Error: {response.status_code}")
+                    except Exception as e:
+                        st.error(f"Error while processing the image: {e}")
                             
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
-
-from shadcn_ui import tabs  # Certifique-se de já ter este import
-import requests
-
-with tabs(
-    options=[
-        "Summary Dashboard",
-        "Distribution of Cases",
-        "Visual Species Identification (iNaturalist)"
-    ],
-    key="dashboard_tabs"
-) as selected_tab:
-
-    if selected_tab == "Summary Dashboard":
-        st.markdown("## Summary Dashboard")
-        # [ ... seu conteúdo já existente aqui ... ]
-
-    elif selected_tab == "Distribution of Cases":
-        st.markdown("## Temporal and Geographic Distribution of Recorded Cases")
-        # [ ... seu conteúdo já existente aqui ... ]
-
-    elif selected_tab == "Visual Species Identification (iNaturalist)":
-        st.markdown("## Visual Species Identification (iNaturalist)")
-        st.markdown("Upload a photo of a wild animal or plant to identify it using AI.")
-
-        file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
-        if file:
-            files = {'image': file.getvalue()}
-            st.image(file, caption="Uploaded Image", use_column_width=True)
-            st.info("Sending image to iNaturalist...")
-
-            try:
-                response = requests.post(
-                    "https://api.inaturalist.org/v1/computervision/score_image",
-                    files=files
-                )
-                if response.status_code == 200:
-                    results = response.json().get("results", [])
-                    if not results:
-                        st.warning("No species could be identified.")
-                    for result in results:
-                        taxon = result["taxon"]
-                        common_name = taxon.get('preferred_common_name', 'Unknown species')
-                        scientific_name = taxon.get('name', 'Unknown')
-                        confidence = result.get('score', 0)
-
-                        st.markdown(f"### {common_name}")
-                        st.markdown(f"**Scientific name:** `{scientific_name}`")
-                        st.markdown(f"**Confidence:** `{confidence:.2%}`")
-
-                        if "default_photo" in taxon:
-                            st.image(taxon["default_photo"]["medium_url"], width=300)
-                else:
-                    st.error(f"API Error: {response.status_code}")
-            except Exception as e:
-                st.error(f"Error while processing the image: {e}")
                 
 # --- SUGGESTIONS AND COMMENTS (SIDEBAR) ---
 if "show_sidebar_feedback" not in st.session_state:
