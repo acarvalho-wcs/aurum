@@ -2186,7 +2186,7 @@ if uploaded_file is None and st.session_state.get("user"):
 
                 file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
                 if file:
-                    bing_api_key = st.secrets.get("bing_api_key")
+                    bing_api_key = st.secrets["bing_api_key"]
                     if not bing_api_key:
                         st.error("API key not found. Please set 'bing_api_key' in Streamlit secrets.")
                     else:
