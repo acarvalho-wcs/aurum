@@ -2182,60 +2182,70 @@ if uploaded_file is None and st.session_state.get("user"):
 
             elif dashboard_tab == "Visual Species Identification":
                 st.markdown("## Visual Species Identification")
-                st.markdown("Upload a photo of a wild animal or plant to identify it using AI (iNaturalist API via Imgbb).")
+                st.markdown("Upload a photo of a wild animal or plant to identify it using AI (Azure Computer Vision).")
 
-                imgbb_api_key = st.secrets.get("imgbb_api_key")
-                if not imgbb_api_key:
-                    st.error("❌ API key for Imgbb not found. Please set 'imgbb_api_key' in .streamlit/secrets.toml.")
-                else:
-                    file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
-                    if file:
-                        st.image(file, caption="Uploaded Image", use_container_width=True)
-                        st.info("Uploading image and contacting iNaturalist...")
+                azure_key = st.secrets["bing_api_key"]
+                endpoint = "https://aurum-image.cognitiveservices.azure.com/vision/v3.2/analyze"
 
-                        try:
-                            import base64
-                            image_base64 = base64.b64encode(file.getvalue()).decode("utf-8")
+                file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
+                if file:
+                    st.image(file, caption="Uploaded Image", use_container_width=True)
+                    st.info("Sending image to Azure Computer Vision...")
 
-                            # Upload to imgbb
-                            upload_url = "https://api.imgbb.com/1/upload"
-                            payload = {
-                                "key": imgbb_api_key,
-                                "image": image_base64
-                            }
-                            imgbb_response = requests.post(upload_url, data=payload)
-                            imgbb_response.raise_for_status()
-                            image_url = imgbb_response.json()["data"]["url"]
+                    headers = {
+                        "Ocp-Apim-Subscription-Key": azure_key,
+                        "Content-Type": "application/octet-stream"
+                    }
+                    params = {
+                        "visualFeatures": "Categories,Description,Tags",
+                        "details": "",
+                        "language": "en"
+                    }
 
-                            # Send to iNaturalist
-                            inat_url = "https://api.inaturalist.org/v1/computervision/score_image"
-                            inat_response = requests.get(inat_url, params={"image_url": image_url})
-                            inat_response.raise_for_status()
-                            data = inat_response.json()
+                    try:
+                        response = requests.post(
+                            url=endpoint,
+                            headers=headers,
+                            params=params,
+                            data=file.getvalue(),
+                            timeout=10
+                        )
 
-                            results = data.get("results", [])
-                            if results:
-                                best = results[0]
-                                taxon = best.get("taxon", {})
-                                name = taxon.get("name", "Unknown")
-                                common = taxon.get("preferred_common_name", "No common name")
-                                score = best.get("score", 0)
+                        if response.status_code == 200:
+                            result = response.json()
+                            st.success("✅ Image processed successfully!")
 
-                                st.success("✅ Image processed successfully via iNaturalist!")
-                                st.markdown(f"### {common}")
-                                st.markdown(f"**Scientific name:** `{name}`")
-                                st.markdown(f"**Confidence:** `{score:.2%}`")
+                            st.markdown("### Description")
+                            captions = result.get("description", {}).get("captions", [])
+                            tags = result.get("description", {}).get("tags", [])
 
-                                photo = taxon.get("default_photo", {})
-                                if photo.get("medium_url"):
-                                    st.image(photo["medium_url"], width=300)
+                            if captions:
+                                best_caption = captions[0].get("text", "").capitalize()
+                                confidence = captions[0].get("confidence", 0.0)
+                                st.markdown(f"- **{best_caption}** (confidence: `{confidence:.2%}`)")
                             else:
-                                st.warning("⚠️ No prediction returned by iNaturalist.")
+                                best_caption = None
 
-                        except requests.exceptions.RequestException as err:
-                            st.error(f"❌ Error during image upload or prediction: {err}")
-                        except Exception as e:
-                            st.error(f"❌ Unexpected error: {e}")
+                            if tags:
+                                st.markdown("### Tags")
+                                st.write(", ".join(tags))
+                            else:
+                                tags = []
+
+                            # Escolhe um nome de espécie possível
+                            possible_species = tags[0] if tags else best_caption
+                            if possible_species:
+                                encoded_species = urllib.parse.quote(possible_species)
+                                url = f"https://www.inaturalist.org/search?q={encoded_species}"
+                                st.markdown(f"[🔍 Search on iNaturalist]({url})")
+
+                        else:
+                            st.error(f"❌ Azure API returned {response.status_code}: {response.text}")
+
+                    except requests.exceptions.Timeout:
+                        st.error("❌ Request timed out.")
+                    except Exception as e:
+                        st.error(f"❌ Error: {e}")
 
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
