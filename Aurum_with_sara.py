@@ -2184,37 +2184,49 @@ if uploaded_file is None and st.session_state.get("user"):
                 st.markdown("## Visual Species Identification (iNaturalist)")
                 st.markdown("Upload a photo of a wild animal or plant to identify it using AI.")
 
+                def upload_temp_image_to_transfersh(file_bytes, filename="image.jpg"):
+                    try:
+                        response = requests.put(f"https://transfer.sh/{filename}", data=file_bytes)
+                        if response.status_code == 200:
+                            return response.text.strip()
+                        else:
+                            return None
+                    except Exception as e:
+                        st.error(f"Error uploading image to transfer.sh: {e}")
+                        return None
+
                 file = st.file_uploader("Image file (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
                 if file:
-                    files = {'image': file.getvalue()}
-                    st.image(file, caption="Uploaded Image", use_column_width=True)
+                    st.image(file, caption="Uploaded Image", use_container_width=True)
                     st.info("Sending image to iNaturalist...")
 
-                    try:
-                        response = requests.post(
-                            "https://api.inaturalist.org/v1/computervision/score_image",
-                            files=files
-                        )
-                        if response.status_code == 200:
-                            results = response.json().get("results", [])
-                            if not results:
-                                st.warning("No species could be identified.")
-                            for result in results:
-                                taxon = result["taxon"]
-                                common_name = taxon.get('preferred_common_name', 'Unknown species')
-                                scientific_name = taxon.get('name', 'Unknown')
-                                confidence = result.get('score', 0)
+                    image_url = upload_temp_image_to_transfersh(file.getvalue(), filename=file.name)
+                    if image_url:
+                        try:
+                            api_url = f"https://api.inaturalist.org/v1/computervision/score_image?image_url={image_url}"
+                            response = requests.get(api_url)
+                            if response.status_code == 200:
+                                results = response.json().get("results", [])
+                                if not results:
+                                    st.warning("No species could be identified.")
+                                for result in results:
+                                    taxon = result["taxon"]
+                                    common_name = taxon.get('preferred_common_name', 'Unknown species')
+                                    scientific_name = taxon.get('name', 'Unknown')
+                                    confidence = result.get('score', 0)
 
-                                st.markdown(f"### {common_name}")
-                                st.markdown(f"**Scientific name:** `{scientific_name}`")
-                                st.markdown(f"**Confidence:** `{confidence:.2%}`")
+                                    st.markdown(f"### {common_name}")
+                                    st.markdown(f"**Scientific name:** `{scientific_name}`")
+                                    st.markdown(f"**Confidence:** `{confidence:.2%}`")
 
-                                if "default_photo" in taxon:
-                                    st.image(taxon["default_photo"]["medium_url"], width=300)
-                        else:
-                            st.error(f"API Error: {response.status_code}")
-                    except Exception as e:
-                        st.error(f"Error while processing the image: {e}")
+                                    if "default_photo" in taxon:
+                                        st.image(taxon["default_photo"]["medium_url"], use_container_width=True)
+                            else:
+                                st.error(f"API Error: {response.status_code}")
+                        except Exception as e:
+                            st.error(f"Error while processing the image: {e}")
+                    else:
+                        st.error("Failed to upload image to temporary host.")
                             
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
