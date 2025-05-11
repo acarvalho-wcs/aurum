@@ -21,6 +21,7 @@ from sklearn.neighbors import LocalOutlierFactor
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 import os
+import urllib.parse
 from uuid import uuid4
 from datetime import datetime
 import pytz
