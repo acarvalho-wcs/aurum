@@ -2130,18 +2130,30 @@ if uploaded_file is None and st.session_state.get("user"):
                             center_lat = (bounds[1] + bounds[3]) / 2
                             center_lon = (bounds[0] + bounds[2]) / 2
 
+                            from shadcn_ui import tabs
+
                             st.markdown("**Select weighting method for heatmap:**")
-                            colm1, colm2, colm3, colm4 = st.columns(4)
 
-                            with colm1:
-                                case_btn = st.button("Per case", key="method_case")
-                            with colm2:
-                                specimen_btn = st.button("By number of specimens", key="method_specimens")
-                            with colm3:
-                                weight_btn = st.button("By weight (kg)", key="method_weight")
-                            with colm4:
-                                parts_btn = st.button("By animal parts", key="method_parts")
+                            tab_labels = [
+                                "Per case",
+                                "By number of specimens",
+                                "By weight (kg)",
+                                "By animal parts"
+                            ]
 
+                            if "selected_method" not in st.session_state:
+                                st.session_state["selected_method"] = "Per case"
+
+                            selected_tab = tabs(
+                                options=tab_labels,
+                                default_value=st.session_state["selected_method"],
+                                key="method_tab"
+                            )
+
+                            st.session_state["selected_method"] = selected_tab
+                            method = selected_tab
+
+                            st.markdown(f"*Current method: **{method}***")
                             if "selected_method" not in st.session_state:
                                 st.session_state["selected_method"] = "Per case"
 
