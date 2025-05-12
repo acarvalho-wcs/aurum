@@ -34,18 +34,6 @@ brt = pytz.timezone("America/Sao_Paulo")
 st.set_page_config(page_title="Aurum Dashboard", layout="wide")
 st.title("Aurum - Criminal Intelligence in Wildlife Trafficking")
 
-# --- Mensagem inicial caso nenhum arquivo tenha sido enviado e usuário não esteja logado ---
-if uploaded_file is None:
-    st.markdown("""
-    **Aurum** is a criminal intelligence platform developed to support the monitoring and investigation of **illegal wildlife trade (IWT)**.
-    By integrating advanced statistical methods and interactive visualizations, Aurum enables researchers, enforcement agencies, and conservation organizations to identify operational patterns and support data-driven responses to IWT.
-
-    Click the small arrow at the top-left corner (`>`) to open the sidebar and upload your XLSX data file.
-    
-    For the full Aurum experience, please request access or log in if you already have an account.  
-    Click **About Aurum** to learn more about each analysis module.
-    """)
-
 # Upload do arquivo
 from PIL import Image
 logo = Image.open("logo.png")
@@ -128,6 +116,18 @@ users_df = pd.DataFrame(users_ws.get_all_records())
 def get_worksheet(name="Aurum_data"):
     return sheets.worksheet(name)
 
+# --- Mensagem inicial caso nenhum arquivo tenha sido enviado e usuário não esteja logado ---
+if uploaded_file is None:
+    st.markdown("""
+    **Aurum** is a criminal intelligence platform developed to support the monitoring and investigation of **illegal wildlife trade (IWT)**.
+    By integrating advanced statistical methods and interactive visualizations, Aurum enables researchers, enforcement agencies, and conservation organizations to identify operational patterns and support data-driven responses to IWT.
+
+    Click the small arrow at the top-left corner (`>`) to open the sidebar and upload your XLSX data file.
+    
+    For the full Aurum experience, please request access or log in if you already have an account.  
+    Click **About Aurum** to learn more about each analysis module.
+    """)
+    
 # --- ALERTAS PÚBLICOS (visível para todos, inclusive sem login) ---
 def display_public_alerts_section(sheet_id):
     import folium
