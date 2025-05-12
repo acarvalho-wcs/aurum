@@ -2150,86 +2150,92 @@ if uploaded_file is None and st.session_state.get("user"):
                             method = st.session_state["selected_method"]
                             st.markdown(f"*Current method: **{method}***")
 
+                            # Default: one per case
                             gdf["weight"] = 1
 
                             if method == "By number of specimens" and "N seized specimens" in gdf.columns:
-                                gdf["weight"] = pd.to_numeric(gdf["N seized specimens"], errors="coerce").fillna(1)
+                                gdf["weight"] = pd.to_numeric(gdf["N seized specimens"], errors="coerce")
+                                gdf = gdf[gdf["weight"] > 0]
+
                             elif method == "By weight (kg)" and "Estimated weight (kg)" in gdf.columns:
-                                gdf["weight"] = pd.to_numeric(gdf["Estimated weight (kg)"], errors="coerce").fillna(1)
+                                gdf["weight"] = pd.to_numeric(gdf["Estimated weight (kg)"], errors="coerce")
+                                gdf = gdf[gdf["weight"] > 0]
+
                             elif method == "By animal parts" and "Animal parts seized" in gdf.columns:
                                 gdf["weight"] = gdf["Animal parts seized"].notna().astype(int)
+                                gdf = gdf[gdf["weight"] > 0]
 
-                            max_weight = gdf["weight"].max()
-                            min_weight = gdf["weight"].min()
-
-                            st.caption(f"Max value for selected method: **{max_weight:.1f}** – Min: **{min_weight:.1f}**")
-
-                            # Normalize weights for better visual contrast
-                            if max_weight == min_weight:
-                                normalized_weights = [1.0] * len(gdf)
+                            if gdf.empty:
+                                st.info("No data with valid weight found for this method.")
                             else:
-                                normalized_weights = [
-                                    0.1 + 0.9 * (w - min_weight) / (max_weight - min_weight)
-                                    for w in gdf["weight"]
+                                max_weight = gdf["weight"].max()
+                                min_weight = gdf["weight"].min()
+                                st.caption(f"Max value for selected method: **{max_weight:.1f}** – Min: **{min_weight:.1f}**")
+
+                                if max_weight == min_weight:
+                                    normalized_weights = [1.0] * len(gdf)
+                                else:
+                                    normalized_weights = [
+                                        0.1 + 0.9 * (w - min_weight) / (max_weight - min_weight)
+                                        for w in gdf["weight"]
+                                    ]
+
+                                radius_val = st.slider("HeatMap radius (px)", 5, 50, 25, key="heatmap_radius")
+
+                                m = folium.Map(location=[center_lat, center_lon], zoom_start=4)
+                                m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+
+                                heat_data = [
+                                    [row.Latitude, row.Longitude, norm]
+                                    for row, norm in zip(gdf.itertuples(), normalized_weights)
                                 ]
+                                HeatMap(data=heat_data, radius=radius_val).add_to(m)
 
-                            radius_val = st.slider("HeatMap radius (px)", 5, 50, 25, key="heatmap_radius")
-
-                            m = folium.Map(location=[center_lat, center_lon], zoom_start=4)
-                            m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
-
-                            heat_data = [
-                                [row["Latitude"], row["Longitude"], norm]
-                                for row, norm in zip(gdf.itertuples(), normalized_weights)
-                            ]
-                            HeatMap(data=heat_data, radius=radius_val).add_to(m)
-
-                            legend_html = '''
-                                <div style="
-                                    position: fixed;
-                                    bottom: 40px;
-                                    right: 20px;
-                                    z-index: 9999;
-                                    background-color: white;
-                                    padding: 10px;
-                                    border:2px solid gray;
-                                    border-radius:5px;
-                                    font-size:14px;
-                                    box-shadow: 2px 2px 6px rgba(0,0,0,0.3);">
-                                    <b>HeatMap Intensity</b>
-                                    <div style="height: 10px; width: 120px;
-                                        background: linear-gradient(to right, blue, cyan, lime, yellow, orange, red);
-                                        margin: 5px 0;"></div>
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <span>Low</span>
-                                        <span>Medium</span>
-                                        <span>High</span>
+                                legend_html = '''
+                                    <div style="
+                                        position: fixed;
+                                        bottom: 40px;
+                                        right: 20px;
+                                        z-index: 9999;
+                                        background-color: white;
+                                        padding: 10px;
+                                        border:2px solid gray;
+                                        border-radius:5px;
+                                        font-size:14px;
+                                        box-shadow: 2px 2px 6px rgba(0,0,0,0.3);">
+                                        <b>HeatMap Intensity</b>
+                                        <div style="height: 10px; width: 120px;
+                                            background: linear-gradient(to right, blue, cyan, lime, yellow, orange, red);
+                                            margin: 5px 0;"></div>
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <span>Low</span>
+                                            <span>Medium</span>
+                                            <span>High</span>
+                                        </div>
+                                        <div style="margin-top:6px; font-size:10px; color:gray;">Generated with Aurum</div>
                                     </div>
-                                    <div style="margin-top:6px; font-size:10px; color:gray;">Generated with Aurum</div>
-                                </div>
-                            '''
-                            m.get_root().html.add_child(folium.Element(legend_html))
+                                '''
+                                m.get_root().html.add_child(folium.Element(legend_html))
 
-                            html_str = m.get_root().render()
-                            st.components.v1.html(html_str, height=300)
+                                html_str = m.get_root().render()
+                                st.components.v1.html(html_str, height=300)
 
-                            from io import BytesIO
+                                from io import BytesIO
 
-                            map_html = m.get_root().render()
-                            safe_species = selected_species_dash.replace(" ", "_").replace("/", "_")
-                            filename = f"aurum_heatmap_{safe_species}.html"
-                            map_bytes = BytesIO(map_html.encode("utf-8"))
+                                map_html = m.get_root().render()
+                                safe_species = selected_species_dash.replace(" ", "_").replace("/", "_")
+                                filename = f"aurum_heatmap_{safe_species}.html"
+                                map_bytes = BytesIO(map_html.encode("utf-8"))
 
-                            col_btn1, col_btn2, col_btn3 = st.columns([5, 2, 2])
-                            with col_btn3:
-                                st.download_button(
-                                    label="Download HTML",
-                                    data=map_bytes,
-                                    file_name=filename,
-                                    mime="text/html",
-                                    use_container_width=True
-                                )
-
+                                col_btn1, col_btn2, col_btn3 = st.columns([5, 2, 2])
+                                with col_btn3:
+                                    st.download_button(
+                                        label="Download HTML",
+                                        data=map_bytes,
+                                        file_name=filename,
+                                        mime="text/html",
+                                        use_container_width=True
+                                    )
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
                 
