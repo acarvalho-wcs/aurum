@@ -2210,7 +2210,7 @@ if uploaded_file is None and st.session_state.get("user"):
                                 gdf = gdf[gdf["weight"] > 0]
 
                             if gdf.empty:
-                                st.info("No data with valid weight found for this method.")
+                                st.info("No valid data found for this method.")
                             else:
                                 max_weight = gdf["weight"].max()
                                 min_weight = gdf["weight"].min()
