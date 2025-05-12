@@ -1936,7 +1936,7 @@ if uploaded_file is None and st.session_state.get("user"):
                         expanded_rows.append(new_row)
 
                     # 2. Garante inclusão de espécies mencionadas mesmo sem número
-                    all_species = re.findall(r'\b([A-Z][a-z]+(?:_[a-z]+)+)\b', text)
+                    all_species = re.findall(r'\b([A-Z][a-z]+ [a-z]+)\b', text)
                     for species in set(all_species):
                         if species not in matched_species:
                             new_row = row.copy()
