@@ -2112,12 +2112,14 @@ if uploaded_file is None and st.session_state.get("user"):
                             from folium.plugins import HeatMap
                             import geopandas as gpd
                             import re
+                            from streamlit_shadcn_ui import tabs
 
-                            def extract_total_specimens(cell):
+                            def extract_specimens_only(cell):
                                 if pd.isna(cell):
                                     return 0
-                                matches = re.findall(r"\b(\d+)\b(?!\s*(?:kg|parts?|fangs?|claws?|feathers?|scales?|shells?))", str(cell), flags=re.IGNORECASE)
-                                return sum(int(n) for n in matches)
+                                clean = re.sub(r"\b\d+(\.\d+)?\s*kg\b", "", str(cell), flags=re.IGNORECASE)
+                                numbers = re.findall(r"\b\d+\b", clean)
+                                return sum(int(n) for n in numbers)
 
                             df_geo_unique = df_geo.drop_duplicates(subset=["Case #", "Latitude", "Longitude"])
                             gdf = gpd.GeoDataFrame(
@@ -2129,8 +2131,6 @@ if uploaded_file is None and st.session_state.get("user"):
                             bounds = gdf.total_bounds
                             center_lat = (bounds[1] + bounds[3]) / 2
                             center_lon = (bounds[0] + bounds[2]) / 2
-
-                            from streamlit_shadcn_ui import tabs
 
                             st.markdown("**Select weighting method for heatmap:**")
 
@@ -2156,7 +2156,6 @@ if uploaded_file is None and st.session_state.get("user"):
 
                             st.markdown(f"*Current method: **{method}***")
 
-                            # Default weight
                             gdf["weight"] = 1
 
                             if method == METHOD_SPECIMENS and "N seized specimens" in gdf.columns:
