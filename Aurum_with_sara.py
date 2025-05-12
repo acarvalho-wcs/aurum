@@ -2168,10 +2168,7 @@ if uploaded_file is None and st.session_state.get("user"):
                                 gdf = gdf[gdf["weight"] > 0]
 
                             elif method == METHOD_PARTS and "Animal parts seized" in gdf.columns:
-                                gdf["weight"] = (
-                                    gdf["Animal parts seized"]
-                                    .apply(lambda x: 1 if isinstance(x, str) and x.strip() != "" else 0)
-                                )
+                                gdf["weight"] = pd.to_numeric(gdf["Animal parts seized"], errors="coerce").fillna(0)
                                 gdf = gdf[gdf["weight"] > 0]
 
                             if gdf.empty:
