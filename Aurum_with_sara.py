@@ -2146,12 +2146,14 @@ if uploaded_file is None and st.session_state.get("user"):
                                 METHOD_PARTS
                             ]
 
-                            selected_tab = tabs(
+                            if "method_tab" not in st.session_state:
+                                st.session_state["method_tab"] = METHOD_CASE
+
+                            method = tabs(
                                 options=tab_labels,
                                 key="method_tab"
                             )
 
-                            method = selected_tab
                             st.markdown(f"*Current method: **{method}***")
 
                             # Default weight
@@ -2166,9 +2168,11 @@ if uploaded_file is None and st.session_state.get("user"):
                                 gdf = gdf[gdf["weight"] > 0]
 
                             elif method == METHOD_PARTS and "Animal parts seized" in gdf.columns:
-                                gdf["Animal parts seized"] = gdf["Animal parts seized"].astype(str).str.strip()
-                                gdf = gdf[gdf["Animal parts seized"].str.len() > 0]
-                                gdf["weight"] = 1  # valor fixo por caso com partes
+                                gdf["weight"] = (
+                                    gdf["Animal parts seized"]
+                                    .apply(lambda x: 1 if isinstance(x, str) and x.strip() != "" else 0)
+                                )
+                                gdf = gdf[gdf["weight"] > 0]
 
                             if gdf.empty:
                                 st.info("No data with valid weight found for this method.")
