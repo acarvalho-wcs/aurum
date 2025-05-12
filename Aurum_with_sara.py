@@ -2130,7 +2130,7 @@ if uploaded_file is None and st.session_state.get("user"):
                             center_lat = (bounds[1] + bounds[3]) / 2
                             center_lon = (bounds[0] + bounds[2]) / 2
 
-                            from shadcn_ui import tabs
+                            from streamlit_shadcn_ui import tabs
 
                             st.markdown("**Select weighting method for heatmap:**")
 
