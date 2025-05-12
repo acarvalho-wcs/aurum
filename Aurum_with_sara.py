@@ -2168,7 +2168,12 @@ if uploaded_file is None and st.session_state.get("user"):
                                 [row["Latitude"], row["Longitude"], row["weight"]]
                                 for _, row in gdf.iterrows()
                             ]
-                            HeatMap(data=heat_data, radius=radius_val).add_to(m)
+
+                            HeatMap(
+                                data=heat_data,
+                                radius=radius_val,
+                                max_val=gdf["weight"].max()  # ← Isso força a coloração a se ajustar
+                            ).add_to(m)
 
                             legend_html = '''
                                 <div style="
