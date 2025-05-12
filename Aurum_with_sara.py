@@ -2298,8 +2298,8 @@ if uploaded_file is None and st.session_state.get("user"):
                                     if co_species:
                                         formatted = " and ".join(f"`{s}`" for s in co_species)
                                         st.caption(
-                                            f"🔎 Some weights were reported as grouped values with {formatted} "
-                                            f"(e.g., '1100 kg (Species A + Species B)')."
+                                            f"**Some weights were reported as grouped values with {formatted} "
+                                            f"(e.g., '1100 kg (Species A + Species B)').**"
                                         )
 
                                 from io import BytesIO
