@@ -2146,18 +2146,12 @@ if uploaded_file is None and st.session_state.get("user"):
                                 METHOD_PARTS
                             ]
 
-                            if "selected_method" not in st.session_state:
-                                st.session_state["selected_method"] = METHOD_CASE
-
                             selected_tab = tabs(
                                 options=tab_labels,
-                                default_value=st.session_state["selected_method"],
                                 key="method_tab"
                             )
 
-                            st.session_state["selected_method"] = selected_tab
                             method = selected_tab
-
                             st.markdown(f"*Current method: **{method}***")
 
                             # Default weight
