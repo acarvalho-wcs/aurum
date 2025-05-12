@@ -2266,10 +2266,28 @@ if uploaded_file is None and st.session_state.get("user"):
 
                                 # Observação sobre pesos compartilhados entre espécies
                                 if (
-                                    "N seized specimens" in df_geo.columns and
-                                    df_geo["N seized specimens"].astype(str).str.contains(r"\(.*\+.*\)").any()
+                                    selected_species_dash != "All species" and
+                                    "N seized specimens" in df_geo.columns
                                 ):
-                                    st.caption("**Some weights were reported as grouped values (e.g., '1100 kg (Species A + Species B)').**")
+                                    grouped_df = df_geo[
+                                        df_geo["N seized specimens"].astype(str).str.contains(r"\(.*\+.*\)")
+                                    ]
+                                    co_species = []
+                                    for text in grouped_df["N seized specimens"]:
+                                        match = re.search(r"\(([^)]+)\)", text)
+                                        if match:
+                                            species_group = [s.strip() for s in match.group(1).split("+")]
+                                            if selected_species_dash in species_group:
+                                                others = [s for s in species_group if s != selected_species_dash]
+                                                co_species.extend(others)
+
+                                    co_species = sorted(set(co_species))
+                                    if co_species:
+                                        formatted = " and ".join(f"`{s}`" for s in co_species)
+                                        st.caption(
+                                            f"🔎 Some weights were reported as grouped values with {formatted} "
+                                            f"(e.g., '1100 kg (Species A + Species B)')."
+                                        )
 
                                 from io import BytesIO
 
