@@ -2264,6 +2264,13 @@ if uploaded_file is None and st.session_state.get("user"):
                                 html_str = m.get_root().render()
                                 st.components.v1.html(html_str, height=300)
 
+                                # Observação sobre pesos compartilhados entre espécies
+                                if (
+                                    "N seized specimens" in df_geo.columns and
+                                    df_geo["N seized specimens"].astype(str).str.contains(r"\(.*\+.*\)").any()
+                                ):
+                                    st.caption("🔎 Some weights were reported as grouped values (e.g., '1100 kg (Species A + Species B)').")
+
                                 from io import BytesIO
 
                                 map_html = m.get_root().render()
