@@ -1,4 +1,13 @@
 import streamlit as st
+
+st.write("Loaded secrets keys:", list(st.secrets.keys()))
+
+if "gcp_service_account" in st.secrets:
+    st.success("✅ gcp_service_account is available!")
+else:
+    st.error("❌ gcp_service_account is missing from secrets.")
+
+import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
