@@ -2123,12 +2123,51 @@ if uploaded_file is None and st.session_state.get("user"):
                             center_lat = (bounds[1] + bounds[3]) / 2
                             center_lon = (bounds[0] + bounds[2]) / 2
 
+                            st.markdown("**Select weighting method for heatmap:**")
+                            colm1, colm2, colm3, colm4 = st.columns(4)
+
+                            with colm1:
+                                case_btn = st.button("Per case", key="method_case")
+                            with colm2:
+                                specimen_btn = st.button("By number of specimens", key="method_specimens")
+                            with colm3:
+                                weight_btn = st.button("By weight (kg)", key="method_weight")
+                            with colm4:
+                                parts_btn = st.button("By animal parts", key="method_parts")
+
+                            if "selected_method" not in st.session_state:
+                                st.session_state["selected_method"] = "Per case"
+
+                            if case_btn:
+                                st.session_state["selected_method"] = "Per case"
+                            elif specimen_btn:
+                                st.session_state["selected_method"] = "By number of specimens"
+                            elif weight_btn:
+                                st.session_state["selected_method"] = "By weight (kg)"
+                            elif parts_btn:
+                                st.session_state["selected_method"] = "By animal parts"
+
+                            method = st.session_state["selected_method"]
+                            st.markdown(f"*Current method: **{method}***")
+
+                            gdf["weight"] = 1
+
+                            if method == "By number of specimens" and "N seized specimens" in gdf.columns:
+                                gdf["weight"] = pd.to_numeric(gdf["N seized specimens"], errors="coerce").fillna(1)
+                            elif method == "By weight (kg)" and "Estimated weight (kg)" in gdf.columns:
+                                gdf["weight"] = pd.to_numeric(gdf["Estimated weight (kg)"], errors="coerce").fillna(1)
+                            elif method == "By animal parts" and "Animal parts seized" in gdf.columns:
+                                gdf["weight"] = gdf["Animal parts seized"].notna().astype(int)
+
                             radius_val = st.slider("HeatMap radius (px)", 5, 50, 25, key="heatmap_radius")
 
                             m = folium.Map(location=[center_lat, center_lon], zoom_start=4)
                             m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
 
-                            heat_data = gdf[["Latitude", "Longitude"]].dropna().values.tolist()
+                            heat_data = [
+                                [row["Latitude"], row["Longitude"], row["weight"]]
+                                for _, row in gdf.iterrows()
+                            ]
                             HeatMap(data=heat_data, radius=radius_val).add_to(m)
 
                             legend_html = '''
@@ -2162,15 +2201,11 @@ if uploaded_file is None and st.session_state.get("user"):
 
                             from io import BytesIO
 
-                            # Gera HTML do mapa
                             map_html = m.get_root().render()
-
-                            # Define nome do arquivo baseado na espécie
                             safe_species = selected_species_dash.replace(" ", "_").replace("/", "_")
                             filename = f"aurum_heatmap_{safe_species}.html"
                             map_bytes = BytesIO(map_html.encode("utf-8"))
 
-                            # Estiliza botão dentro de um container pequeno à direita
                             col_btn1, col_btn2, col_btn3 = st.columns([5, 2, 2])
                             with col_btn3:
                                 st.download_button(
