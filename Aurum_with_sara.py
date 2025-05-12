@@ -2081,8 +2081,21 @@ if uploaded_file is None and st.session_state.get("user"):
                     coocurrence_df = df_dashboard[df_dashboard["Case #"].isin(cases_with_selected)]
                     co_species = coocurrence_df[coocurrence_df["Species"] != selected_species_dash]["Species"].unique()
 
+                    def format_species_italic(name):
+                        if name.lower().startswith("bushmeat"):
+                            return name
+                        if re.match(r"^[A-Z][a-z]+ [a-z]+$", name):
+                            return f"_{name}_"
+                        elif re.match(r"^[A-Z][a-z]+ sp\\.?$", name):
+                            return f"_{name[:-1]}_ sp."
+                        elif re.match(r"^[A-Z][a-z]+ spp\\.?$", name):
+                            return f"_{name[:-1]}_ spp."
+                        else:
+                            return name
+
                     if len(co_species) > 0:
-                        st.write(", ".join(sorted(co_species)))
+                        formatted_species = [format_species_italic(s) for s in sorted(co_species)]
+                        st.markdown(", ".join(formatted_species))
                     else:
                         st.info("No other species recorded with the selected species.")
 
