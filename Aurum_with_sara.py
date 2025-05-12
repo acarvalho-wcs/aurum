@@ -1901,6 +1901,20 @@ if uploaded_file is None and st.session_state.get("user"):
         df_dashboard = pd.DataFrame(records)
 
         if not df_dashboard.empty and "N seized specimens" in df_dashboard.columns:
+
+            def format_species_italics(name):
+                if not isinstance(name, str):
+                    return name
+                name = name.strip()
+                if name.lower() == "bush_meat":
+                    return "Bush_meat"
+                if name.endswith("sp.") or name.endswith("spp."):
+                    first = name.split("_")[0]
+                    return f"_{first}_ " + name[len(first):]
+                elif "_" in name:
+                    return f"_{name.replace('_', ' ')}_"
+                return name
+
             def expand_multi_species_rows(df):
                 expanded_rows = []
                 for _, row in df.iterrows():
@@ -1953,6 +1967,9 @@ if uploaded_file is None and st.session_state.get("user"):
             df_dashboard["N_seized"] = pd.to_numeric(df_dashboard["N_seized"], errors="coerce").fillna(0)
             df_dashboard["Estimated weight (kg)"] = pd.to_numeric(df_dashboard["Estimated weight (kg)"], errors="coerce").fillna(0)
             df_dashboard["Animal parts seized"] = pd.to_numeric(df_dashboard["Animal parts seized"], errors="coerce").fillna(0)
+
+            # ✅ Aplica formatação em itálico na coluna Species
+            df_dashboard["Species"] = df_dashboard["Species"].apply(format_species_italics)
 
             dashboard_tab = tabs(
                 options=["Summary Dashboard", "Distribution of Cases"],
@@ -2067,12 +2084,16 @@ if uploaded_file is None and st.session_state.get("user"):
 
                         df_filtered["Year"] = pd.to_numeric(df_filtered["Year"], errors="coerce")
                         df_years = df_filtered.groupby("Year", as_index=False)["Case #"].nunique()
+
+                        formatted_species = format_species_italics(selected_species_dash)
+
                         fig_years = px.bar(
                             df_years,
                             x="Year",
                             y="Case #",
                             labels={"Case #": "Number of Cases", "Year": "Year"},
-                            height=450
+                            height=450,
+                            title=f"Number of Cases per Year – {formatted_species}"
                         )
                         fig_years.update_layout(margin=dict(t=30, b=30, l=10, r=10))
                         st.plotly_chart(fig_years, use_container_width=True)
@@ -2117,8 +2138,8 @@ if uploaded_file is None and st.session_state.get("user"):
                             def extract_specimens_only(cell):
                                 if pd.isna(cell):
                                     return 0
-                                clean = re.sub(r"\b\d+(\.\d+)?\s*kg\b", "", str(cell), flags=re.IGNORECASE)
-                                numbers = re.findall(r"\b\d+\b", clean)
+                                clean = re.sub(r"\\b\\d+(\\.\\d+)?\\s*kg\\b", "", str(cell), flags=re.IGNORECASE)
+                                numbers = re.findall(r"\\b\\d+\\b", clean)
                                 return sum(int(n) for n in numbers)
 
                             df_geo_unique = df_geo.drop_duplicates(subset=["Case #", "Latitude", "Longitude"])
