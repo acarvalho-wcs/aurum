@@ -2014,7 +2014,7 @@ if uploaded_file is None and st.session_state.get("user"):
                 )
 
                 if selected_species_dash == "All species":
-                    total_species = df_dashboard["Species"].nunique()
+                    total_species = df_dashboard[df_dashboard["Species"].str.lower() != "bushmeat"]["Species"].nunique()
                     total_cases_all = df_dashboard["Case #"].nunique()
                     total_individuals_all = int(df_dashboard["N_seized"].sum())
                     total_countries_all = df_dashboard["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in df_dashboard.columns else 0
