@@ -2111,6 +2111,13 @@ if uploaded_file is None and st.session_state.get("user"):
                             import folium
                             from folium.plugins import HeatMap
                             import geopandas as gpd
+                            import re
+
+                            def extract_total_specimens(cell):
+                                if pd.isna(cell):
+                                    return 0
+                                numbers = re.findall(r"\b\d+\b", str(cell))
+                                return sum(int(n) for n in numbers)
 
                             df_geo_unique = df_geo.drop_duplicates(subset=["Case #", "Latitude", "Longitude"])
                             gdf = gpd.GeoDataFrame(
@@ -2150,11 +2157,11 @@ if uploaded_file is None and st.session_state.get("user"):
                             method = st.session_state["selected_method"]
                             st.markdown(f"*Current method: **{method}***")
 
-                            # Default: one per case
+                            # Default weight
                             gdf["weight"] = 1
 
                             if method == "By number of specimens" and "N seized specimens" in gdf.columns:
-                                gdf["weight"] = pd.to_numeric(gdf["N seized specimens"], errors="coerce")
+                                gdf["weight"] = gdf["N seized specimens"].apply(extract_total_specimens)
                                 gdf = gdf[gdf["weight"] > 0]
 
                             elif method == "By weight (kg)" and "Estimated weight (kg)" in gdf.columns:
@@ -2162,8 +2169,9 @@ if uploaded_file is None and st.session_state.get("user"):
                                 gdf = gdf[gdf["weight"] > 0]
 
                             elif method == "By animal parts" and "Animal parts seized" in gdf.columns:
-                                gdf["weight"] = gdf["Animal parts seized"].notna().astype(int)
-                                gdf = gdf[gdf["weight"] > 0]
+                                gdf["Animal parts seized"] = gdf["Animal parts seized"].astype(str).str.strip()
+                                gdf = gdf[gdf["Animal parts seized"].str.len() > 0]
+                                gdf["weight"] = 1  # valor fixo por caso com partes
 
                             if gdf.empty:
                                 st.info("No data with valid weight found for this method.")
@@ -2236,6 +2244,7 @@ if uploaded_file is None and st.session_state.get("user"):
                                         mime="text/html",
                                         use_container_width=True
                                     )
+
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
                 
