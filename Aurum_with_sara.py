@@ -1908,7 +1908,7 @@ if uploaded_file is None and st.session_state.get("user"):
 
                     # 1. Extrai entradas com número + unidade (kg, parts etc) + espécie
                     matches = re.findall(
-                        r'(\d+(?:\.\d+)?)\s*(kg|parts?|fangs?|claws?|feathers?|scales?|shells?)?\s*([A-Z][a-z]+(?:_[a-z]+)+)',
+                        r'(\d+(?:\.\d+)?)\s*(kg|parts?|fangs?|claws?|feathers?|scales?|shells?)?\s*([A-Z][a-z]+(?: [a-z]+)+)',
                         text,
                         flags=re.IGNORECASE
                     )
