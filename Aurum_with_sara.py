@@ -2154,20 +2154,6 @@ if uploaded_file is None and st.session_state.get("user"):
                             method = selected_tab
 
                             st.markdown(f"*Current method: **{method}***")
-                            if "selected_method" not in st.session_state:
-                                st.session_state["selected_method"] = "Per case"
-
-                            if case_btn:
-                                st.session_state["selected_method"] = "Per case"
-                            elif specimen_btn:
-                                st.session_state["selected_method"] = "By number of specimens"
-                            elif weight_btn:
-                                st.session_state["selected_method"] = "By weight (kg)"
-                            elif parts_btn:
-                                st.session_state["selected_method"] = "By animal parts"
-
-                            method = st.session_state["selected_method"]
-                            st.markdown(f"*Current method: **{method}***")
 
                             # Default weight
                             gdf["weight"] = 1
