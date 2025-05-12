@@ -2116,8 +2116,8 @@ if uploaded_file is None and st.session_state.get("user"):
                             def extract_total_specimens(cell):
                                 if pd.isna(cell):
                                     return 0
-                                numbers = re.findall(r"\b\d+\b", str(cell))
-                                return sum(int(n) for n in numbers)
+                                matches = re.findall(r"\b(\d+)\b(?!\s*(?:kg|parts?|fangs?|claws?|feathers?|scales?|shells?))", str(cell), flags=re.IGNORECASE)
+                                return sum(int(n) for n in matches)
 
                             df_geo_unique = df_geo.drop_duplicates(subset=["Case #", "Latitude", "Longitude"])
                             gdf = gpd.GeoDataFrame(
@@ -2160,7 +2160,7 @@ if uploaded_file is None and st.session_state.get("user"):
                             gdf["weight"] = 1
 
                             if method == METHOD_SPECIMENS and "N seized specimens" in gdf.columns:
-                                gdf["weight"] = gdf["N seized specimens"].apply(extract_total_specimens)
+                                gdf["weight"] = gdf["N seized specimens"].apply(extract_specimens_only)
                                 gdf = gdf[gdf["weight"] > 0]
 
                             elif method == METHOD_WEIGHT and "Estimated weight (kg)" in gdf.columns:
