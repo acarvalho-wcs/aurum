@@ -1922,6 +1922,7 @@ if uploaded_file is None and st.session_state.get("user"):
                             new_row["Species"] = species
                             new_row["N_seized"] = 0
                             new_row["Estimated weight (kg)"] = qty
+                            new_row["Shared weight"] = True
                             new_row["Animal parts seized"] = 0
                             expanded_rows.append(new_row)
 
@@ -1944,6 +1945,7 @@ if uploaded_file is None and st.session_state.get("user"):
                         new_row["Species"] = species
                         new_row["N_seized"] = 0
                         new_row["Estimated weight (kg)"] = 0
+                        new_row["Shared weight"] = False
                         new_row["Animal parts seized"] = 0
 
                         unit = (unit or "").lower()
@@ -1966,6 +1968,7 @@ if uploaded_file is None and st.session_state.get("user"):
                             new_row["Species"] = species
                             new_row["N_seized"] = 0
                             new_row["Estimated weight (kg)"] = 0
+                            new_row["Shared weight"] = False
                             new_row["Animal parts seized"] = 0
                             expanded_rows.append(new_row)
 
@@ -2017,7 +2020,20 @@ if uploaded_file is None and st.session_state.get("user"):
                     total_countries_all = df_dashboard["Country of seizure or shipment"].nunique() if "Country of seizure or shipment" in df_dashboard.columns else 0
 
                     # ✅ Usa colunas diretas da planilha Aurum_data
-                    total_kg = pd.to_numeric(df_dashboard.get("Estimated weight (kg)", 0), errors="coerce").fillna(0).sum()
+                    total_kg = pd.to_numeric(
+                        df_dashboard[df_dashboard["Shared weight"] == False].get("Estimated weight (kg)", 0),
+                        errors="coerce"
+                    ).fillna(0).sum()
+
+                    # Agora soma só uma vez os valores compartilhados
+                    unique_shared_cases = df_dashboard[df_dashboard["Shared weight"] == True].drop_duplicates(subset=["Case #"])
+                    shared_kg = pd.to_numeric(
+                        unique_shared_cases.get("Estimated weight (kg)", 0),
+                        errors="coerce"
+                    ).fillna(0).sum()
+
+                    total_kg += shared_kg
+                    
                     total_parts = pd.to_numeric(df_dashboard.get("Animal parts seized", 0), errors="coerce").fillna(0).sum()
 
                     st.markdown("### Global Summary")
