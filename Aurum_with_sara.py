@@ -1946,7 +1946,23 @@ if uploaded_file is None and st.session_state.get("user"):
                             new_row["Animal parts seized"] = 0
                             expanded_rows.append(new_row)
 
-                return pd.DataFrame(expanded_rows)
+                df_exp = pd.DataFrame(expanded_rows)
+                df_exp["Species_clean"] = df_exp["Species"].str.strip()
+
+                def format_species_italics(name):
+                    if name.lower().startswith("bushmeat"):
+                        return name  # não italizar
+                    if re.match(r"^[A-Z][a-z]+ [a-z]+$", name):
+                        return f"_{name}_"
+                    elif re.match(r"^[A-Z][a-z]+ sp\\.?$", name):
+                        return f"_{name[:-1]}_ sp."
+                    elif re.match(r"^[A-Z][a-z]+ spp\\.?$", name):
+                        return f"_{name[:-1]}_ spp."
+                    else:
+                        return name
+
+                df_exp["Species_display"] = df_exp["Species_clean"].apply(format_species_italics)
+                return df_exp
 
             df_dashboard = expand_multi_species_rows(df_dashboard)
             df_dashboard = df_dashboard[df_dashboard["Species"].notna()]
