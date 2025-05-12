@@ -1999,16 +1999,31 @@ if uploaded_file is None and st.session_state.get("user"):
                 key="dashboard_tabs"
             )
 
-            available_species = sorted(df_dashboard["Species"].unique())
+            # Ajuste de labels com itálico
+            def format_species_label(name):
+                if name.lower().startswith("bushmeat"):
+                    return name
+                if re.match(r"^[A-Z][a-z]+ [a-z]+$", name):
+                    return f"_{name}_"
+                elif re.match(r"^[A-Z][a-z]+ sp\\.?$", name):
+                    return f"_{name[:-1]}_ sp."
+                elif re.match(r"^[A-Z][a-z]+ spp\\.?$", name):
+                    return f"_{name[:-1]}_ spp."
+                else:
+                    return name
+
+            label_to_species = {format_species_label(s): s for s in sorted(df_dashboard["Species"].unique())}
+            available_species = sorted(label_to_species.keys())
 
             if dashboard_tab == "Summary Dashboard":
                 st.markdown("## Summary Dashboard")
 
-                selected_species_dash = st.selectbox(
+                selected_label = st.selectbox(
                     "Select a species to view:",
                     ["All species"] + available_species,
                     key="species_summary_dashboard"
                 )
+                selected_species_dash = label_to_species.get(selected_label, "All species")
 
                 if selected_species_dash == "All species":
                     total_species = df_dashboard["Species"].nunique()
@@ -2089,12 +2104,13 @@ if uploaded_file is None and st.session_state.get("user"):
             elif dashboard_tab == "Distribution of Cases":
                 st.markdown("## Temporal and Geographic Distribution of Recorded Cases")
 
-                selected_species_dash = st.selectbox(
+                selected_label = st.selectbox(
                     "Select a species to view:",
                     ["All species"] + available_species,
                     key="species_distribution_dashboard"
                 )
-
+                selected_species_dash = label_to_species.get(selected_label, "All species")
+                
                 col1, col2 = st.columns([1, 1.4])
 
                 with col1:
