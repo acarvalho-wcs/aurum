@@ -1905,6 +1905,25 @@ if uploaded_file is None and st.session_state.get("user"):
                 expanded_rows = []
                 for _, row in df.iterrows():
                     text = str(row.get('N seized specimens', ''))
+                    matched_species = set()
+
+                    # 0. Trata casos do tipo "1100 kg (Espécie A + Espécie B)"
+                    shared_matches = re.findall(
+                        r'(\d+(?:\.\d+)?)\s*kg\s*\(([^)]+)\)', text
+                    )
+                    for qty_str, species_group in shared_matches:
+                        qty = float(qty_str)
+                        species_list = [s.strip() for s in re.split(r'\s*\+\s*', species_group)]
+                        for species in species_list:
+                            if re.match(r"(?i)^bush ?meat$", species):
+                                species = "Bushmeat"
+                            matched_species.add(species)
+                            new_row = row.copy()
+                            new_row["Species"] = species
+                            new_row["N_seized"] = 0
+                            new_row["Estimated weight (kg)"] = qty
+                            new_row["Animal parts seized"] = 0
+                            expanded_rows.append(new_row)
 
                     # 1. Extrai entradas com número + unidade + espécie
                     matches = re.findall(
@@ -1912,16 +1931,16 @@ if uploaded_file is None and st.session_state.get("user"):
                         text,
                         flags=re.IGNORECASE
                     )
-                    matched_species = set()
-
                     for qty, unit, species in matches:
-                        new_row = row.copy()
                         qty = float(qty)
                         species = species.strip()
                         if re.match(r"(?i)^bush ?meat$", species):
                             species = "Bushmeat"
+                        if species in matched_species:
+                            continue
                         matched_species.add(species)
 
+                        new_row = row.copy()
                         new_row["Species"] = species
                         new_row["N_seized"] = 0
                         new_row["Estimated weight (kg)"] = 0
@@ -1967,7 +1986,7 @@ if uploaded_file is None and st.session_state.get("user"):
 
                 df_exp["Species_display"] = df_exp["Species_clean"].apply(format_species_italics)
                 return df_exp
-
+                
             df_dashboard = expand_multi_species_rows(df_dashboard)
             df_dashboard = df_dashboard[df_dashboard["Species"].notna()]
             df_dashboard["N_seized"] = pd.to_numeric(df_dashboard["N_seized"], errors="coerce").fillna(0)
