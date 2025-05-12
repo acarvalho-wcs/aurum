@@ -1906,9 +1906,9 @@ if uploaded_file is None and st.session_state.get("user"):
                 for _, row in df.iterrows():
                     text = str(row.get('N seized specimens', ''))
 
-                    # 1. Extrai entradas com número + unidade (kg, parts etc) + espécie
+                    # 1. Extrai entradas com número + unidade + espécie
                     matches = re.findall(
-                        r'(\d+(?:\.\d+)?)\s*(kg|parts?|fangs?|claws?|feathers?|scales?|shells?)?\s*([A-Z][a-z]+(?: [a-z]+)+)',
+                        r'(\d+(?:\.\d+)?)\s*(kg|parts?|fangs?|claws?|feathers?|scales?|shells?)?\s*([A-Z][a-z]+(?: [a-z]+)+|[Bb]ush ?[Mm]eat)',
                         text,
                         flags=re.IGNORECASE
                     )
@@ -1918,6 +1918,8 @@ if uploaded_file is None and st.session_state.get("user"):
                         new_row = row.copy()
                         qty = float(qty)
                         species = species.strip()
+                        if re.match(r"(?i)^bush ?meat$", species):
+                            species = "Bushmeat"
                         matched_species.add(species)
 
                         new_row["Species"] = species
@@ -1936,8 +1938,10 @@ if uploaded_file is None and st.session_state.get("user"):
                         expanded_rows.append(new_row)
 
                     # 2. Garante inclusão de espécies mencionadas mesmo sem número
-                    all_species = re.findall(r'\b([A-Z][a-z]+ [a-z]+)\b', text)
+                    all_species = re.findall(r'\b([A-Z][a-z]+ [a-z]+|[Bb]ush ?[Mm]eat)\b', text)
                     for species in set(all_species):
+                        if re.match(r"(?i)^bush ?meat$", species):
+                            species = "Bushmeat"
                         if species not in matched_species:
                             new_row = row.copy()
                             new_row["Species"] = species
@@ -1951,7 +1955,7 @@ if uploaded_file is None and st.session_state.get("user"):
 
                 def format_species_italics(name):
                     if name.lower().startswith("bushmeat"):
-                        return name  # não italizar
+                        return name
                     if re.match(r"^[A-Z][a-z]+ [a-z]+$", name):
                         return f"_{name}_"
                     elif re.match(r"^[A-Z][a-z]+ sp\\.?$", name):
