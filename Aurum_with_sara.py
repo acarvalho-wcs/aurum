@@ -2159,21 +2159,30 @@ if uploaded_file is None and st.session_state.get("user"):
                             elif method == "By animal parts" and "Animal parts seized" in gdf.columns:
                                 gdf["weight"] = gdf["Animal parts seized"].notna().astype(int)
 
+                            max_weight = gdf["weight"].max()
+                            min_weight = gdf["weight"].min()
+
+                            st.caption(f"Max value for selected method: **{max_weight:.1f}** – Min: **{min_weight:.1f}**")
+
+                            # Normalize weights for better visual contrast
+                            if max_weight == min_weight:
+                                normalized_weights = [1.0] * len(gdf)
+                            else:
+                                normalized_weights = [
+                                    0.1 + 0.9 * (w - min_weight) / (max_weight - min_weight)
+                                    for w in gdf["weight"]
+                                ]
+
                             radius_val = st.slider("HeatMap radius (px)", 5, 50, 25, key="heatmap_radius")
 
                             m = folium.Map(location=[center_lat, center_lon], zoom_start=4)
                             m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
 
                             heat_data = [
-                                [row["Latitude"], row["Longitude"], row["weight"]]
-                                for _, row in gdf.iterrows()
+                                [row["Latitude"], row["Longitude"], norm]
+                                for row, norm in zip(gdf.itertuples(), normalized_weights)
                             ]
-
-                            HeatMap(
-                                data=heat_data,
-                                radius=radius_val,
-                                max_val=gdf["weight"].max()  # ← Isso força a coloração a se ajustar
-                            ).add_to(m)
+                            HeatMap(data=heat_data, radius=radius_val).add_to(m)
 
                             legend_html = '''
                                 <div style="
