@@ -2134,15 +2134,20 @@ if uploaded_file is None and st.session_state.get("user"):
 
                             st.markdown("**Select weighting method for heatmap:**")
 
+                            METHOD_CASE = "Per case"
+                            METHOD_SPECIMENS = "By number of specimens"
+                            METHOD_WEIGHT = "By weight (kg)"
+                            METHOD_PARTS = "By animal parts"
+
                             tab_labels = [
-                                "Per case",
-                                "By number of specimens",
-                                "By weight (kg)",
-                                "By animal parts"
+                                METHOD_CASE,
+                                METHOD_SPECIMENS,
+                                METHOD_WEIGHT,
+                                METHOD_PARTS
                             ]
 
                             if "selected_method" not in st.session_state:
-                                st.session_state["selected_method"] = "Per case"
+                                st.session_state["selected_method"] = METHOD_CASE
 
                             selected_tab = tabs(
                                 options=tab_labels,
@@ -2158,15 +2163,15 @@ if uploaded_file is None and st.session_state.get("user"):
                             # Default weight
                             gdf["weight"] = 1
 
-                            if method == "By number of specimens" and "N seized specimens" in gdf.columns:
+                            if method == METHOD_SPECIMENS and "N seized specimens" in gdf.columns:
                                 gdf["weight"] = gdf["N seized specimens"].apply(extract_total_specimens)
                                 gdf = gdf[gdf["weight"] > 0]
 
-                            elif method == "By weight (kg)" and "Estimated weight (kg)" in gdf.columns:
+                            elif method == METHOD_WEIGHT and "Estimated weight (kg)" in gdf.columns:
                                 gdf["weight"] = pd.to_numeric(gdf["Estimated weight (kg)"], errors="coerce")
                                 gdf = gdf[gdf["weight"] > 0]
 
-                            elif method == "By animal parts" and "Animal parts seized" in gdf.columns:
+                            elif method == METHOD_PARTS and "Animal parts seized" in gdf.columns:
                                 gdf["Animal parts seized"] = gdf["Animal parts seized"].astype(str).str.strip()
                                 gdf = gdf[gdf["Animal parts seized"].str.len() > 0]
                                 gdf["weight"] = 1  # valor fixo por caso com partes
