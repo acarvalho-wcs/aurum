@@ -1434,8 +1434,8 @@ def display_alert_submission_form(sheet_id):
         species = st.text_input("Species involved (optional)", key=field_keys["species"])
         country = st.text_input("Country or Region (optional)", key=field_keys["country"])
         source_link = st.text_input("Source Link (optional)", key=field_keys["source_link"])
-        latitude = st.text_input("Latitude (optional)", key=field_keys["latitude"])
-        longitude = st.text_input("Longitude (optional)", key=field_keys["longitude"])
+        latitude = st.text_input("Latitude (e.g. -9.5342)", key=field_keys["latitude"])
+        longitude = st.text_input("Longitude (e.g. -43.3525)", key=field_keys["longitude"])
 
         author_choice = st.radio(
             "Choose how to display your name:",
