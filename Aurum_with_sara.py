@@ -202,9 +202,12 @@ def display_public_alerts_section(sheet_id):
             # Adiciona updates relacionados ao alerta
             alert_updates = df_updates[df_updates["Alert ID"] == row["Alert ID"]].sort_values("Timestamp")
             if not alert_updates.empty:
-                popup_html += "<hr><b>Updates:</b><ul style='padding-left: 15px;'>"
+                popup_html += "<hr><b>Updates:</b><ul style='padding-left: 15px; font-size: 12px;'>"
                 for _, upd in alert_updates.iterrows():
-                    popup_html += f"<li><i>{upd['Timestamp']}</i> – <b>{upd['User']}</b>: {upd['Update Text']}</li>"
+                    timestamp = upd['Timestamp']
+                    user = upd['User']
+                    text = upd['Update Text']
+                    popup_html += f"<li><i>{timestamp}</i> – <b>{user}</b>: {text}</li>"
                 popup_html += "</ul>"
 
             color = {
@@ -277,7 +280,7 @@ def display_public_alerts_section(sheet_id):
         # Renderiza o mapa como HTML embutido
         map_html = m.get_root().render()
         html(map_html, height=600)
-    
+
     except Exception as e:
         st.error(f"❌ Failed to load public alerts: {e}")
 
