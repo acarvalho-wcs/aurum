@@ -2142,16 +2142,6 @@ if uploaded_file is None and st.session_state.get("user"):
                             df_filtered = df_filtered[df_filtered["Species"] == selected_species_dash]
 
                         df_filtered["Year"] = pd.to_numeric(df_filtered["Year"], errors="coerce")
-                col1, col2 = st.columns([1, 1.4])
-
-                with col1:
-                    st.markdown("#### Cases per Year")
-                    if "Year" in df_dashboard.columns:
-                        df_filtered = df_dashboard.copy()
-                        if selected_species_dash != "All species":
-                            df_filtered = df_filtered[df_filtered["Species"] == selected_species_dash]
-
-                        df_filtered["Year"] = pd.to_numeric(df_filtered["Year"], errors="coerce")
                         df_years = df_filtered.groupby("Year", as_index=False)["Case #"].nunique()
                         fig_years = px.bar(
                             df_years,
@@ -2164,7 +2154,6 @@ if uploaded_file is None and st.session_state.get("user"):
                         st.plotly_chart(fig_years, use_container_width=True)
                     else:
                         st.info("Year column not available in data.")
-
 
                 with col2:
                     st.markdown("#### Heatmap of Recorded Cases by Location")
