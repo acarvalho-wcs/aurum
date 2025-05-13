@@ -237,7 +237,7 @@ def display_public_alerts_section(sheet_id):
         m.get_root().html.add_child(folium.Element(legend_html))
 
         info_toggle_html = """
-            <div style="position: fixed; top: 20px; left: 20px; z-index: 9999;">
+            <div style="position: fixed; top: 20px; left: 40px; z-index: 9999;">
                 <button onclick="var box = document.getElementById('info-box'); box.style.display = (box.style.display === 'none') ? 'block' : 'none';"
                     style="background-color: #4a90e2; color: white; border: none; padding: 8px 12px; border-radius: 50%; font-size: 16px; cursor: pointer;">
                     ℹ️
