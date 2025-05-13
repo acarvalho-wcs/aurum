@@ -240,14 +240,9 @@ def display_public_alerts_section(sheet_id):
         map_html = m.get_root().render()
         html(map_html, height=600)
 
-        # 🔗 Link para abrir o mapa completo em nova aba
-        from io import BytesIO
-        import base64
-
-        map_bytes = BytesIO(map_html.encode("utf-8"))
-        map_base64 = base64.b64encode(map_bytes.getvalue()).decode()
-        external_html_link = f'data:text/html;base64,{map_base64}'
-        st.markdown(f"[🌐 Open full map in a new tab]({external_html_link})", unsafe_allow_html=True)
+        expand_map = st.toggle("🗺️ Expand map to full height", value=False)
+        map_height = 600 if not expand_map else 1000
+        html(map_html, height=map_height)
     
     except Exception as e:
         st.error(f"❌ Failed to load public alerts: {e}")
