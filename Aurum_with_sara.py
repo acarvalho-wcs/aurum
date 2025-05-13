@@ -143,15 +143,26 @@ def display_public_alerts_section(sheet_id):
     def parse_italics(text):
         return re.sub(r'_([^_]+)_', r'<em>\1</em>', str(text))
 
-    tab = tabs(
+    st.markdown("## 🌍 Alert Board")
+    st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
+
+    # --- Seletor de funcionalidade com tabs (Submit | Update)
+    selected_tab = tabs(
         options=["Submit New Alert", "Update Alert"],
         key="alert_entry_tabs"
     )
 
-    st.markdown("## 🌍 Alert Board")
-    st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
-    st.markdown("### Wildlife Trafficking Alerts")
+    if selected_tab == "Submit New Alert":
+        st.markdown("### 📝 Submit New Alert")
+        display_submit_new_alert_form(sheet_id)  # <-- você deve definir essa função separadamente
 
+    elif selected_tab == "Update Alert":
+        st.markdown("### ✏️ Update My Alerts")
+        display_update_alerts_interface(sheet_id)  # <-- você deve definir essa função separadamente
+
+    st.markdown("### 📍 Wildlife Trafficking Alerts")
+
+    # --- Carregamento dos dados do Google Sheets e exibição do mapa
     scope = ["https://www.googleapis.com/auth/spreadsheets"]
     credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
     client = gspread.authorize(credentials)
@@ -261,9 +272,6 @@ def display_public_alerts_section(sheet_id):
 
     except Exception as e:
         st.error(f"❌ Failed to load public alerts: {e}")
-
-if "user" in st.session_state:
-    display_public_alerts_section(SHEET_ID)
 
 df = None
 df_selected = None
