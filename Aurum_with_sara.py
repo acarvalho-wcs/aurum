@@ -128,6 +128,8 @@ if uploaded_file is None:
     Click **About Aurum** to learn more about each analysis module.
     """)
 
+from streamlit_shadcn_ui import tabs
+
 # --- ALERTAS PÚBLICOS (visível para todos, inclusive sem login) ---
 def display_public_alerts_section(sheet_id):
     import folium
@@ -140,6 +142,11 @@ def display_public_alerts_section(sheet_id):
 
     def parse_italics(text):
         return re.sub(r'_([^_]+)_', r'<em>\1</em>', str(text))
+
+    tab = tabs(
+        options=["Submit New Alert", "Update Alert"],
+        key="alert_entry_tabs"
+    )
 
     st.markdown("## 🌍 Alert Board")
     st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
