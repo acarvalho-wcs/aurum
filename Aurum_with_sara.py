@@ -239,10 +239,6 @@ def display_public_alerts_section(sheet_id):
         # Renderiza o mapa como HTML embutido
         map_html = m.get_root().render()
         html(map_html, height=600)
-
-        expand_map = st.toggle("🗺️ Expand map to full height", value=False)
-        map_height = 600 if not expand_map else 1000
-        html(map_html, height=map_height)
     
     except Exception as e:
         st.error(f"❌ Failed to load public alerts: {e}")
