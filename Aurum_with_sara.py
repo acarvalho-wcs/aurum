@@ -145,7 +145,6 @@ def display_public_alerts_section(sheet_id):
     st.caption("These alerts are publicly available and updated by verified users of the Aurum system.")
     st.markdown("### Wildlife Trafficking Alerts")
 
-    # Acesso ao Google Sheets
     scope = ["https://www.googleapis.com/auth/spreadsheets"]
     credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
     client = gspread.authorize(credentials)
@@ -161,12 +160,9 @@ def display_public_alerts_section(sheet_id):
             return
 
         df_alerts = df_alerts[df_alerts["Public"].astype(str).str.strip().str.upper() == "TRUE"]
-
-        # Filtra alertas com coordenadas válidas
         df_alerts = df_alerts.dropna(subset=["Latitude", "Longitude"])
         df_alerts = df_alerts[df_alerts["Latitude"].astype(str).str.strip() != ""]
         df_alerts = df_alerts[df_alerts["Longitude"].astype(str).str.strip() != ""]
-
         df_alerts["Latitude"] = pd.to_numeric(df_alerts["Latitude"], errors="coerce")
         df_alerts["Longitude"] = pd.to_numeric(df_alerts["Longitude"], errors="coerce")
         df_alerts = df_alerts.dropna(subset=["Latitude", "Longitude"])
@@ -175,9 +171,7 @@ def display_public_alerts_section(sheet_id):
             st.info("No georeferenced alerts to display on the map.")
             return
 
-        # Cria GeoDataFrame
         gdf = gpd.GeoDataFrame(df_alerts, geometry=gpd.points_from_xy(df_alerts["Longitude"], df_alerts["Latitude"]), crs="EPSG:4326")
-
         m = folium.Map(location=[0, 0], zoom_start=2)
         marker_cluster = MarkerCluster().add_to(m)
 
@@ -185,36 +179,33 @@ def display_public_alerts_section(sheet_id):
             title = parse_italics(row["Title"])
             description = parse_italics(row["Description"])
             species = parse_italics(row.get("Species", "—"))
+            source_link = row.get("Source Link")
 
-            popup_html = f"""
-                <b>{title}</b><br>
-                <b>Risk:</b> {row['Risk Level']}<br>
-                <b>Category:</b> {row['Category']}<br>
-                <b>Species:</b> {species}<br>
-                <b>Country:</b> {row.get('Country', '—')}<br>
-                <b>Submitted by:</b> {row.get('Display As', 'Anonymous')}<br>
-                <b>Date:</b> {row['Created At']}<br>
-                <p style='margin-top:5px'><b>Description:</b><br>{description}</p>
-            """
-            if row.get("Source Link"):
-                popup_html += f"<p><a href='{row['Source Link']}' target='_blank'>🔗 Source Link</a></p>"
+            popup_parts = [
+                f"<b>{title}</b><br>",
+                f"<b>Risk:</b> {row['Risk Level']}<br>",
+                f"<b>Category:</b> {row['Category']}<br>",
+                f"<b>Species:</b> {species}<br>",
+                f"<b>Country:</b> {row.get('Country', '—')}<br>",
+                f"<b>Submitted by:</b> {row.get('Display As', 'Anonymous')}<br>",
+                f"<b>Date:</b> {row['Created At']}<br>",
+                f"<p style='margin-top:5px'><b>Description:</b><br>{description}</p>"
+            ]
 
-            # Adiciona updates relacionados ao alerta
-            alert_updates = df_updates[df_updates["Alert ID"] == row["Alert ID"]].sort_values("Timestamp")
-            if not alert_updates.empty:
-                popup_html += "<hr><b>Updates:</b><ul style='padding-left: 15px; font-size: 12px;'>"
-                for _, upd in alert_updates.iterrows():
-                    timestamp = upd['Timestamp']
-                    user = upd['User']
-                    text = upd['Update Text']
-                    popup_html += f"<li><i>{timestamp}</i> – <b>{user}</b>: {text}</li>"
-                popup_html += "</ul>"
+            if source_link:
+                popup_parts.append(f"<p><a href='{source_link}' target='_blank'>🔗 Source Link</a></p>")
 
-            color = {
-                "High": "red",
-                "Medium": "orange",
-                "Low": "blue"
-            }.get(row["Risk Level"], "gray")
+            updates = df_updates[df_updates["Alert ID"] == row["Alert ID"]].sort_values("Timestamp")
+            if not updates.empty:
+                updates_html = "<hr><b>Updates:</b><div style='max-height: 140px; overflow-y: auto; margin-top: 4px; padding-right: 6px;'><ul style='padding-left: 15px; font-size: 12px; margin-bottom: 0;'>"
+                for _, upd in updates.iterrows():
+                    updates_html += f"<li style='margin-bottom: 6px;'><i>{upd['Timestamp']}</i> – <b>{upd['User']}</b>: {upd['Update Text'].replace('\n', '<br>')}</li>"
+                updates_html += "</ul></div>"
+                popup_parts.append(updates_html)
+
+            popup_html = "".join(popup_parts)
+
+            color = {"High": "red", "Medium": "orange", "Low": "blue"}.get(row["Risk Level"], "gray")
 
             Marker(
                 location=[row["Latitude"], row["Longitude"]],
@@ -222,20 +213,10 @@ def display_public_alerts_section(sheet_id):
                 icon=Icon(color=color, icon="exclamation-sign")
             ).add_to(marker_cluster)
 
-        # 🔴 Legenda de risco com mesmas cores dos ícones
-        legend_html = """
-            <div style="
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                z-index:9999;
-                background-color: white;
-                padding: 10px 14px;
-                border-radius: 6px;
-                font-size: 13px;
-                box-shadow: 2px 2px 8px rgba(0,0,0,0.25);
-                line-height: 1.5;
-            ">
+        legend_html = '''
+            <div style="position: fixed; bottom: 20px; right: 20px; z-index:9999; background-color: white;
+                        padding: 10px 14px; border-radius: 6px; font-size: 13px; box-shadow: 2px 2px 8px rgba(0,0,0,0.25);
+                        line-height: 1.5;">
                 <strong>Risk Level</strong><br>
                 <div style="margin-left: 4px;">
                     <span style='color:red;'>●</span> High<br>
@@ -246,26 +227,18 @@ def display_public_alerts_section(sheet_id):
                     Generated with <strong>Aurum</strong>
                 </div>
             </div>
-        """
+        '''
         m.get_root().html.add_child(folium.Element(legend_html))
 
-        info_toggle_html = """
+        info_toggle_html = '''
             <div style="position: absolute; top: 90px; left: 10px; z-index: 9999;">
                 <button onclick="var box = document.getElementById('info-box'); box.style.display = (box.style.display === 'none') ? 'block' : 'none';"
                     style="background-color: #4a90e2; color: white; border: none; padding: 8px 12px; border-radius: 50%; font-size: 16px; cursor: pointer;">
                     ℹ️
                 </button>
-                <div id="info-box" style="
-                    display: none;
-                    margin-top: 10px;
-                    background-color: #fefefe;
-                    padding: 12px 16px;
-                    border-radius: 8px;
-                    box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
-                    font-size: 13px;
-                    max-width: 280px;
-                    line-height: 1.5;
-                ">
+                <div id="info-box" style="display: none; margin-top: 10px; background-color: #fefefe;
+                    padding: 12px 16px; border-radius: 8px; box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+                    font-size: 13px; max-width: 280px; line-height: 1.5;">
                     <b>Guidelines for submitting a Wildlife Trafficking Alert in Aurum</b><br><br>
                     <b>Species:</b> Use scientific names with underscores for italics (e.g., <em>_Panthera onca_</em>).<br>
                     <b>Description:</b> Add what happened, who was involved, when and where, and the information source.<br>
@@ -274,17 +247,14 @@ def display_public_alerts_section(sheet_id):
                     <b>Source Link:</b> (Optional) Add a link to a post, article, or evidence.
                 </div>
             </div>
-        """
+        '''
         m.get_root().html.add_child(folium.Element(info_toggle_html))
 
-        # Renderiza o mapa como HTML embutido
-        map_html = m.get_root().render()
-        html(map_html, height=600)
+        html(m.get_root().render(), height=600)
 
     except Exception as e:
         st.error(f"❌ Failed to load public alerts: {e}")
 
-# Executa antes do login
 if "user" in st.session_state:
     display_public_alerts_section(SHEET_ID)
 
