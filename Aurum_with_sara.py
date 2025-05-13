@@ -254,16 +254,11 @@ def display_public_alerts_section(sheet_id):
                     line-height: 1.5;
                 ">
                     <b>📝 How to fill in a Wildlife Trafficking Alert</b><br><br>
-                    <b>Title:</b> Provide a short summary (e.g., <em>Suspicious shipment of _Chelonoidis carbonarius_ in Amazonas</em>).<br><br>
-                    <b>Risk Level:</b> Choose between High, Medium, or Low.<br><br>
-                    <b>Category:</b> Define the context (e.g., Border checkpoint, Market, Online ad).<br><br>
                     <b>Species:</b> Use scientific names with underscores for italics (e.g., <em>_Panthera onca_</em>).<br><br>
                     <b>Description:</b> Add what happened, who was involved, when and where, and the information source.<br><br>
                     <b>Coordinates:</b> Provide values like <code>Latitude: -9.43453</code> and <code>Longitude: 3.53433</code>.<br><br>
-                    <b>Country:</b> Country of the event.<br><br>
+                    <b>Country:</b> Country or precise location of the event.<br><br>
                     <b>Source Link:</b> (Optional) Add a link to a post, article, or evidence.<br><br>
-                    <b>Display As:</b> Your name or alias (or leave blank for Anonymous).<br><br>
-                    <i>Submitted alerts may appear on the map after approval.</i>
                 </div>
             </div>
         """
