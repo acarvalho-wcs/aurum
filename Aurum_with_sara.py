@@ -236,6 +236,32 @@ def display_public_alerts_section(sheet_id):
         """
         m.get_root().html.add_child(folium.Element(legend_html))
 
+        info_toggle_html = """
+            <div style="position: fixed; top: 20px; left: 20px; z-index: 9999;">
+                <button onclick="var box = document.getElementById('info-box'); box.style.display = (box.style.display === 'none') ? 'block' : 'none';"
+                    style="background-color: #4a90e2; color: white; border: none; padding: 8px 12px; border-radius: 50%; font-size: 16px; cursor: pointer;">
+                    ℹ️
+                </button>
+                <div id="info-box" style="
+                    display: none;
+                    margin-top: 10px;
+                    background-color: #fefefe;
+                    padding: 12px 16px;
+                    border-radius: 8px;
+                    box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+                    font-size: 13px;
+                    max-width: 280px;
+                    line-height: 1.5;
+                ">
+                    <b>📝 How to contribute an alert:</b><br>
+                    Go to <b>Alerts Management</b> and click <b>Submit New Alert</b>.<br>
+                    Fill in the location, risk level, species, and case details.<br><br>
+                    Submitted alerts may appear here after approval.
+                </div>
+            </div>
+        """
+        m.get_root().html.add_child(folium.Element(info_toggle_html))
+
         # Renderiza o mapa como HTML embutido
         map_html = m.get_root().render()
         html(map_html, height=600)
