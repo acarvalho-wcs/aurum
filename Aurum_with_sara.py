@@ -251,9 +251,9 @@ def display_public_alerts_section(sheet_id):
                     box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
                     font-size: 13px;
                     max-width: 280px;
-                    line-height: 1.4;
+                    line-height: 1.5;
                 ">
-                    <b>Guidelines for submitting a Wildlife Trafficking Alert in Aurum</b><br>
+                    <b>Guidelines for submitting a Wildlife Trafficking Alert in Aurum</b><br><br>
                     <b>Species:</b> Use scientific names with underscores for italics (e.g., <em>_Panthera onca_</em>).<br>
                     <b>Description:</b> Add what happened, who was involved, when and where, and the information source.<br>
                     <b>Coordinates:</b> Provide values like <code>Latitude: -9.43453</code> and <code>Longitude: 3.53433</code>.<br>
