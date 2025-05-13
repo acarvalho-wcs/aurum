@@ -2164,8 +2164,7 @@ if uploaded_file is None and st.session_state.get("user"):
                         st.plotly_chart(fig_years, use_container_width=True)
                     else:
                         st.info("Year column not available in data.")
-                    else:
-                        st.info("Year column not available in data.")
+
 
                 with col2:
                     st.markdown("#### Heatmap of Recorded Cases by Location")
