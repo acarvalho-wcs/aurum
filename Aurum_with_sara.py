@@ -153,6 +153,8 @@ def display_public_alerts_section(sheet_id):
 
     try:
         df_alerts = pd.DataFrame(sheets.worksheet("Alerts").get_all_records())
+        df_updates = pd.DataFrame(sheets.worksheet("Alert Updates").get_all_records())
+        df_updates.columns = [col.strip() for col in df_updates.columns]
 
         if df_alerts.empty or "Public" not in df_alerts.columns:
             st.info("No public alerts available.")
@@ -196,6 +198,14 @@ def display_public_alerts_section(sheet_id):
             """
             if row.get("Source Link"):
                 popup_html += f"<p><a href='{row['Source Link']}' target='_blank'>🔗 Source Link</a></p>"
+
+            # Adiciona updates relacionados ao alerta
+            alert_updates = df_updates[df_updates["Alert ID"] == row["Alert ID"]].sort_values("Timestamp")
+            if not alert_updates.empty:
+                popup_html += "<hr><b>Updates:</b><ul style='padding-left: 15px;'>"
+                for _, upd in alert_updates.iterrows():
+                    popup_html += f"<li><i>{upd['Timestamp']}</i> – <b>{upd['User']}</b>: {upd['Update Text']}</li>"
+                popup_html += "</ul>"
 
             color = {
                 "High": "red",
