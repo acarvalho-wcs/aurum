@@ -36,7 +36,7 @@ st.set_page_config(page_title="Aurum Dashboard", layout="wide")
 # --- FUSO HORÁRIO ---
 brt = pytz.timezone("America/Sao_Paulo")
 
-# --- SELEÇÃO DE IDIOMA ---
+# --- SELEÇÃO DE IDIOMA (sem st.rerun) ---
 if "language" not in st.session_state:
     st.session_state["language"] = "English"
 
@@ -47,14 +47,11 @@ with st.container():
         key="language_tab"
     )
 
-if selected_lang != st.session_state["language"]:
-    st.session_state["language"] = selected_lang
-    st.rerun()
+# Atualiza apenas o session_state (sem rerun)
+st.session_state["language"] = selected_lang
+st.caption(f"🌐 Language selected: **{selected_lang}**")
 
-# Exibe idioma atual (opcional)
-st.caption(f"🌐 Language selected: **{st.session_state['language']}**")
-
-# --- FUNÇÃO DE TRADUÇÃO (opcional e extensível) ---
+# --- FUNÇÃO DE TRADUÇÃO ---
 def t(key):
     lang = st.session_state["language"]
     translations = {
@@ -67,30 +64,34 @@ def t(key):
             "English": "Log in below to unlock multi-user tools.",
             "Português": "Faça login abaixo para desbloquear ferramentas multiusuário.",
             "Español": "Inicie sesión abajo para desbloquear herramientas multiusuario."
+        },
+        "missing_creds": {
+            "English": "❌ Missing GCP credentials. Please check your Streamlit secrets.",
+            "Português": "❌ Credenciais do GCP ausentes. Verifique seus segredos no Streamlit.",
+            "Español": "❌ Faltan credenciales de GCP. Verifique sus secretos en Streamlit."
         }
     }
     return translations.get(key, {}).get(lang, key)
 
-# --- INÍCIO DO APP ---
-import os
-from PIL import Image
+# --- INTERFACE INICIAL (logo + sidebar) ---
 logo = Image.open("logo.png")
 st.sidebar.image("logo.png", use_container_width=True)
 st.sidebar.markdown(f"## {t('welcome')}")
 st.sidebar.markdown(t("login_prompt"))
 
 # --- CREDENCIAIS GOOGLE SAFE ---
-import gspread
-from google.oauth2.service_account import Credentials
+def load_gcp_client():
+    if "gcp_service_account" not in st.secrets:
+        st.error(t("missing_creds"))
+        st.stop()
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    credentials = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=scope
+    )
+    return gspread.authorize(credentials)
 
-scope = ["https://www.googleapis.com/auth/spreadsheets"]
-
-if "gcp_service_account" not in st.secrets:
-    st.error("❌ Missing GCP credentials. Please configure `secrets.toml` correctly.")
-    st.stop()
-
-credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-client = gspread.authorize(credentials)
+client = load_gcp_client()
 
 # Upload do arquivo
 from PIL import Image
