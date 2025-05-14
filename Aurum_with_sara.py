@@ -611,10 +611,8 @@ if uploaded_file is not None:
                     arima_steps = st.slider("How many years ahead to forecast?", 1, 10, value=5)
 
                     try:
-                        # Certifique-se de que a coluna 'Year' existe e é numérica
                         df_selected["Year"] = df_selected["Year"].astype(int)
 
-                        # Agrupar por ano somando os indivíduos apreendidos
                         df_annual = (
                             df_selected
                             .groupby("Year")["N_seized"]
@@ -623,20 +621,14 @@ if uploaded_file is not None:
                             .astype(float)
                         )
 
-                        # Converter para datetime para compatibilidade com ARIMA
                         df_annual.index = pd.to_datetime(df_annual.index, format="%Y")
                         df_annual = df_annual.asfreq("YS")
 
-                        from pmdarima import auto_arima
+                        from statsmodels.tsa.arima.model import ARIMA
 
-                        model = auto_arima(
-                            df_annual,
-                            seasonal=False,
-                            stepwise=True,
-                            suppress_warnings=True,
-                            error_action="ignore"
-                        )
-                        forecast_values = model.predict(n_periods=arima_steps)
+                        model = ARIMA(df_annual, order=(1, 1, 1))
+                        model_fit = model.fit()
+                        forecast_values = model_fit.forecast(steps=arima_steps)
 
                         future_index = pd.date_range(
                             start=df_annual.index[-1] + pd.offsets.YearBegin(),
