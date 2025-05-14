@@ -605,6 +605,69 @@ if uploaded_file is not None:
 
                     plot_cusum_trend(df_cusum, col_data=col_data, col_time=col_time)
 
+                if st.checkbox("Activate ARIMA Forecast"):
+                    st.subheader("ARIMA - Time Series Forecast")
+
+                    arima_steps = st.slider("How many years ahead to forecast?", 1, 10, value=5)
+
+                    df_arima = df_selected.groupby("Year")["N_seized"].sum().reset_index()
+                    df_arima = df_arima.sort_values("Year")
+                    df_arima.set_index("Year", inplace=True)
+                    df_arima = df_arima.asfreq("YS")  # Year Start frequency
+                    df_arima["N_seized"] = df_arima["N_seized"].fillna(0)
+
+                    try:
+                        from statsmodels.tsa.arima.model import ARIMA
+
+                        model = ARIMA(df_arima["N_seized"], order=(1, 1, 1))
+                        model_fit = model.fit()
+                        forecast = model_fit.forecast(steps=arima_steps)
+
+                        st.markdown("### Forecast Plot")
+                        fig, ax = plt.subplots(figsize=(10, 5))
+                        df_arima["N_seized"].plot(ax=ax, label="Observed", marker='o')
+                        forecast_years = range(df_arima.index[-1].year + 1, df_arima.index[-1].year + 1 + arima_steps)
+                        ax.plot(forecast_years, forecast, label="Forecast", linestyle='--', color='green', marker='x')
+                        ax.set_xlabel("Year")
+                        ax.set_ylabel("Seized Individuals")
+                        ax.set_title("ARIMA Forecast of Seizures")
+                        ax.legend()
+                        st.pyplot(fig)
+
+                    except Exception as e:
+                        st.error(f"❌ ARIMA model failed: {e}")
+
+                    with st.expander("📈 Learn more about this analysis"):
+                        st.markdown("""
+                        ### About ARIMA Forecasting
+
+                        The *ARIMA Forecast* module estimates the expected number of seizures for future years based on past trends in the data.
+
+                        - **ARIMA** stands for **AutoRegressive Integrated Moving Average**, and is a powerful time series model used to capture temporal dependencies.
+                        - The configuration used here is `ARIMA(1,1,1)`, which assumes:
+                          - Short-term memory (autoregressive lag),
+                          - Differencing for trend removal (to ensure stationarity),
+                          - Moving average smoothing of residuals.
+
+                        **How to interpret the forecast:**
+                        - The **green dashed line** represents expected values based on historical seizure patterns.
+                        - If actual values exceed this line in the future, it may indicate **anomalous increases or enforcement spikes**.
+                        - Conversely, values well below the forecast may suggest **reduced detection** or a change in trafficking dynamics.
+
+                        **Use cases in wildlife trafficking:**
+                        - Anticipate future high-risk years for specific species or regions.
+                        - Compare actual seizure numbers with predicted baseline trends.
+                        - Feed anomaly detection pipelines when deviations from ARIMA predictions are large.
+
+                        **Limitations:**
+                        - ARIMA assumes linear temporal dependencies and normal residuals.
+                        - It may not adapt well to sudden disruptions (e.g., major policy shifts or crises).
+                        - Forecasts can degrade significantly if the time series is very short or erratic.
+
+                        For detailed model selection (e.g., automatic tuning of parameters), consider integrating **Auto-ARIMA** or seasonal extensions (SARIMA) in future versions of Aurum.
+
+                        """)
+
             show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
             if show_cooc:
                 st.markdown("## Species Co-occurrence Analysis")
