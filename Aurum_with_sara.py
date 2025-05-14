@@ -32,11 +32,13 @@ brt = pytz.timezone("America/Sao_Paulo")
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Aurum Dashboard", layout="wide")
-st.title("Aurum - Criminal Intelligence in Wildlife Trafficking")
 
-# --- SELEÇÃO DE IDIOMA (coloque logo após o st.set_page_config) ---
+# --- FUSO HORÁRIO ---
+brt = pytz.timezone("America/Sao_Paulo")
+
+# --- SELEÇÃO DE IDIOMA ---
 if "language" not in st.session_state:
-    st.session_state["language"] = "English"  # Valor padrão
+    st.session_state["language"] = "English"
 
 with st.container():
     selected_lang = tabs(
@@ -45,13 +47,50 @@ with st.container():
         key="language_tab"
     )
 
-# Atualiza session_state se houver mudança
 if selected_lang != st.session_state["language"]:
     st.session_state["language"] = selected_lang
     st.rerun()
 
 # Exibe idioma atual (opcional)
-st.caption(f"Language selected: **{st.session_state['language']}**")
+st.caption(f"🌐 Language selected: **{st.session_state['language']}**")
+
+# --- FUNÇÃO DE TRADUÇÃO (opcional e extensível) ---
+def t(key):
+    lang = st.session_state["language"]
+    translations = {
+        "welcome": {
+            "English": "Welcome to Aurum",
+            "Português": "Bem-vindo ao Aurum",
+            "Español": "Bienvenido a Aurum"
+        },
+        "login_prompt": {
+            "English": "Log in below to unlock multi-user tools.",
+            "Português": "Faça login abaixo para desbloquear ferramentas multiusuário.",
+            "Español": "Inicie sesión abajo para desbloquear herramientas multiusuario."
+        }
+    }
+    return translations.get(key, {}).get(lang, key)
+
+# --- INÍCIO DO APP ---
+import os
+from PIL import Image
+logo = Image.open("logo.png")
+st.sidebar.image("logo.png", use_container_width=True)
+st.sidebar.markdown(f"## {t('welcome')}")
+st.sidebar.markdown(t("login_prompt"))
+
+# --- CREDENCIAIS GOOGLE SAFE ---
+import gspread
+from google.oauth2.service_account import Credentials
+
+scope = ["https://www.googleapis.com/auth/spreadsheets"]
+
+if "gcp_service_account" not in st.secrets:
+    st.error("❌ Missing GCP credentials. Please configure `secrets.toml` correctly.")
+    st.stop()
+
+credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+client = gspread.authorize(credentials)
 
 # Upload do arquivo
 from PIL import Image
