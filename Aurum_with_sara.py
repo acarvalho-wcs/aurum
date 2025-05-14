@@ -103,9 +103,18 @@ SHEET_ID = "1HVYbot3Z9OBccBw7jKNw5acodwiQpfXgavDTIptSKic"
 USERS_SHEET = "Users"
 REQUESTS_SHEET = "Access Requests"
 
-scope = ["https://www.googleapis.com/auth/spreadsheets"]
-credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-client = gspread.authorize(credentials)
+def load_gcp_client():
+    if "gcp_service_account" not in st.secrets:
+        st.error("❌ Missing GCP credentials. Please check your Streamlit secrets.")
+        st.stop()
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    credentials = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=scope
+    )
+    return gspread.authorize(credentials)
+
+client = load_gcp_client()
 sheets = client.open_by_key(SHEET_ID)
 
 users_ws = sheets.worksheet(USERS_SHEET)
