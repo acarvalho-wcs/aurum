@@ -605,28 +605,41 @@ if uploaded_file is not None:
 
                     plot_cusum_trend(df_cusum, col_data=col_data, col_time=col_time)
 
-                if st.checkbox("Activate ARIMA Forecast"):
-                    st.subheader("ARIMA - Time Series Forecast")
+                if st.checkbox("Activate ARIMA Forecast (annual, by seizure)"):
+                    st.subheader("ARIMA - Forecast Using Annual Seizure Records")
 
                     arima_steps = st.slider("How many years ahead to forecast?", 1, 10, value=5)
 
-                    df_arima = df_selected.groupby("Year")["N_seized"].sum().reset_index()
-                    df_arima = df_arima.sort_values("Year")
-
-                    df_arima["Year"] = pd.to_datetime(df_arima["Year"], format="%Y")
-                    df_arima.set_index("Year", inplace=True)
-                    df_arima = df_arima.asfreq("YS")
-                    df_arima["N_seized"] = df_arima["N_seized"].astype(float).fillna(0.0)
-
                     try:
-                        from statsmodels.tsa.arima.model import ARIMA
+                        # Certifique-se de que a coluna 'Year' existe e é numérica
+                        df_selected["Year"] = df_selected["Year"].astype(int)
 
-                        model = ARIMA(df_arima["N_seized"], order=(1, 1, 1))
-                        model_fit = model.fit()
-                        forecast_values = model_fit.forecast(steps=arima_steps)
+                        # Agrupar por ano somando os indivíduos apreendidos
+                        df_annual = (
+                            df_selected
+                            .groupby("Year")["N_seized"]
+                            .sum()
+                            .sort_index()
+                            .astype(float)
+                        )
+
+                        # Converter para datetime para compatibilidade com ARIMA
+                        df_annual.index = pd.to_datetime(df_annual.index, format="%Y")
+                        df_annual = df_annual.asfreq("YS")
+
+                        from pmdarima import auto_arima
+
+                        model = auto_arima(
+                            df_annual,
+                            seasonal=False,
+                            stepwise=True,
+                            suppress_warnings=True,
+                            error_action="ignore"
+                        )
+                        forecast_values = model.predict(n_periods=arima_steps)
 
                         future_index = pd.date_range(
-                            start=df_arima.index[-1] + pd.offsets.YearBegin(),
+                            start=df_annual.index[-1] + pd.offsets.YearBegin(),
                             periods=arima_steps,
                             freq="YS"
                         )
@@ -634,47 +647,37 @@ if uploaded_file is not None:
 
                         st.markdown("### Forecast Plot")
                         fig, ax = plt.subplots(figsize=(10, 5))
-                        df_arima["N_seized"].plot(ax=ax, label="Observed", marker='o')
+                        df_annual.plot(ax=ax, label="Observed", marker='o')
                         forecast.plot(ax=ax, label="Forecast", linestyle='--', color='green', marker='x')
 
                         ax.set_xlabel("Year")
                         ax.set_ylabel("Seized Individuals")
-                        ax.set_title("ARIMA Forecast of Seizures")
-                        ax.set_xlim(df_arima.index[0], future_index[-1])
+                        ax.set_title("ARIMA Forecast of Seizures (Yearly)")
+                        ax.set_xlim(df_annual.index[0], future_index[-1])
                         ax.legend()
                         st.pyplot(fig)
 
                     except Exception as e:
-                        st.error(f"❌ ARIMA model failed: {e}")
+                        st.error(f"❌ Failed to run ARIMA forecast: {e}")
 
                     with st.expander("📈 Learn more about this analysis"):
                         st.markdown("""
-                        ### About ARIMA Forecasting
+                        ### ARIMA Forecasting (Annual, Based on Seizure Records)
 
-                        The *ARIMA Forecast* module estimates the expected number of seizures for future years based on past trends in the data.
+                        This forecast uses the **sum of individuals seized per year**, calculated from your raw seizure records.
 
-                        - **ARIMA** stands for **AutoRegressive Integrated Moving Average**, and is a powerful time series model used to capture temporal dependencies.
-                        - The configuration used here is `ARIMA(1,1,1)`, which assumes:
-                          - Short-term memory (autoregressive lag),
-                          - Differencing for trend removal (to ensure stationarity),
-                          - Moving average smoothing of residuals.
+                        - The model uses **Auto-ARIMA** to find the optimal configuration.
+                        - The forecast reflects expected values for upcoming years based on past annual patterns.
 
-                        **How to interpret the forecast:**
-                        - The **green dashed line** represents expected values based on historical seizure patterns.
-                        - If actual values exceed this line in the future, it may indicate **anomalous increases or enforcement spikes**.
-                        - Conversely, values well below the forecast may suggest **reduced detection** or a change in trafficking dynamics.
+                        **Interpretation:**
+                        - The green dashed line shows predicted values.
+                        - If your data contains outlier years (e.g., spikes), ARIMA may smooth them out unless they're part of a trend.
 
-                        **Use cases in wildlife trafficking:**
-                        - Anticipate future high-risk years for specific species or regions.
-                        - Compare actual seizure numbers with predicted baseline trends.
-                        - Feed anomaly detection pipelines when deviations from ARIMA predictions are large.
+                        **Tips:**
+                        - Combine this with Trend Segmentation (TCS) and CUSUM to confirm significant shifts.
+                        - You can modify this to forecast **mean per seizure** or **number of seizures**, depending on the metric of interest.
 
-                        **Limitations:**
-                        - ARIMA assumes linear temporal dependencies and normal residuals.
-                        - It may not adapt well to sudden disruptions (e.g., major policy shifts or crises).
-                        - Forecasts can degrade significantly if the time series is very short or erratic.
-
-                        For detailed model selection (e.g., automatic tuning of parameters), consider integrating **Auto-ARIMA** or seasonal extensions (SARIMA) in future versions of Aurum.
+                        This is the best use of ARIMA when you only have annual seizure-level data.
                         """)
 
             show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
