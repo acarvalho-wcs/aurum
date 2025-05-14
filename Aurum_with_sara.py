@@ -34,6 +34,24 @@ brt = pytz.timezone("America/Sao_Paulo")
 st.set_page_config(page_title="Aurum Dashboard", layout="wide")
 st.title("Aurum - Criminal Intelligence in Wildlife Trafficking")
 
+# --- SELEÇÃO DE IDIOMA (coloque logo após o st.set_page_config) ---
+if "language" not in st.session_state:
+    st.session_state["language"] = "English"  # Valor padrão
+
+selected_lang = tabs(
+    options=["English", "Português", "Español"],
+    default_value=st.session_state["language"],
+    key="language_tab"
+)
+
+# Atualiza session_state se houver mudança
+if selected_lang != st.session_state["language"]:
+    st.session_state["language"] = selected_lang
+    st.rerun()
+
+# Exibe idioma atual (opcional)
+st.caption(f"Language selected: **{st.session_state['language']}**")
+
 # Upload do arquivo
 from PIL import Image
 logo = Image.open("logo.png")
