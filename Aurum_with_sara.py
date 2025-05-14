@@ -32,66 +32,7 @@ brt = pytz.timezone("America/Sao_Paulo")
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Aurum Dashboard", layout="wide")
-
-# --- FUSO HORÁRIO ---
-brt = pytz.timezone("America/Sao_Paulo")
-
-# --- SELEÇÃO DE IDIOMA (sem st.rerun) ---
-if "language" not in st.session_state:
-    st.session_state["language"] = "English"
-
-with st.container():
-    selected_lang = tabs(
-        options=["English", "Português", "Español"],
-        default_value=st.session_state["language"],
-        key="language_tab"
-    )
-
-# Atualiza apenas o session_state (sem rerun)
-st.session_state["language"] = selected_lang
-st.caption(f"🌐 Language selected: **{selected_lang}**")
-
-# --- FUNÇÃO DE TRADUÇÃO ---
-def t(key):
-    lang = st.session_state["language"]
-    translations = {
-        "welcome": {
-            "English": "Welcome to Aurum",
-            "Português": "Bem-vindo ao Aurum",
-            "Español": "Bienvenido a Aurum"
-        },
-        "login_prompt": {
-            "English": "Log in below to unlock multi-user tools.",
-            "Português": "Faça login abaixo para desbloquear ferramentas multiusuário.",
-            "Español": "Inicie sesión abajo para desbloquear herramientas multiusuario."
-        },
-        "missing_creds": {
-            "English": "❌ Missing GCP credentials. Please check your Streamlit secrets.",
-            "Português": "❌ Credenciais do GCP ausentes. Verifique seus segredos no Streamlit.",
-            "Español": "❌ Faltan credenciales de GCP. Verifique sus secretos en Streamlit."
-        }
-    }
-    return translations.get(key, {}).get(lang, key)
-
-# --- INTERFACE INICIAL (logo + sidebar) ---
-logo = Image.open("logo.png")
-st.sidebar.image("logo.png", use_container_width=True)
-st.sidebar.markdown(f"## {t('welcome')}")
-st.sidebar.markdown(t("login_prompt"))
-
-# --- CREDENCIAIS GOOGLE SAFE ---
-def load_gcp_client():
-    if "gcp_service_account" not in st.secrets:
-        st.error(t("missing_creds"))
-        st.stop()
-    scope = ["https://www.googleapis.com/auth/spreadsheets"]
-    credentials = Credentials.from_service_account_info(
-        st.secrets["gcp_service_account"],
-        scopes=scope
-    )
-    return gspread.authorize(credentials)
-
-client = load_gcp_client()
+st.title("Aurum - Criminal Intelligence in Wildlife Trafficking")
 
 # Upload do arquivo
 from PIL import Image
@@ -99,7 +40,6 @@ logo = Image.open("logo.png")
 st.sidebar.image("logo.png", use_container_width=True)
 st.sidebar.markdown("## Welcome to Aurum")
 st.sidebar.markdown("Log in below to unlock multi-user tools.")
-
 # --- SOBRE O AURUM (ABOUT) ---
 # Inicializa estado
 if "show_sidebar_about" not in st.session_state:
