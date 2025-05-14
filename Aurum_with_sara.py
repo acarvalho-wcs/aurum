@@ -612,9 +612,12 @@ if uploaded_file is not None:
 
                     df_arima = df_selected.groupby("Year")["N_seized"].sum().reset_index()
                     df_arima = df_arima.sort_values("Year")
+
+                    # Correções essenciais
+                    df_arima["Year"] = pd.to_datetime(df_arima["Year"], format="%Y")
                     df_arima.set_index("Year", inplace=True)
                     df_arima = df_arima.asfreq("YS")  # Year Start frequency
-                    df_arima["N_seized"] = df_arima["N_seized"].fillna(0)
+                    df_arima["N_seized"] = df_arima["N_seized"].astype(float).fillna(0.0)
 
                     try:
                         from statsmodels.tsa.arima.model import ARIMA
@@ -626,8 +629,13 @@ if uploaded_file is not None:
                         st.markdown("### Forecast Plot")
                         fig, ax = plt.subplots(figsize=(10, 5))
                         df_arima["N_seized"].plot(ax=ax, label="Observed", marker='o')
-                        forecast_years = range(df_arima.index[-1].year + 1, df_arima.index[-1].year + 1 + arima_steps)
-                        ax.plot(forecast_years, forecast, label="Forecast", linestyle='--', color='green', marker='x')
+
+                        future_index = pd.date_range(
+                            start=df_arima.index[-1] + pd.offsets.YearBegin(),
+                            periods=arima_steps,
+                            freq="YS"
+                        )
+                        ax.plot(future_index, forecast, label="Forecast", linestyle='--', color='green', marker='x')
                         ax.set_xlabel("Year")
                         ax.set_ylabel("Seized Individuals")
                         ax.set_title("ARIMA Forecast of Seizures")
@@ -665,7 +673,6 @@ if uploaded_file is not None:
                         - Forecasts can degrade significantly if the time series is very short or erratic.
 
                         For detailed model selection (e.g., automatic tuning of parameters), consider integrating **Auto-ARIMA** or seasonal extensions (SARIMA) in future versions of Aurum.
-
                         """)
 
             show_cooc = st.sidebar.checkbox("Species Co-occurrence", value=False)
