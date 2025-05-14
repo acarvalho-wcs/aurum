@@ -31,3 +31,4 @@ seaborn
 pyproj
 shapely
 imageio
+pmdarima>=1.8.5
