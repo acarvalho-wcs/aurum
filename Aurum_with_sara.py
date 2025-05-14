@@ -613,10 +613,9 @@ if uploaded_file is not None:
                     df_arima = df_selected.groupby("Year")["N_seized"].sum().reset_index()
                     df_arima = df_arima.sort_values("Year")
 
-                    # Correções essenciais
                     df_arima["Year"] = pd.to_datetime(df_arima["Year"], format="%Y")
                     df_arima.set_index("Year", inplace=True)
-                    df_arima = df_arima.asfreq("YS")  # Year Start frequency
+                    df_arima = df_arima.asfreq("YS")
                     df_arima["N_seized"] = df_arima["N_seized"].astype(float).fillna(0.0)
 
                     try:
@@ -624,21 +623,24 @@ if uploaded_file is not None:
 
                         model = ARIMA(df_arima["N_seized"], order=(1, 1, 1))
                         model_fit = model.fit()
-                        forecast = model_fit.forecast(steps=arima_steps)
-
-                        st.markdown("### Forecast Plot")
-                        fig, ax = plt.subplots(figsize=(10, 5))
-                        df_arima["N_seized"].plot(ax=ax, label="Observed", marker='o')
+                        forecast_values = model_fit.forecast(steps=arima_steps)
 
                         future_index = pd.date_range(
                             start=df_arima.index[-1] + pd.offsets.YearBegin(),
                             periods=arima_steps,
                             freq="YS"
                         )
-                        ax.plot(future_index, forecast, label="Forecast", linestyle='--', color='green', marker='x')
+                        forecast = pd.Series(forecast_values, index=future_index)
+
+                        st.markdown("### Forecast Plot")
+                        fig, ax = plt.subplots(figsize=(10, 5))
+                        df_arima["N_seized"].plot(ax=ax, label="Observed", marker='o')
+                        forecast.plot(ax=ax, label="Forecast", linestyle='--', color='green', marker='x')
+
                         ax.set_xlabel("Year")
                         ax.set_ylabel("Seized Individuals")
                         ax.set_title("ARIMA Forecast of Seizures")
+                        ax.set_xlim(df_arima.index[0], future_index[-1])
                         ax.legend()
                         st.pyplot(fig)
 
