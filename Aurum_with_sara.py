@@ -38,11 +38,12 @@ st.title("Aurum - Criminal Intelligence in Wildlife Trafficking")
 if "language" not in st.session_state:
     st.session_state["language"] = "English"  # Valor padrão
 
-selected_lang = tabs(
-    options=["English", "Português", "Español"],
-    default_value=st.session_state["language"],
-    key="language_tab"
-)
+with st.container():
+    selected_lang = tabs(
+        options=["English", "Português", "Español"],
+        default_value=st.session_state["language"],
+        key="language_tab"
+    )
 
 # Atualiza session_state se houver mudança
 if selected_lang != st.session_state["language"]:
@@ -58,6 +59,7 @@ logo = Image.open("logo.png")
 st.sidebar.image("logo.png", use_container_width=True)
 st.sidebar.markdown("## Welcome to Aurum")
 st.sidebar.markdown("Log in below to unlock multi-user tools.")
+
 # --- SOBRE O AURUM (ABOUT) ---
 # Inicializa estado
 if "show_sidebar_about" not in st.session_state:
