@@ -28,6 +28,7 @@ import pytz
 from streamlit_shadcn_ui import tabs
 from streamlit_shadcn_ui import button
 import streamlit.components.v1 as components
+from sklearn.decomposition import PCA
 brt = pytz.timezone("America/Sao_Paulo")
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
