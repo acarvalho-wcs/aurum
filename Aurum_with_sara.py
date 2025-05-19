@@ -658,11 +658,11 @@ if uploaded_file is not None:
                                 cramers_v = (chi2 / n) ** 0.5
                             results.append({
                                 "A": sp_a, "B": sp_b,
-                                "Chi²": chi2, "p": p,
+                                "Chi2": chi2, "p": p,
                                 "Table": table,
                                 "Expected": expected,
                                 "Test": test_used,
-                                "Cramér's V": cramers_v
+                                "Cramers_V": cramers_v
                             })
                     return sorted(results, key=lambda x: x["p"])
 
@@ -699,9 +699,9 @@ if uploaded_file is not None:
                             "Species A": r["A"],
                             "Species B": r["B"],
                             "Test": r["Test"],
-                            "Chi²": r["Chi²"] if r["Chi²"] is not None else "-",
+                            "Chi²": r["Chi2"] if r["Chi2"] is not None else "-",
                             "p-value": r["p"],
-                            "Cramér's V": r["Cramér's V"] if r["Cramér's V"] is not None else "-"
+                            "Cramér's V": r["Cramers_V"] if r["Cramers_V"] is not None else "-"
                         }
                         for r in co_results
                     ])
@@ -717,12 +717,12 @@ if uploaded_file is not None:
                                 st.dataframe(pd.DataFrame(r["Expected"], 
                                                           index=r["Table"].index, 
                                                           columns=r["Table"].columns))
-                        if r["Chi²"] is not None:
-                            st.markdown(f"Chi² = `{r['Chi²']:.2f}`")
+                        if r["Chi2"] is not None:
+                            st.markdown(f"Chi² = `{r['Chi2']:.2f}`")
                         st.markdown(f"p = `{r['p']:.4f}`")
-                        if r["Cramér's V"] is not None:
-                            st.markdown(f"Cramér's V = `{r['Cramér's V']:.3f}`")
-                        interpret_cooccurrence(r["Table"], r["Chi²"], r["p"])
+                        if r["Cramers_V"] is not None:
+                            st.markdown(f"Cramér's V = `{r['Cramers_V']:.3f}`")
+                        interpret_cooccurrence(r["Table"], r["Chi2"], r["p"])
                         st.markdown("---")
                 else:
                     st.info("No co-occurrence data available for selected species.")
