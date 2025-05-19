@@ -2000,18 +2000,18 @@ if "user" in st.session_state:
         # --- Área de gerenciamento do projeto
         st.markdown("### 📂 Project Dashboard")
         st.info("Here you'll be able to manage and monitor cases associated with your project.")
-        st.markdown("- 🔍 View all project cases")
-        st.markdown("- ➕ Add or update case data")
-        st.markdown("- 👥 Manage team (if Project Lead)")
-        st.markdown("- 📈 See project-specific analytics (future feature)")
+        st.markdown("- View all project cases")
+        st.markdown("- Add or update case data")
+        st.markdown("- Manage team (if Project Lead)")
+        st.markdown("- See project-specific analytics (future feature)")
 
         # --- Formulário para criação de novos projetos (apenas admin ou lead)
         if is_admin() or is_lead():
-            st.markdown("### 🆕 Create New Project")
+            st.markdown("### Create New Project")
             with st.form("create_project_form"):
-                new_project = st.text_input("Project code (no spaces, e.g., trafico_br)")
+                new_project = st.text_input("Project code (no spaces, e.g., trafick_br)")
                 new_members_raw = st.text_area("Add user emails (comma-separated)", placeholder="email1@org.org, email2@org.org")
-                submit_new_project = st.form_submit_button("➕ Create Project")
+                submit_new_project = st.form_submit_button("Create Project")
 
                 if submit_new_project:
                     if not new_project.strip():
