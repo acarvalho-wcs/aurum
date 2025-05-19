@@ -615,19 +615,13 @@ if uploaded_file is not None:
 
                     The Species Co-occurrence section identifies pairs of species that tend to be trafficked together within the same cases, revealing potential patterns of coordinated extraction, transport, or market demand.
 
-                    This analysis uses a binary presence-absence matrix for each selected species across all case IDs. For every species pair, a **chi-square test of independence** is performed to evaluate whether the observed co-occurrence is statistically significant beyond what would be expected by chance.
+                    This analysis uses a binary presence-absence matrix for each selected species across all case IDs. For every species pair, a **chi-square test of independence** (or Fisher's exact test when needed) is performed to evaluate whether the observed co-occurrence is statistically significant beyond what would be expected by chance.
 
-                    - A **2×2 contingency table** is generated for each pair, indicating joint presence or absence across cases.
-                    - The **Chi² statistic** quantifies the degree of association: higher values suggest stronger deviation from independence (i.e., a stronger link between the species).
-                    - The associated **p-value** indicates whether this deviation is statistically significant. A p-value below 0.05 typically means the co-occurrence is unlikely to be due to chance.
+                    - A **2×2 contingency table** is generated for each pair.
+                    - The **Chi² statistic** or **Fisher’s exact p-value** indicates whether co-occurrence is stronger or weaker than random chance.
+                    - The **Cramér's V** coefficient provides a measure of association strength (ranging from 0 to 1).
 
-                    **Interpretation**:
-                    - **High Chi² values** signal that the two species co-occur more (or less) than expected — implying possible ecological overlap, shared trafficking routes, or joint market targeting.
-                    - **Low Chi² values** suggest weak or no association, even if species occasionally appear together.
-
-                    This method is particularly useful for identifying species that may be captured, transported, or traded together due to logistical, ecological, or commercial drivers.
-
-                    The results are displayed in an interactive table showing co-occurrence counts, the Chi² statistic, and p-values for each species pair — helping analysts prioritize combinations for deeper investigation.
+                    The results are displayed in a sortable table and detailed outputs for each pair, including visualizations of contingency tables and statistical interpretations.
                     """)
 
                 def general_species_cooccurrence(df, species_list, case_col='Case #'):
@@ -648,16 +642,35 @@ if uploaded_file is not None:
                     for sp_a, sp_b in combinations(species_list, 2):
                         table = pd.crosstab(presence[sp_a], presence[sp_b])
                         if table.shape == (2, 2):
-                            chi2, p, _, _ = chi2_contingency(table)
-                            results.append((sp_a, sp_b, chi2, p, table))
-                    return results
+                            obs = table.values
+                            chi2, p_chi, _, expected = chi2_contingency(obs)
+                            use_fisher = (expected < 5).any()
+                            if use_fisher:
+                                from scipy.stats import fisher_exact
+                                _, p = fisher_exact(obs)
+                                test_used = "Fisher"
+                                chi2 = None
+                                cramers_v = None
+                            else:
+                                n = obs.sum()
+                                p = p_chi
+                                test_used = "Chi²"
+                                cramers_v = (chi2 / n) ** 0.5
+                            results.append({
+                                "A": sp_a, "B": sp_b,
+                                "Chi²": chi2, "p": p,
+                                "Table": table,
+                                "Expected": expected,
+                                "Test": test_used,
+                                "Cramér's V": cramers_v
+                            })
+                    return sorted(results, key=lambda x: x["p"])
 
                 def interpret_cooccurrence(table, chi2, p):
                     a = table.iloc[0, 0]
                     b = table.iloc[0, 1]
                     c = table.iloc[1, 0]
                     d = table.iloc[1, 1]
-
                     threshold = 0.05
 
                     if p >= threshold:
@@ -679,11 +692,37 @@ if uploaded_file is not None:
 
                 if co_results:
                     st.markdown("### Co-occurrence Results")
-                    for sp_a, sp_b, chi2, p, table in co_results:
-                        st.markdown(f"**{sp_a} × {sp_b}**")
-                        st.dataframe(table)
-                        st.markdown(f"Chi² = `{chi2:.2f}` | p = `{p:.4f}`")
-                        interpret_cooccurrence(table, chi2, p)
+
+                    # Tabela resumo interativa
+                    summary_df = pd.DataFrame([
+                        {
+                            "Species A": r["A"],
+                            "Species B": r["B"],
+                            "Test": r["Test"],
+                            "Chi²": r["Chi²"] if r["Chi²"] is not None else "-",
+                            "p-value": r["p"],
+                            "Cramér's V": r["Cramér's V"] if r["Cramér's V"] is not None else "-"
+                        }
+                        for r in co_results
+                    ])
+                    st.dataframe(summary_df)
+
+                    # Resultados detalhados
+                    for r in co_results:
+                        st.markdown(f"**{r['A']} × {r['B']}**")
+                        st.markdown(f"Test used: `{r['Test']}`")
+                        st.dataframe(r["Table"])
+                        if r["Expected"] is not None:
+                            with st.expander("Expected Frequencies"):
+                                st.dataframe(pd.DataFrame(r["Expected"], 
+                                                          index=r["Table"].index, 
+                                                          columns=r["Table"].columns))
+                        if r["Chi²"] is not None:
+                            st.markdown(f"Chi² = `{r['Chi²']:.2f}`")
+                        st.markdown(f"p = `{r['p']:.4f}`")
+                        if r["Cramér's V"] is not None:
+                            st.markdown(f"Cramér's V = `{r['Cramér's V']:.3f}`")
+                        interpret_cooccurrence(r["Table"], r["Chi²"], r["p"])
                         st.markdown("---")
                 else:
                     st.info("No co-occurrence data available for selected species.")
