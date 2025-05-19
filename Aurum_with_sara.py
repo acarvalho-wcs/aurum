@@ -1997,7 +1997,7 @@ if "user" in st.session_state:
 
         # --- Subtabs para navegação
         collab_tab = tabs(
-            options=["Investigation Dashboard", "Create Investigation", "View All Projects", "Manage Members"],
+            options=["Investigation Dashboard", "Create Investigation", "View All Investigations", "Manage Members"],
             key="collab_inner_tabs"
         )
 
@@ -2103,7 +2103,7 @@ if "user" in st.session_state:
                             st.error(f"Failed to update sheet: {e}")
 
         # --- VISUALIZAR TODOS OS PROJETOS
-        elif collab_tab == "View All Projects" and (is_admin() or is_lead()):
+        elif collab_tab == "View All Investigations" and (is_admin() or is_lead()):
             st.markdown("### 📅 View and Update Projects")
 
             project_data = []
