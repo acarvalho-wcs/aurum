@@ -2026,7 +2026,7 @@ if "user" in st.session_state:
 
             with st.form("create_project_form"):
                 new_project = st.text_input("Project code (no spaces, e.g., trafick_br)", key=field_keys["project"])
-                new_members_raw = st.text_area("Add collaborator's emails (comma-separated)", placeholder="email1@org.org, email2@org.org", key=field_keys["members"])
+                new_members_raw = st.text_area("Add collaborators' emails (comma-separated)", placeholder="email1@org.org, email2@org.org", key=field_keys["members"])
 
                 st.markdown("#### Additional Project Metadata")
                 name = st.text_input("Project name")
