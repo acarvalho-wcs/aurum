@@ -2096,7 +2096,8 @@ if "user" in st.session_state:
 
         # --- VISUALIZAR TODOS OS PROJETOS
         elif collab_tab == "View All Projects" and (is_admin() or is_lead()):
-            st.info("Below is the list of all users and their associated projects.")
+            st.markdown("### 📅 View and Update Projects")
+
             project_data = []
             for idx, row in df_users.iterrows():
                 projects = [p.strip() for p in row["Projects"].split(",")] if row["Projects"].strip() else []
@@ -2108,11 +2109,62 @@ if "user" in st.session_state:
                         "Role": row["Role"]
                     })
             df_proj = pd.DataFrame(project_data)
-            if not df_proj.empty:
-                df_proj = df_proj.sort_values(["Project", "Name"])
-                st.dataframe(df_proj, use_container_width=True)
-            else:
+
+            if df_proj.empty:
                 st.info("No projects or users found.")
+                st.stop()
+
+            selected_project = st.selectbox("Select a project to view and update:", sorted(df_proj["Project"].unique()))
+
+            st.markdown(f"### 📌 Updates for Project: **{selected_project}**")
+
+            # --- Leitura da aba Project_Updates
+            try:
+                updates_ws = sheet.worksheet("Project_Updates")
+                df_updates = pd.DataFrame(updates_ws.get_all_records())
+            except Exception:
+                updates_ws = sheet.add_worksheet(title="Project_Updates", rows=1000, cols=6)
+                updates_ws.update(["Project ID", "Date", "Submitted By", "Description", "Type", "Timestamp"])
+                df_updates = pd.DataFrame()
+
+            project_updates = df_updates[df_updates["Project ID"] == selected_project] if not df_updates.empty else pd.DataFrame()
+
+            if not project_updates.empty:
+                st.markdown("#### 🔄 Project Update Feed")
+                for _, row in project_updates.sort_values("Timestamp", ascending=False).iterrows():
+                    st.markdown(f"**{row['Date']}** — *{row['Type']}*  \\ 👤 {row['Submitted By']}  \\ {row['Description']}")
+                    st.markdown("---")
+            else:
+                st.info("No updates have been submitted for this project yet.")
+
+            st.markdown("#### ➕ Submit a New Update")
+            with st.form("submit_project_update"):
+                update_date = st.date_input("Date of event", value=datetime.today())
+                update_type = st.selectbox("Type of update", ["Movement", "Suspicious Activity", "Legal Decision", "Logistic Operation", "Other"])
+                update_desc = st.text_area("Description of update")
+                submit_update = st.form_submit_button("Submit Update")
+
+                if submit_update:
+                    new_entry = {
+                        "Project ID": selected_project,
+                        "Date": update_date.strftime("%Y-%m-%d"),
+                        "Submitted By": email,
+                        "Description": update_desc,
+                        "Type": update_type,
+                        "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                    try:
+                        current_data = updates_ws.get_all_values()
+                        if current_data:
+                            header = current_data[0]
+                            new_row = [new_entry.get(col, "") for col in header]
+                            updates_ws.append_row(new_row)
+                        else:
+                            updates_ws.update([list(new_entry.keys()), list(new_entry.values())])
+                        st.success("Update submitted successfully.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Failed to submit update: {e}")
 
         # --- GESTÃO DE MEMBROS DO PROJETO
         elif collab_tab == "Manage Members" and (is_admin() or is_lead()):
