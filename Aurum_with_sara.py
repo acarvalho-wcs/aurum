@@ -1998,7 +1998,7 @@ if "user" in st.session_state:
         selected_project = st.selectbox("Select a project to manage:", user_projects_list)
 
         if not has_project_access(selected_project):
-            st.warning("You do not have access to this project.")
+            st.warning("You either don't have access to this investigation or haven't created any yet.")
             st.stop()
 
         st.success(f"✅ Access granted to project: **{selected_project}**")
