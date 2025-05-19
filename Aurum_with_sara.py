@@ -1020,7 +1020,6 @@ if uploaded_file is not None:
                     - Cases can be color-coded and shaped by additional attributes for comparison and pattern detection.
                     """)
 
-                # Variáveis numéricas disponíveis
                 numeric_cols = df_selected.select_dtypes(include=["number"]).columns.tolist()
                 selected_pca_features = st.multiselect("Select numeric features for PCA", numeric_cols, default=numeric_cols[:3])
 
@@ -1039,21 +1038,17 @@ if uploaded_file is not None:
                     components = pca.fit_transform(X_scaled)
                     explained = pca.explained_variance_ratio_
 
-                    # Construir dataframe projetado
                     df_proj = df_pca_input.copy()
                     df_proj["PC1"] = components[:, 0]
                     df_proj["PC2"] = components[:, 1]
 
-                    # Variáveis categóricas com poucas categorias
                     categorical_options = [col for col in df_proj.columns 
                                            if df_proj[col].dtype == "object" and df_proj[col].nunique() <= 30]
 
-                    # Incluir colunas relevantes mesmo que não categóricas
                     for col in ["Year", "Stage", "Country of seizure or shipment", "Species"]:
                         if col in df_proj.columns and col not in categorical_options:
                             categorical_options.append(col)
 
-                    # Se houver categorias elegíveis
                     color_by = None
                     symbol_by = None
                     if categorical_options:
@@ -1062,11 +1057,16 @@ if uploaded_file is not None:
                         if symbol_by == "None":
                             symbol_by = None
 
-                    # Gráfico PCA
+                    use_custom_color = st.checkbox("Use custom point color", value=False)
+                    custom_color = "#1f77b4"
+                    if use_custom_color:
+                        custom_color = st.color_picker("Pick a color for all points", value=custom_color)
+
                     fig = px.scatter(
                         df_proj,
                         x="PC1", y="PC2",
-                        color=df_proj[color_by] if color_by else None,
+                        color=None if use_custom_color else (df_proj[color_by] if color_by else None),
+                        color_discrete_sequence=[custom_color] if use_custom_color else None,
                         symbol=df_proj[symbol_by] if symbol_by else None,
                         hover_data=["Case #"],
                         title=f"PCA Projection — Variance Explained: PC1 = {explained[0]:.2f}, PC2 = {explained[1]:.2f}",
