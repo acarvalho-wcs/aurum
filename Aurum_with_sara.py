@@ -2033,7 +2033,7 @@ if "user" in st.session_state:
             }
 
             with st.form("create_project_form"):
-                new_project = st.text_input("Project code (no spaces, e.g., trafick_br)", key=field_keys["project"])
+                new_project = st.text_input("Investigation code (no spaces, e.g., trafick_br)", key=field_keys["project"])
                 new_members_raw = st.text_area("Add collaborators' emails (comma-separated)", placeholder="email1@org.org, email2@org.org", key=field_keys["members"])
 
                 st.markdown("#### Additional Project Metadata")
@@ -2049,7 +2049,7 @@ if "user" in st.session_state:
 
                 if submit_new_project:
                     if not new_project.strip():
-                        st.warning("Please provide a project code.")
+                        st.warning("Please provide an investigation  code.")
                     else:
                         new_project = new_project.strip()
                         emails = [e.strip() for e in new_members_raw.split(",") if e.strip()]
