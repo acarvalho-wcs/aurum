@@ -1963,11 +1963,11 @@ if "user" in st.session_state:
         sheet = client.open_by_key(SHEET_ID)
         users_ws = sheet.worksheet("Users")
         df_users = pd.DataFrame(users_ws.get_all_records())
-        df_users.columns = [col.strip() for col in df_users.columns]
+        df_users.columns = [col.strip().title() for col in df_users.columns]  # Normaliza nomes
 
         # --- Identifica o usuário logado
         email = st.session_state.get("user_email")
-        user_row = df_users[df_users["E-mail"] == email]
+        user_row = df_users[df_users["E-Mail"] == email]
 
         if user_row.empty:
             st.error("❌ User not found.")
@@ -1997,13 +1997,47 @@ if "user" in st.session_state:
 
         st.success(f"✅ Access granted to project: **{selected_project}**")
 
-        # --- Área de gerenciamento (substitua pelo conteúdo real depois)
+        # --- Área de gerenciamento do projeto
         st.markdown("### 📂 Project Dashboard")
         st.info("Here you'll be able to manage and monitor cases associated with your project.")
         st.markdown("- 🔍 View all project cases")
         st.markdown("- ➕ Add or update case data")
         st.markdown("- 👥 Manage team (if Project Lead)")
         st.markdown("- 📈 See project-specific analytics (future feature)")
+
+        # --- Formulário para criação de novos projetos (apenas admin ou lead)
+        if is_admin() or is_lead():
+            st.markdown("### 🆕 Create New Project")
+            with st.form("create_project_form"):
+                new_project = st.text_input("Project code (no spaces, e.g., trafico_br)")
+                new_members_raw = st.text_area("Add user emails (comma-separated)", placeholder="email1@org.org, email2@org.org")
+                submit_new_project = st.form_submit_button("➕ Create Project")
+
+                if submit_new_project:
+                    if not new_project.strip():
+                        st.warning("Please provide a project code.")
+                    else:
+                        new_project = new_project.strip()
+                        emails = [e.strip() for e in new_members_raw.split(",") if e.strip()]
+                        updated = 0
+                        
+                        for idx, row in df_users.iterrows():
+                            user_email = row["E-Mail"].strip()
+                            if user_email in emails:
+                                current_projects = row["Projects"].strip()
+                                project_list = [p.strip() for p in current_projects.split(",")] if current_projects else []
+                                if new_project not in project_list:
+                                    project_list.append(new_project)
+                                    df_users.at[idx, "Projects"] = ", ".join(sorted(set(project_list)))
+                                    updated += 1
+
+                        try:
+                            # Salva de volta na planilha
+                            users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
+                            st.success(f"✅ Project '{new_project}' created and assigned to {updated} user(s).")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Failed to update sheet: {e}")
 
 if uploaded_file is None and st.session_state.get("user"):
     try:
