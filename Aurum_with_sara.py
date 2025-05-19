@@ -2010,15 +2010,15 @@ if "user" in st.session_state:
         )
 
         # --- DASHBOARD
-        if collab_tab == "Investigation Dashboard":
-            with st.expander("📁 Investigation Dashboard", expanded=False):
-                if st.button("Show My Investigations"):
+        if collab_tab == "Project Dashboard":
+            with st.expander("📁 Project Dashboard", expanded=False):
+                if st.button("Show My Projects"):
                     user_projects = df_projects[df_projects["Collaborators"].str.contains(email, na=False)]
 
                     if user_projects.empty:
-                        st.info("You are not listed as a collaborator on any investigations.")
+                        st.info("You are not listed as a collaborator on any projects.")
                     else:
-                        st.markdown("### Investigations You Collaborate On")
+                        st.markdown("### Projects You Collaborate On")
                         st.dataframe(user_projects[["Project Name", "Lead", "Cases Involved", "Summary"]])
 
         # --- CRIAÇÃO DE PROJETOS
