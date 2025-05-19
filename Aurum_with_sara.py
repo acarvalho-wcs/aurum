@@ -1997,20 +1997,30 @@ if "user" in st.session_state:
 
         st.success(f"✅ Access granted to project: **{selected_project}**")
 
-        # --- Área de gerenciamento do projeto
-        st.markdown("### 📂 Project Dashboard")
-        st.info("Here you'll be able to manage and monitor cases associated with your project.")
-        st.markdown("- View all project cases")
-        st.markdown("- Add or update case data")
-        st.markdown("- Manage team (if Project Lead)")
-        st.markdown("- See project-specific analytics (future feature)")
+        # --- Área de gerenciamento do projeto (colapsável)
+        with st.expander("Project Dashboard", expanded=True):
+            st.info("Here you'll be able to manage and monitor cases associated with your project.")
+            st.markdown("- View all project cases")
+            st.markdown("- Add or update case data")
+            st.markdown("- Manage team (if Project Lead)")
+            st.markdown("- See project-specific analytics (future feature)")
 
         # --- Formulário para criação de novos projetos (apenas admin ou lead)
         if is_admin() or is_lead():
             st.markdown("### Create New Project")
+
+            field_keys = {
+                "project": "create_project_code",
+                "members": "create_project_emails"
+            }
+
             with st.form("create_project_form"):
-                new_project = st.text_input("Project code (no spaces, e.g., trafick_br)")
-                new_members_raw = st.text_area("Add user emails (comma-separated)", placeholder="email1@org.org, email2@org.org")
+                new_project = st.text_input("Project code (no spaces, e.g., trafick_br)", key=field_keys["project"])
+                new_members_raw = st.text_area(
+                    "Add user emails (comma-separated)",
+                    placeholder="email1@org.org, email2@org.org",
+                    key=field_keys["members"]
+                )
                 submit_new_project = st.form_submit_button("Create Project")
 
                 if submit_new_project:
@@ -2034,10 +2044,16 @@ if "user" in st.session_state:
                         try:
                             # Salva de volta na planilha
                             users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
-                            st.success(f"✅ Project '{new_project}' created and assigned to {updated} user(s).")
+                            st.success(f"Project '{new_project}' created and assigned to {updated} user(s).")
+
+                            # Limpa os campos após criação
+                            for k in field_keys.values():
+                                if k in st.session_state:
+                                    del st.session_state[k]
                             st.rerun()
+
                         except Exception as e:
-                            st.error(f"❌ Failed to update sheet: {e}")
+                            st.error(f"Failed to update sheet: {e}")
 
 if uploaded_file is None and st.session_state.get("user"):
     try:
