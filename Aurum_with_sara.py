@@ -1997,7 +1997,7 @@ if "user" in st.session_state:
 
         # --- Subtabs para navegação
         collab_tab = tabs(
-            options=["Project Dashboard", "Create Project", "View All Projects", "Manage Members"],
+            options=["Investigation Dashboard", "Create Project", "View All Projects", "Manage Members"],
             key="collab_inner_tabs"
         )
 
@@ -2014,8 +2014,8 @@ if "user" in st.session_state:
                 st.stop()
 
         # --- DASHBOARD
-        if collab_tab == "Project Dashboard":
-            with st.expander("📁 Project Dashboard", expanded=False):
+        if collab_tab == "Investigation Dashboard":
+            with st.expander("📁 Investigation Dashboard", expanded=False):
                 if st.button("Show My Projects"):
                     user_projects = df_projects[df_projects["Collaborators"].str.contains(email, na=False)]
 
