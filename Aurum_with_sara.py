@@ -1626,7 +1626,7 @@ if "user" in st.session_state:
     # --- MENU SUPERIOR COM TABS ---
     selected_tab = tabs(
         options=["Alerts Management", "Cases Management", "Data Requests", "Collaboration"],
-        default_value="",
+        default_value="Alerts Management",
         key="main_tab"
     )
 
@@ -1954,7 +1954,7 @@ if "user" in st.session_state:
     # 🤝 COLLABORATION
     # ----------------------------
     elif selected_tab == "Collaboration":
-        st.markdown("## 🤝 Collaboration Area")
+        st.markdown("## Collaboration Area")
 
         # --- Carrega dados de usuário da planilha
         scope = ["https://www.googleapis.com/auth/spreadsheets"]
