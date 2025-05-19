@@ -1625,7 +1625,7 @@ if "user" in st.session_state:
     
     # --- MENU SUPERIOR COM TABS ---
     selected_tab = tabs(
-        options=["Alerts Management", "Cases Management", "Data Requests"],
+        options=["Alerts Management", "Cases Management", "Data Requests", "Collaboration"],
         default_value="",
         key="main_tab"
     )
@@ -1949,6 +1949,61 @@ if "user" in st.session_state:
 
                     except Exception as e:
                         st.error(f"❌ Failed to submit your request: {e}")
+
+    # ----------------------------
+    # 🤝 COLLABORATION
+    # ----------------------------
+    elif selected_tab == "Collaboration":
+        st.markdown("## 🤝 Collaboration Area")
+
+        # --- Carrega dados de usuário da planilha
+        scope = ["https://www.googleapis.com/auth/spreadsheets"]
+        credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+        client = gspread.authorize(credentials)
+        sheet = client.open_by_key(SHEET_ID)
+        users_ws = sheet.worksheet("Users")
+        df_users = pd.DataFrame(users_ws.get_all_records())
+        df_users.columns = [col.strip() for col in df_users.columns]
+
+        # --- Identifica o usuário logado
+        email = st.session_state.get("user_email")
+        user_row = df_users[df_users["E-mail"] == email]
+
+        if user_row.empty:
+            st.error("❌ User not found.")
+            st.stop()
+
+        user_role = user_row["Role"].values[0].strip().lower()
+        user_projects = user_row["Projects"].values[0].strip()
+        user_projects_list = [p.strip() for p in user_projects.split(",")] if user_projects else []
+
+        def is_admin(): return user_role == "admin"
+        def is_lead(): return user_role == "lead"
+        def is_member(): return user_role == "member"
+        def is_standard_user(): return user_role == "user"
+        def has_project_access(project): return "all" in user_projects_list or project in user_projects_list
+
+        # --- Acesso permitido apenas a lead, member ou admin
+        if not (is_admin() or is_lead() or is_member()):
+            st.warning("🔒 You do not have access to the collaboration area.")
+            st.stop()
+
+        # --- Seleção do projeto
+        selected_project = st.selectbox("Select a project to manage:", user_projects_list)
+
+        if not has_project_access(selected_project):
+            st.warning("You do not have access to this project.")
+            st.stop()
+
+        st.success(f"✅ Access granted to project: **{selected_project}**")
+
+        # --- Área de gerenciamento (substitua pelo conteúdo real depois)
+        st.markdown("### 📂 Project Dashboard")
+        st.info("Here you'll be able to manage and monitor cases associated with your project.")
+        st.markdown("- 🔍 View all project cases")
+        st.markdown("- ➕ Add or update case data")
+        st.markdown("- 👥 Manage team (if Project Lead)")
+        st.markdown("- 📈 See project-specific analytics (future feature)")
 
 if uploaded_file is None and st.session_state.get("user"):
     try:
