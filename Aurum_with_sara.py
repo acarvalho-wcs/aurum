@@ -2037,7 +2037,7 @@ if "user" in st.session_state:
                 new_members_raw = st.text_area("Add collaborators' emails (comma-separated)", placeholder="email1@org.org, email2@org.org", key=field_keys["members"])
 
                 st.markdown("#### Additional Investigation Metadata")
-                name = st.text_input("Project name")
+                name = st.text_input("Investigation name")
                 species = st.text_input("Target species (comma-separated)")
                 countries = st.text_input("Countries covered")
                 cases = st.text_input("Cases involved (comma-separated Case #)")
