@@ -1017,8 +1017,7 @@ if uploaded_file is not None:
                     - PCA is applied on **standardized** numerical columns.
                     - Users can select which attributes to include in the projection.
                     - The resulting plot displays each case in a 2D space formed by the first two components.
-                    - Cases can be color-coded by species, country, year, or other attributes for visual comparison.
-
+                    - Cases can be color-coded and shaped by additional attributes for comparison and pattern detection.
                     """)
 
                 # Variáveis numéricas disponíveis
@@ -1040,22 +1039,40 @@ if uploaded_file is not None:
                     components = pca.fit_transform(X_scaled)
                     explained = pca.explained_variance_ratio_
 
-                    # Construir dataframe de projeção
+                    # Construir dataframe projetado
                     df_proj = df_pca_input.copy()
                     df_proj["PC1"] = components[:, 0]
                     df_proj["PC2"] = components[:, 1]
 
-                    color_by = st.selectbox("Color by", options=["Species", "Country of seizure or shipment", "Year"], index=0)
+                    # Variáveis categóricas com poucas categorias
+                    categorical_options = [col for col in df_proj.columns 
+                                           if df_proj[col].dtype == "object" and df_proj[col].nunique() <= 30]
 
+                    # Incluir colunas relevantes mesmo que não categóricas
+                    for col in ["Year", "Stage", "Country of seizure or shipment", "Species"]:
+                        if col in df_proj.columns and col not in categorical_options:
+                            categorical_options.append(col)
+
+                    # Se houver categorias elegíveis
+                    color_by = None
+                    symbol_by = None
+                    if categorical_options:
+                        color_by = st.selectbox("Color points by", options=categorical_options, index=0)
+                        symbol_by = st.selectbox("Symbol shape by", options=["None"] + categorical_options, index=0)
+                        if symbol_by == "None":
+                            symbol_by = None
+
+                    # Gráfico PCA
                     fig = px.scatter(
-                        df_proj, x="PC1", y="PC2",
-                        color=df_proj[color_by] if color_by in df_proj else None,
+                        df_proj,
+                        x="PC1", y="PC2",
+                        color=df_proj[color_by] if color_by else None,
+                        symbol=df_proj[symbol_by] if symbol_by else None,
                         hover_data=["Case #"],
                         title=f"PCA Projection — Variance Explained: PC1 = {explained[0]:.2f}, PC2 = {explained[1]:.2f}",
                         width=800, height=500
                     )
                     st.plotly_chart(fig, use_container_width=True)
-
             
             show_geo = st.sidebar.checkbox("Geospatial Analysis", value=False)
             if show_geo:
