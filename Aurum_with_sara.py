@@ -1965,13 +1965,13 @@ if "user" in st.session_state:
         df_users = pd.DataFrame(users_ws.get_all_records())
         df_users.columns = [col.strip().title() for col in df_users.columns]
 
-        # --- Leitura da aba 'Investigations'
+        # --- Leitura da aba 'Projects'
         try:
-            Investigations_ws = sheet.worksheet("Investigations")
-            df_Investigations = pd.DataFrame(Investigations_ws.get_all_records())
+            projects_ws = sheet.worksheet("Projects")
+            df_projects = pd.DataFrame(projects_ws.get_all_records())
         except Exception as e:
-            st.error(f"❌ Failed to load 'Investigations' sheet: {e}")
-            df_Investigations = pd.DataFrame()
+            st.error(f"❌ Failed to load 'Projects' sheet: {e}")
+            df_projects = pd.DataFrame()
 
         # --- Identifica o usuário logado
         email = st.session_state.get("user_email")
@@ -1982,84 +1982,84 @@ if "user" in st.session_state:
             st.stop()
 
         user_role = user_row["Role"].values[0].strip().lower()
-        user_Investigations = user_row["Investigations"].values[0].strip()
-        user_Investigations_list = [p.strip() for p in user_Investigations.split(",")] if user_Investigations else []
+        user_projects = user_row["Projects"].values[0].strip()
+        user_projects_list = [p.strip() for p in user_projects.split(",")] if user_projects else []
 
         def is_admin(): return user_role == "admin"
         def is_lead(): return user_role == "lead"
         def is_member(): return user_role == "member"
         def is_standard_user(): return user_role == "user"
-        def has_Investigation_access(Investigation): return "all" in user_Investigations_list or Investigation in user_Investigations_list
+        def has_project_access(project): return "all" in user_projects_list or project in user_projects_list
 
         if not (is_admin() or is_lead() or is_member()):
             st.warning("🔐 You do not have access to the collaboration area.")
             st.stop()
 
-        selected_Investigation = st.selectbox("Select a Investigation to manage:", user_Investigations_list)
+        selected_project = st.selectbox("Select a project to manage:", user_projects_list)
 
-        if not has_Investigation_access(selected_Investigation):
-            st.warning("You do not have access to this Investigation.")
+        if not has_project_access(selected_project):
+            st.warning("You do not have access to this project.")
             st.stop()
 
-        st.success(f"✅ Access granted to Investigation: **{selected_Investigation}**")
+        st.success(f"✅ Access granted to project: **{selected_project}**")
 
         # --- Subtabs para navegação
         collab_tab = tabs(
-            options=["Investigation Dashboard", "Create Investigation", "View All Investigations", "Manage Members"],
+            options=["Project Dashboard", "Create Project", "View All Projects", "Manage Members"],
             key="collab_inner_tabs"
         )
 
         # --- DASHBOARD
-        if collab_tab == "Investigation Dashboard":
-            st.info("Here you'll be able to manage and monitor cases associated with your Investigation.")
-            st.markdown("- View all Investigation cases")
+        if collab_tab == "Project Dashboard":
+            st.info("Here you'll be able to manage and monitor cases associated with your project.")
+            st.markdown("- View all project cases")
             st.markdown("- Add or update case data")
-            st.markdown("- Manage team (if Investigation Lead)")
-            st.markdown("- See Investigation-specific analytics (future feature)")
+            st.markdown("- Manage team (if Project Lead)")
+            st.markdown("- See project-specific analytics (future feature)")
 
         # --- CRIAÇÃO DE PROJETOS
-        elif collab_tab == "Create Investigation" and (is_admin() or is_lead()):
+        elif collab_tab == "Create Project" and (is_admin() or is_lead()):
             field_keys = {
-                "Investigation": "create_Investigation_code",
-                "members": "create_Investigation_emails"
+                "project": "create_project_code",
+                "members": "create_project_emails"
             }
 
-            with st.form("create_Investigation_form"):
-                new_Investigation = st.text_input("Investigation code (no spaces, e.g., trafick_br)", key=field_keys["Investigation"])
+            with st.form("create_project_form"):
+                new_project = st.text_input("Project code (no spaces, e.g., trafick_br)", key=field_keys["project"])
                 new_members_raw = st.text_area("Add user emails (comma-separated)", placeholder="email1@org.org, email2@org.org", key=field_keys["members"])
 
-                st.markdown("#### Additional Investigation Metadata")
-                name = st.text_input("Investigation name")
+                st.markdown("#### Additional Project Metadata")
+                name = st.text_input("Project name")
                 species = st.text_input("Target species (comma-separated)")
                 countries = st.text_input("Countries covered")
                 cases = st.text_input("Cases involved (comma-separated Case #)")
                 monitoring = st.selectbox("Monitoring type", ["Passive", "Active", "Mixed"])
-                status = st.selectbox("Investigation status", ["Ongoing", "Finalized", "On Hold", "Cancelled"])
-                summary = st.text_area("Investigation summary (brief description)")
+                status = st.selectbox("Project status", ["Ongoing", "Finalized", "On Hold", "Cancelled"])
+                summary = st.text_area("Project summary (brief description)")
 
-                submit_new_Investigation = st.form_submit_button("Create Investigation")
+                submit_new_project = st.form_submit_button("Create Project")
 
-                if submit_new_Investigation:
-                    if not new_Investigation.strip():
-                        st.warning("Please provide a Investigation code.")
+                if submit_new_project:
+                    if not new_project.strip():
+                        st.warning("Please provide a project code.")
                     else:
-                        new_Investigation = new_Investigation.strip()
+                        new_project = new_project.strip()
                         emails = [e.strip() for e in new_members_raw.split(",") if e.strip()]
                         updated = 0
 
                         for idx, row in df_users.iterrows():
                             user_email = row["E-Mail"].strip()
                             if user_email in emails:
-                                current_Investigations = row["Investigations"].strip()
-                                Investigation_list = [p.strip() for p in current_Investigations.split(",")] if current_Investigations else []
-                                if new_Investigation not in Investigation_list:
-                                    Investigation_list.append(new_Investigation)
-                                    df_users.at[idx, "Investigations"] = ", ".join(sorted(set(Investigation_list)))
+                                current_projects = row["Projects"].strip()
+                                project_list = [p.strip() for p in current_projects.split(",")] if current_projects else []
+                                if new_project not in project_list:
+                                    project_list.append(new_project)
+                                    df_users.at[idx, "Projects"] = ", ".join(sorted(set(project_list)))
                                     updated += 1
 
-                        new_Investigation_entry = {
-                            "Investigation ID": new_Investigation,
-                            "Investigation Name": name,
+                        new_project_entry = {
+                            "Project ID": new_project,
+                            "Project Name": name,
                             "Lead": email,
                             "Collaborators": ", ".join(emails),
                             "Creation Date": datetime.today().strftime("%Y-%m-%d"),
@@ -2067,7 +2067,7 @@ if "user" in st.session_state:
                             "Target Species": species,
                             "Countries Covered": countries,
                             "Monitoring Type": monitoring,
-                            "Investigation Status": status,
+                            "Project Status": status,
                             "Summary": summary,
                             "Last Update": datetime.today().strftime("%Y-%m-%d"),
                             "Public": "FALSE"
@@ -2076,17 +2076,17 @@ if "user" in st.session_state:
                         try:
                             users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
 
-                            current_Investigations_data = Investigations_ws.get_all_values()
-                            if current_Investigations_data:
-                                header = current_Investigations_data[0]
-                                new_row = [new_Investigation_entry.get(col, "") for col in header]
-                                Investigations_ws.append_row(new_row)
+                            current_projects_data = projects_ws.get_all_values()
+                            if current_projects_data:
+                                header = current_projects_data[0]
+                                new_row = [new_project_entry.get(col, "") for col in header]
+                                projects_ws.append_row(new_row)
                             else:
-                                header = list(new_Investigation_entry.keys())
-                                new_row = list(new_Investigation_entry.values())
-                                Investigations_ws.update([header, new_row])
+                                header = list(new_project_entry.keys())
+                                new_row = list(new_project_entry.values())
+                                projects_ws.update([header, new_row])
 
-                            st.success(f"✅ Investigation '{new_Investigation}' created and assigned to {updated} user(s).")
+                            st.success(f"✅ Project '{new_project}' created and assigned to {updated} user(s).")
                             for k in field_keys.values():
                                 if k in st.session_state:
                                     del st.session_state[k]
@@ -2095,50 +2095,50 @@ if "user" in st.session_state:
                             st.error(f"Failed to update sheet: {e}")
 
         # --- VISUALIZAR TODOS OS PROJETOS
-        elif collab_tab == "View All Investigations" and (is_admin() or is_lead()):
-            st.markdown("### 📅 View and Update Investigations")
+        elif collab_tab == "View All Projects" and (is_admin() or is_lead()):
+            st.markdown("### 📅 View and Update Projects")
 
-            Investigation_data = []
+            project_data = []
             for idx, row in df_users.iterrows():
-                Investigations = [p.strip() for p in row["Investigations"].split(",")] if row["Investigations"].strip() else []
-                for proj in Investigations:
-                    Investigation_data.append({
-                        "Investigation": proj,
+                projects = [p.strip() for p in row["Projects"].split(",")] if row["Projects"].strip() else []
+                for proj in projects:
+                    project_data.append({
+                        "Project": proj,
                         "Name": row["Username"],
                         "E-mail": row["E-Mail"],
                         "Role": row["Role"]
                     })
-            df_proj = pd.DataFrame(Investigation_data)
+            df_proj = pd.DataFrame(project_data)
 
             if df_proj.empty:
-                st.info("No Investigations or users found.")
+                st.info("No projects or users found.")
                 st.stop()
 
-            selected_Investigation = st.selectbox("Select a Investigation to view and update:", sorted(df_proj["Investigation"].unique()))
+            selected_project = st.selectbox("Select a project to view and update:", sorted(df_proj["Project"].unique()))
 
-            st.markdown(f"### 📌 Updates for Investigation: **{selected_Investigation}**")
+            st.markdown(f"### 📌 Updates for Project: **{selected_project}**")
 
-            # --- Leitura da aba Investigation_Updates
+            # --- Leitura da aba Project_Updates
             try:
-                updates_ws = sheet.worksheet("Investigation_Updates")
+                updates_ws = sheet.worksheet("Project_Updates")
                 df_updates = pd.DataFrame(updates_ws.get_all_records())
             except Exception:
-                updates_ws = sheet.add_worksheet(title="Investigation_Updates", rows=1000, cols=6)
-                updates_ws.update(["Investigation ID", "Date", "Submitted By", "Description", "Type", "Timestamp"])
+                updates_ws = sheet.add_worksheet(title="Project_Updates", rows=1000, cols=6)
+                updates_ws.update(["Project ID", "Date", "Submitted By", "Description", "Type", "Timestamp"])
                 df_updates = pd.DataFrame()
 
-            Investigation_updates = df_updates[df_updates["Investigation ID"] == selected_Investigation] if not df_updates.empty else pd.DataFrame()
+            project_updates = df_updates[df_updates["Project ID"] == selected_project] if not df_updates.empty else pd.DataFrame()
 
-            if not Investigation_updates.empty:
-                st.markdown("#### 🔄 Investigation Update Feed")
-                for _, row in Investigation_updates.sort_values("Timestamp", ascending=False).iterrows():
+            if not project_updates.empty:
+                st.markdown("#### 🔄 Project Update Feed")
+                for _, row in project_updates.sort_values("Timestamp", ascending=False).iterrows():
                     st.markdown(f"**{row['Date']}** — *{row['Type']}*  \\ 👤 {row['Submitted By']}  \\ {row['Description']}")
                     st.markdown("---")
             else:
-                st.info("No updates have been submitted for this Investigation yet.")
+                st.info("No updates have been submitted for this project yet.")
 
             st.markdown("#### ➕ Submit a New Update")
-            with st.form("submit_Investigation_update"):
+            with st.form("submit_project_update"):
                 update_date = st.date_input("Date of event", value=datetime.today())
                 update_type = st.selectbox("Type of update", ["Movement", "Suspicious Activity", "Legal Decision", "Logistic Operation", "Other"])
                 update_desc = st.text_area("Description of update")
@@ -2146,7 +2146,7 @@ if "user" in st.session_state:
 
                 if submit_update:
                     new_entry = {
-                        "Investigation ID": selected_Investigation,
+                        "Project ID": selected_project,
                         "Date": update_date.strftime("%Y-%m-%d"),
                         "Submitted By": email,
                         "Description": update_desc,
@@ -2168,10 +2168,10 @@ if "user" in st.session_state:
 
         # --- GESTÃO DE MEMBROS DO PROJETO
         elif collab_tab == "Manage Members" and (is_admin() or is_lead()):
-            st.markdown("### Add Members to This Investigation")
-            with st.form("manage_Investigation_members_add"):
+            st.markdown("### Add Members to This Project")
+            with st.form("manage_project_members_add"):
                 new_emails = st.text_area(
-                    f"Add user emails to '{selected_Investigation}' (comma-separated)",
+                    f"Add user emails to '{selected_project}' (comma-separated)",
                     placeholder="email1@org.org, email2@org.org",
                     key="add_members_input"
                 )
@@ -2186,39 +2186,39 @@ if "user" in st.session_state:
                         for idx, row in df_users.iterrows():
                             user_email = row["E-Mail"].strip()
                             if user_email in emails:
-                                current_Investigations = row["Investigations"].strip()
-                                Investigation_list = [p.strip() for p in current_Investigations.split(",")] if current_Investigations else []
-                                if selected_Investigation not in Investigation_list:
-                                    Investigation_list.append(selected_Investigation)
-                                    df_users.at[idx, "Investigations"] = ", ".join(sorted(set(Investigation_list)))
+                                current_projects = row["Projects"].strip()
+                                project_list = [p.strip() for p in current_projects.split(",")] if current_projects else []
+                                if selected_project not in project_list:
+                                    project_list.append(selected_project)
+                                    df_users.at[idx, "Projects"] = ", ".join(sorted(set(project_list)))
                                     added += 1
                         try:
                             users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
-                            st.success(f"{added} user(s) added to '{selected_Investigation}'.")
+                            st.success(f"{added} user(s) added to '{selected_project}'.")
                             if "add_members_input" in st.session_state:
                                 del st.session_state["add_members_input"]
                             st.rerun()
                         except Exception as e:
                             st.error(f"Failed to update sheet: {e}")
 
-            st.markdown("### Remove Member from This Investigation")
-            Investigation_members = df_users[df_users["Investigations"].str.contains(selected_Investigation, case=False)]
-            member_emails = Investigation_members["E-Mail"].tolist()
+            st.markdown("### Remove Member from This Project")
+            project_members = df_users[df_users["Projects"].str.contains(selected_project, case=False)]
+            member_emails = project_members["E-Mail"].tolist()
 
-            with st.form("remove_Investigation_member_form"):
+            with st.form("remove_project_member_form"):
                 email_to_remove = st.selectbox("Select member to remove:", member_emails, key="remove_member_input")
                 submit_remove = st.form_submit_button("Remove Member")
 
                 if submit_remove:
                     for idx, row in df_users.iterrows():
                         if row["E-Mail"].strip() == email_to_remove:
-                            Investigations = [p.strip() for p in row["Investigations"].split(",") if p.strip()]
-                            if selected_Investigation in Investigations:
-                                Investigations.remove(selected_Investigation)
-                                df_users.at[idx, "Investigations"] = ", ".join(Investigations)
+                            projects = [p.strip() for p in row["Projects"].split(",") if p.strip()]
+                            if selected_project in projects:
+                                projects.remove(selected_project)
+                                df_users.at[idx, "Projects"] = ", ".join(projects)
                     try:
                         users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
-                        st.success(f"User '{email_to_remove}' removed from '{selected_Investigation}'.")
+                        st.success(f"User '{email_to_remove}' removed from '{selected_project}'.")
                         if "remove_member_input" in st.session_state:
                             del st.session_state["remove_member_input"]
                         st.rerun()
