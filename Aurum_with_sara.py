@@ -1963,7 +1963,7 @@ if "user" in st.session_state:
         sheet = client.open_by_key(SHEET_ID)
         users_ws = sheet.worksheet("Users")
         df_users = pd.DataFrame(users_ws.get_all_records())
-        df_users.columns = [col.strip().title() for col in df_users.columns]  # Normaliza nomes
+        df_users.columns = [col.strip().title() for col in df_users.columns]
 
         # --- Identifica o usuário logado
         email = st.session_state.get("user_email")
@@ -1983,12 +1983,10 @@ if "user" in st.session_state:
         def is_standard_user(): return user_role == "user"
         def has_project_access(project): return "all" in user_projects_list or project in user_projects_list
 
-        # --- Acesso permitido apenas a lead, member ou admin
         if not (is_admin() or is_lead() or is_member()):
             st.warning("🔒 You do not have access to the collaboration area.")
             st.stop()
 
-        # --- Seleção do projeto
         selected_project = st.selectbox("Select a project to manage:", user_projects_list)
 
         if not has_project_access(selected_project):
@@ -1997,18 +1995,22 @@ if "user" in st.session_state:
 
         st.success(f"✅ Access granted to project: **{selected_project}**")
 
-        # --- Área de gerenciamento do projeto (colapsável)
-        with st.expander("Project Dashboard", expanded=True):
+        # --- Subtabs para navegação
+        collab_tab = tabs(
+            options=["Project Dashboard", "Create Project", "View All Projects", "Manage Members"],
+            key="collab_inner_tabs"
+        )
+
+        # --- DASHBOARD
+        if collab_tab == "Project Dashboard":
             st.info("Here you'll be able to manage and monitor cases associated with your project.")
             st.markdown("- View all project cases")
             st.markdown("- Add or update case data")
             st.markdown("- Manage team (if Project Lead)")
             st.markdown("- See project-specific analytics (future feature)")
 
-        # --- Formulário para criação de novos projetos (apenas admin ou lead)
-        if is_admin() or is_lead():
-            st.markdown("### Create New Project")
-
+        # --- CRIAÇÃO DE PROJETOS
+        elif collab_tab == "Create Project" and (is_admin() or is_lead()):
             field_keys = {
                 "project": "create_project_code",
                 "members": "create_project_emails"
@@ -2016,11 +2018,7 @@ if "user" in st.session_state:
 
             with st.form("create_project_form"):
                 new_project = st.text_input("Project code (no spaces, e.g., trafick_br)", key=field_keys["project"])
-                new_members_raw = st.text_area(
-                    "Add user emails (comma-separated)",
-                    placeholder="email1@org.org, email2@org.org",
-                    key=field_keys["members"]
-                )
+                new_members_raw = st.text_area("Add user emails (comma-separated)", placeholder="email1@org.org, email2@org.org", key=field_keys["members"])
                 submit_new_project = st.form_submit_button("Create Project")
 
                 if submit_new_project:
@@ -2030,7 +2028,7 @@ if "user" in st.session_state:
                         new_project = new_project.strip()
                         emails = [e.strip() for e in new_members_raw.split(",") if e.strip()]
                         updated = 0
-                        
+
                         for idx, row in df_users.iterrows():
                             user_email = row["E-Mail"].strip()
                             if user_email in emails:
@@ -2048,14 +2046,12 @@ if "user" in st.session_state:
                                 if k in st.session_state:
                                     del st.session_state[k]
                             st.rerun()
-
                         except Exception as e:
                             st.error(f"Failed to update sheet: {e}")
 
-            # --- Visualização de todos os projetos e membros
-            st.markdown("### View All Projects and Members")
+        # --- VISUALIZAR TODOS OS PROJETOS
+        elif collab_tab == "View All Projects" and (is_admin() or is_lead()):
             st.info("Below is the list of all users and their associated projects.")
-
             project_data = []
             for idx, row in df_users.iterrows():
                 projects = [p.strip() for p in row["Projects"].split(",")] if row["Projects"].strip() else []
@@ -2066,7 +2062,6 @@ if "user" in st.session_state:
                         "E-mail": row["E-Mail"],
                         "Role": row["Role"]
                     })
-
             df_proj = pd.DataFrame(project_data)
             if not df_proj.empty:
                 df_proj = df_proj.sort_values(["Project", "Name"])
@@ -2074,10 +2069,9 @@ if "user" in st.session_state:
             else:
                 st.info("No projects or users found.")
 
-            # --- Gestão de membros do projeto atual
-            st.markdown("### Manage Members of Current Project")
-
-            # Adicionar membros
+        # --- GESTÃO DE MEMBROS DO PROJETO
+        elif collab_tab == "Manage Members" and (is_admin() or is_lead()):
+            st.markdown("### Add Members to This Project")
             with st.form("manage_project_members_add"):
                 new_emails = st.text_area(
                     f"Add user emails to '{selected_project}' (comma-separated)",
@@ -2110,8 +2104,7 @@ if "user" in st.session_state:
                         except Exception as e:
                             st.error(f"Failed to update sheet: {e}")
 
-            # Remover membros
-            st.markdown("Remove a member from this project:")
+            st.markdown("### Remove Member from This Project")
             project_members = df_users[df_users["Projects"].str.contains(selected_project, case=False)]
             member_emails = project_members["E-Mail"].tolist()
 
