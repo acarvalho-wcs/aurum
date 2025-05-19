@@ -2042,11 +2042,8 @@ if "user" in st.session_state:
                                     updated += 1
 
                         try:
-                            # Salva de volta na planilha
                             users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
                             st.success(f"Project '{new_project}' created and assigned to {updated} user(s).")
-
-                            # Limpa os campos após criação
                             for k in field_keys.values():
                                 if k in st.session_state:
                                     del st.session_state[k]
@@ -2054,6 +2051,89 @@ if "user" in st.session_state:
 
                         except Exception as e:
                             st.error(f"Failed to update sheet: {e}")
+
+            # --- Visualização de todos os projetos e membros
+            st.markdown("### View All Projects and Members")
+            st.info("Below is the list of all users and their associated projects.")
+
+            project_data = []
+            for idx, row in df_users.iterrows():
+                projects = [p.strip() for p in row["Projects"].split(",")] if row["Projects"].strip() else []
+                for proj in projects:
+                    project_data.append({
+                        "Project": proj,
+                        "Name": row["Username"],
+                        "E-mail": row["E-Mail"],
+                        "Role": row["Role"]
+                    })
+
+            df_proj = pd.DataFrame(project_data)
+            if not df_proj.empty:
+                df_proj = df_proj.sort_values(["Project", "Name"])
+                st.dataframe(df_proj, use_container_width=True)
+            else:
+                st.info("No projects or users found.")
+
+            # --- Gestão de membros do projeto atual
+            st.markdown("### Manage Members of Current Project")
+
+            # Adicionar membros
+            with st.form("manage_project_members_add"):
+                new_emails = st.text_area(
+                    f"Add user emails to '{selected_project}' (comma-separated)",
+                    placeholder="email1@org.org, email2@org.org",
+                    key="add_members_input"
+                )
+                submit_add = st.form_submit_button("Add Members")
+
+                if submit_add:
+                    if not new_emails.strip():
+                        st.warning("Please enter at least one email.")
+                    else:
+                        emails = [e.strip() for e in new_emails.split(",") if e.strip()]
+                        added = 0
+                        for idx, row in df_users.iterrows():
+                            user_email = row["E-Mail"].strip()
+                            if user_email in emails:
+                                current_projects = row["Projects"].strip()
+                                project_list = [p.strip() for p in current_projects.split(",")] if current_projects else []
+                                if selected_project not in project_list:
+                                    project_list.append(selected_project)
+                                    df_users.at[idx, "Projects"] = ", ".join(sorted(set(project_list)))
+                                    added += 1
+                        try:
+                            users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
+                            st.success(f"{added} user(s) added to '{selected_project}'.")
+                            if "add_members_input" in st.session_state:
+                                del st.session_state["add_members_input"]
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed to update sheet: {e}")
+
+            # Remover membros
+            st.markdown("Remove a member from this project:")
+            project_members = df_users[df_users["Projects"].str.contains(selected_project, case=False)]
+            member_emails = project_members["E-Mail"].tolist()
+
+            with st.form("remove_project_member_form"):
+                email_to_remove = st.selectbox("Select member to remove:", member_emails, key="remove_member_input")
+                submit_remove = st.form_submit_button("Remove Member")
+
+                if submit_remove:
+                    for idx, row in df_users.iterrows():
+                        if row["E-Mail"].strip() == email_to_remove:
+                            projects = [p.strip() for p in row["Projects"].split(",") if p.strip()]
+                            if selected_project in projects:
+                                projects.remove(selected_project)
+                                df_users.at[idx, "Projects"] = ", ".join(projects)
+                    try:
+                        users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
+                        st.success(f"User '{email_to_remove}' removed from '{selected_project}'.")
+                        if "remove_member_input" in st.session_state:
+                            del st.session_state["remove_member_input"]
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Failed to update sheet: {e}")
 
 if uploaded_file is None and st.session_state.get("user"):
     try:
