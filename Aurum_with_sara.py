@@ -28,7 +28,6 @@ import pytz
 from streamlit_shadcn_ui import tabs
 from streamlit_shadcn_ui import button
 import streamlit.components.v1 as components
-from sklearn.decomposition import PCA
 brt = pytz.timezone("America/Sao_Paulo")
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
@@ -1001,78 +1000,6 @@ if uploaded_file is not None:
 
                 else:
                     st.info("Please select at least one feature to define connections between cases.")
-
-            show_pca = st.sidebar.checkbox("PCA Analysis", value=False)
-            if show_pca:
-                st.markdown("## Principal Component Analysis (PCA)")
-
-                with st.expander("ℹ️ Learn more about this analysis"):
-                    st.markdown("""
-                    ### About PCA
-
-                    Principal Component Analysis (PCA) is a dimensionality reduction technique that transforms high-dimensional data into a smaller number of uncorrelated variables called principal components.
-
-                    In Aurum, PCA is applied to numerical features extracted from trafficking cases. This projection enables users to visually explore patterns, clusters, or anomalies in case distributions — helping detect underlying structure in the data.
-
-                    - PCA is applied on **standardized** numerical columns.
-                    - Users can select which attributes to include in the projection.
-                    - The resulting plot displays each case in a 2D space formed by the first two components.
-                    - Cases can be color-coded and shaped by additional attributes for comparison and pattern detection.
-                    """)
-
-                # Variáveis numéricas disponíveis
-                numeric_cols = df_selected.select_dtypes(include=["number"]).columns.tolist()
-                selected_pca_features = st.multiselect("Select numeric features for PCA", numeric_cols, default=numeric_cols[:3])
-
-                if len(selected_pca_features) < 2:
-                    st.warning("Please select at least two numeric features to perform PCA.")
-                else:
-                    from sklearn.preprocessing import StandardScaler
-                    from sklearn.decomposition import PCA
-                    import plotly.express as px
-
-                    df_pca_input = df_selected.dropna(subset=selected_pca_features)
-                    X = df_pca_input[selected_pca_features]
-                    X_scaled = StandardScaler().fit_transform(X)
-
-                    pca = PCA(n_components=2)
-                    components = pca.fit_transform(X_scaled)
-                    explained = pca.explained_variance_ratio_
-
-                    # Construir dataframe projetado
-                    df_proj = df_pca_input.copy()
-                    df_proj["PC1"] = components[:, 0]
-                    df_proj["PC2"] = components[:, 1]
-
-                    # Variáveis categóricas com poucas categorias
-                    categorical_options = [col for col in df_proj.columns 
-                                           if df_proj[col].dtype == "object" and df_proj[col].nunique() <= 30]
-
-                    # Incluir colunas relevantes mesmo que não categóricas
-                    for col in ["Year", "Stage", "Country of seizure or shipment", "Species"]:
-                        if col in df_proj.columns and col not in categorical_options:
-                            categorical_options.append(col)
-
-                    # Se houver categorias elegíveis
-                    color_by = None
-                    symbol_by = None
-                    if categorical_options:
-                        color_by = st.selectbox("Color points by", options=categorical_options, index=0)
-                        symbol_by = st.selectbox("Symbol shape by", options=["None"] + categorical_options, index=0)
-                        if symbol_by == "None":
-                            symbol_by = None
-
-                    # Gráfico PCA
-                    fig = px.scatter(
-                        df_proj,
-                        x="PC1", y="PC2",
-                        color=df_proj[color_by] if color_by else None,
-                        symbol=df_proj[symbol_by] if symbol_by else None,
-                        hover_data=["Case #"],
-                        title=f"PCA Projection — Variance Explained: PC1 = {explained[0]:.2f}, PC2 = {explained[1]:.2f}",
-                        width=800, height=500
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
             
             show_geo = st.sidebar.checkbox("Geospatial Analysis", value=False)
             if show_geo:
