@@ -1965,6 +1965,14 @@ if "user" in st.session_state:
         df_users = pd.DataFrame(users_ws.get_all_records())
         df_users.columns = [col.strip().title() for col in df_users.columns]
 
+        # --- Leitura da aba 'Projects'
+        try:
+            projects_ws = sheet.worksheet("Projects")
+            df_projects = pd.DataFrame(projects_ws.get_all_records())
+        except Exception as e:
+            st.error(f"❌ Failed to load 'Projects' sheet: {e}")
+            df_projects = pd.DataFrame()
+
         # --- Identifica o usuário logado
         email = st.session_state.get("user_email")
         user_row = df_users[df_users["E-Mail"] == email]
@@ -1984,7 +1992,7 @@ if "user" in st.session_state:
         def has_project_access(project): return "all" in user_projects_list or project in user_projects_list
 
         if not (is_admin() or is_lead() or is_member()):
-            st.warning("🔒 You do not have access to the collaboration area.")
+            st.warning("🔐 You do not have access to the collaboration area.")
             st.stop()
 
         selected_project = st.selectbox("Select a project to manage:", user_projects_list)
@@ -2019,6 +2027,16 @@ if "user" in st.session_state:
             with st.form("create_project_form"):
                 new_project = st.text_input("Project code (no spaces, e.g., trafick_br)", key=field_keys["project"])
                 new_members_raw = st.text_area("Add user emails (comma-separated)", placeholder="email1@org.org, email2@org.org", key=field_keys["members"])
+
+                st.markdown("#### Additional Project Metadata")
+                name = st.text_input("Project name")
+                species = st.text_input("Target species (comma-separated)")
+                countries = st.text_input("Countries covered")
+                cases = st.text_input("Cases involved (comma-separated Case #)")
+                monitoring = st.selectbox("Monitoring type", ["Passive", "Active", "Mixed"])
+                status = st.selectbox("Project status", ["Ongoing", "Finalized", "On Hold", "Cancelled"])
+                summary = st.text_area("Project summary (brief description)")
+
                 submit_new_project = st.form_submit_button("Create Project")
 
                 if submit_new_project:
@@ -2039,9 +2057,36 @@ if "user" in st.session_state:
                                     df_users.at[idx, "Projects"] = ", ".join(sorted(set(project_list)))
                                     updated += 1
 
+                        new_project_entry = {
+                            "Project ID": new_project,
+                            "Project Name": name,
+                            "Lead": email,
+                            "Collaborators": ", ".join(emails),
+                            "Creation Date": datetime.today().strftime("%Y-%m-%d"),
+                            "Cases Involved": cases,
+                            "Target Species": species,
+                            "Countries Covered": countries,
+                            "Monitoring Type": monitoring,
+                            "Project Status": status,
+                            "Summary": summary,
+                            "Last Update": datetime.today().strftime("%Y-%m-%d"),
+                            "Public": "FALSE"
+                        }
+
                         try:
                             users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
-                            st.success(f"Project '{new_project}' created and assigned to {updated} user(s).")
+
+                            current_projects_data = projects_ws.get_all_values()
+                            if current_projects_data:
+                                header = current_projects_data[0]
+                                new_row = [new_project_entry.get(col, "") for col in header]
+                                projects_ws.append_row(new_row)
+                            else:
+                                header = list(new_project_entry.keys())
+                                new_row = list(new_project_entry.values())
+                                projects_ws.update([header, new_row])
+
+                            st.success(f"✅ Project '{new_project}' created and assigned to {updated} user(s).")
                             for k in field_keys.values():
                                 if k in st.session_state:
                                     del st.session_state[k]
