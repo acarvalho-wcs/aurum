@@ -1997,12 +1997,12 @@ if "user" in st.session_state:
 
         # --- Subtabs para navegação
         collab_tab = tabs(
-            options=["Investigation Dashboard", "Create Project", "View All Projects", "Manage Members"],
+            options=["Investigation Dashboard", "Create Investigation", "View All Projects", "Manage Members"],
             key="collab_inner_tabs"
         )
 
         selected_project = None
-        if collab_tab != "Create Project":
+        if collab_tab != "Create Investigation":
             if user_projects_list:
                 selected_project = st.selectbox("Select a project to manage:", user_projects_list)
                 if not has_project_access(selected_project):
@@ -2023,10 +2023,10 @@ if "user" in st.session_state:
                         st.info("You are not listed as a collaborator on any projects.")
                     else:
                         st.markdown("### Projects You Collaborate On")
-                        st.dataframe(user_projects[["Project Name", "Lead", "Cases Involved", "Summary"]])
+                        st.dataframe(user_projects[["Investigation Name", "Lead", "Cases Involved", "Summary"]])
 
         # --- CRIAÇÃO DE PROJETOS
-        elif collab_tab == "Create Project" and (is_admin() or is_lead()):
+        elif collab_tab == "Create Investigation" and (is_admin() or is_lead()):
             field_keys = {
                 "project": "create_project_code",
                 "members": "create_project_emails"
@@ -2036,16 +2036,16 @@ if "user" in st.session_state:
                 new_project = st.text_input("Investigation code (no spaces, e.g., trafick_br)", key=field_keys["project"])
                 new_members_raw = st.text_area("Add collaborators' emails (comma-separated)", placeholder="email1@org.org, email2@org.org", key=field_keys["members"])
 
-                st.markdown("#### Additional Project Metadata")
+                st.markdown("#### Additional Investigation Metadata")
                 name = st.text_input("Project name")
                 species = st.text_input("Target species (comma-separated)")
                 countries = st.text_input("Countries covered")
                 cases = st.text_input("Cases involved (comma-separated Case #)")
                 monitoring = st.selectbox("Monitoring type", ["Passive", "Active", "Mixed"])
-                status = st.selectbox("Project status", ["Ongoing", "Finalized", "On Hold", "Cancelled"])
-                summary = st.text_area("Project summary (brief description)")
+                status = st.selectbox("Investigation status", ["Ongoing", "Finalized", "On Hold", "Cancelled"])
+                summary = st.text_area("Investigation summary (brief description)")
 
-                submit_new_project = st.form_submit_button("Create Project")
+                submit_new_project = st.form_submit_button("Create Investigation")
 
                 if submit_new_project:
                     if not new_project.strip():
