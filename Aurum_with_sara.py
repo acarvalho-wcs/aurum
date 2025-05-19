@@ -1294,7 +1294,7 @@ else:
 
             if verify_password(password, hashed_pw):
                 st.session_state["user"] = username
-                st.session_state["user_email"] = user_row.iloc[0]["E-mail"]
+                st.session_state["user_email"] = user_row.iloc[0]["E-Mail"]
                 st.session_state["is_admin"] = str(user_row.iloc[0]["Is_Admin"]).strip().lower() == "true"
 
                 # Limpa os campos após login bem-sucedido
