@@ -2010,12 +2010,16 @@ if "user" in st.session_state:
         )
 
         # --- DASHBOARD
-        if collab_tab == "Project Dashboard":
-            st.info("Here you'll be able to manage and monitor cases associated with your project.")
-            st.markdown("- View all project cases")
-            st.markdown("- Add or update case data")
-            st.markdown("- Manage team (if Project Lead)")
-            st.markdown("- See project-specific analytics (future feature)")
+        if collab_tab == "Investigation Dashboard":
+            with st.expander("📁 Investigation Dashboard", expanded=False):
+                if st.button("Show My Investigations"):
+                    user_projects = df_projects[df_projects["Collaborators"].str.contains(email, na=False)]
+
+                    if user_projects.empty:
+                        st.info("You are not listed as a collaborator on any investigations.")
+                    else:
+                        st.markdown("### Investigations You Collaborate On")
+                        st.dataframe(user_projects[["Project Name", "Lead", "Cases Involved", "Summary"]])
 
         # --- CRIAÇÃO DE PROJETOS
         elif collab_tab == "Create Project" and (is_admin() or is_lead()):
