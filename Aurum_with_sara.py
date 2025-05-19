@@ -1622,7 +1622,20 @@ def display_alert_update_timeline(sheet_id):
 
 # --- Interface em colunas: Alertas (superior) e Casos (inferior) ---
 if "user" in st.session_state:
-    
+
+    # Inicializa as variáveis de exibição dos painéis se não existirem
+    if "show_submit_alert" not in st.session_state:
+        st.session_state["show_submit_alert"] = False
+    if "show_update_alert" not in st.session_state:
+        st.session_state["show_update_alert"] = False
+
+    # Funções de alternância
+    def toggle_submit():
+        st.session_state["show_submit_alert"] = not st.session_state["show_submit_alert"]
+
+    def toggle_update():
+        st.session_state["show_update_alert"] = not st.session_state["show_update_alert"]
+
     # --- MENU SUPERIOR COM TABS ---
     selected_tab = tabs(
         options=["Alerts Management", "Cases Management", "Data Requests"],
@@ -1638,11 +1651,19 @@ if "user" in st.session_state:
         col1, col2 = st.columns(2)
 
         with col1:
-            with st.expander("**Submit New Alert**", expanded=False):
+            if st.button("📝 Submit New Alert", key="btn_submit_alert"):
+                toggle_submit()
+
+            if st.session_state["show_submit_alert"]:
+                st.markdown("#### 📤 Submit New Alert")
                 display_alert_submission_form(SHEET_ID)
 
         with col2:
-            with st.expander("**Update My Alerts**", expanded=False):
+            if st.button("🛠️ Update My Alerts", key="btn_update_alert"):
+                toggle_update()
+
+            if st.session_state["show_update_alert"]:
+                st.markdown("#### 🔄 Update My Alerts")
                 display_alert_update_timeline(SHEET_ID)
 
     # ----------------------------
