@@ -1995,19 +1995,23 @@ if "user" in st.session_state:
             st.warning("🔐 You do not have access to the collaboration area.")
             st.stop()
 
-        selected_project = st.selectbox("Select a project to manage:", user_projects_list)
-
-        if not has_project_access(selected_project):
-            st.warning("You do not have access to any investigation or have not created one yet.")
-            st.stop()
-
-        st.success(f"✅ Access granted to project: **{selected_project}**")
-
         # --- Subtabs para navegação
         collab_tab = tabs(
             options=["Project Dashboard", "Create Project", "View All Projects", "Manage Members"],
             key="collab_inner_tabs"
         )
+
+        selected_project = None
+        if collab_tab != "Create Project":
+            if user_projects_list:
+                selected_project = st.selectbox("Select a project to manage:", user_projects_list)
+                if not has_project_access(selected_project):
+                    st.warning("You do not have access to any investigation or have not created one yet.")
+                    st.stop()
+                st.success(f"✅ Access granted to project: **{selected_project}**")
+            else:
+                st.warning("You do not have access to any investigation or have not created one yet.")
+                st.stop()
 
         # --- DASHBOARD
         if collab_tab == "Project Dashboard":
