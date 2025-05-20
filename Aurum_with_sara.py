@@ -2534,7 +2534,7 @@ if uploaded_file is None and st.session_state.get("user"):
                 col1, col2 = st.columns([1, 1.4])
 
                 with col1:
-                    st.markdown("#### Species Image")
+                    st.markdown("#### Species Information")
 
                     if selected_species_dash == "All species":
                         st.info("Select a specific species to view its image.")
