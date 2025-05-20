@@ -2534,25 +2534,17 @@ if uploaded_file is None and st.session_state.get("user"):
                 col1, col2 = st.columns([1, 1.4])
 
                 with col1:
-                    st.markdown("#### Cases per Year")
-                    if "Year" in df_dashboard.columns:
-                        df_filtered = df_dashboard.copy()
-                        if selected_species_dash != "All species":
-                            df_filtered = df_filtered[df_filtered["Species"] == selected_species_dash]
+                    st.markdown("#### Species Image")
 
-                        df_filtered["Year"] = pd.to_numeric(df_filtered["Year"], errors="coerce")
-                        df_years = df_filtered.groupby("Year", as_index=False)["Case #"].nunique()
-                        fig_years = px.bar(
-                            df_years,
-                            x="Year",
-                            y="Case #",
-                            labels={"Case #": "Number of Cases", "Year": "Year"},
-                            height=450
-                        )
-                        fig_years.update_layout(margin=dict(t=30, b=30, l=10, r=10))
-                        st.plotly_chart(fig_years, use_container_width=True)
+                    if selected_species_dash == "All species":
+                        st.info("Select a specific species to view its image.")
                     else:
-                        st.info("Year column not available in data.")
+                        import urllib.parse
+                        base_url = "https://raw.githubusercontent.com/acarvalho-wcs/aurum/main/.images/"
+                        species_filename = urllib.parse.quote(selected_species_dash.replace(" ", "_") + ".jpg")
+                        image_url = base_url + species_filename
+
+                        st.image(image_url, caption=selected_species_dash, use_column_width=True)
 
                 with col2:
                     st.markdown("#### Heatmap of Recorded Cases by Location")
