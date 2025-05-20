@@ -1804,9 +1804,9 @@ if "user" in st.session_state:
                                     client = gspread.authorize(credentials)
                                     sheet = client.open_by_key(SHEET_ID)
                                     worksheet = sheet.worksheet("Aurum_data")
-                                worksheet.update(f"A{row_index}:N{row_index}", [updated_row])
-                                st.success("✅ Case updated successfully!")
-                                st.rerun()
+                                    worksheet.update(f"A{row_index}:N{row_index}", [updated_row])
+                                    st.success("✅ Case updated successfully!")
+                                    st.rerun()
                 except Exception as e:
                     st.error(f"❌ Failed to load or update your cases: {e}")
                     
