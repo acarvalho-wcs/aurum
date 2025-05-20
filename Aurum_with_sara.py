@@ -2216,6 +2216,9 @@ if "user" in st.session_state:
                         else:
                             updates_ws.update([list(new_entry.keys()), list(new_entry.values())])
                         st.success("Update submitted successfully.")
+                        for k in ["update_type_input", "update_desc_input"]:
+                            if k in st.session_state:
+                                del st.session_state[k]                        
                         st.rerun()
                     except Exception as e:
                         st.error(f"Failed to submit update: {e}")
