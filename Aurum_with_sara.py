@@ -1999,6 +1999,7 @@ if "user" in st.session_state:
         # --- Subtabs para navegação
         collab_tab = tabs(
             options=["Investigation Dashboard", "Create Investigation", "Update Investigations", "Manage Members"],
+            default_value="Investigation Dashboard",
             key="collab_inner_tabs"
         )
 
