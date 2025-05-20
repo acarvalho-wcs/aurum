@@ -1807,8 +1807,8 @@ if "user" in st.session_state:
                                     worksheet.update(f"A{row_index}:N{row_index}", [updated_row])
                                     st.success("✅ Case updated successfully!")
                                     st.rerun()
-                except Exception as e:
-                    st.error(f"❌ Failed to load or update your cases: {e}")
+                    except Exception as e:
+                        st.error(f"❌ Failed to load or update your cases: {e}")
                     
         # --- Upload múltiplo ---
         st.subheader("Upload Multiple Cases (Batch Mode)")
