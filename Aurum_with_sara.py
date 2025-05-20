@@ -2017,38 +2017,58 @@ if "user" in st.session_state:
         # --- DASHBOARD
         if collab_tab == "Investigation Dashboard":
             st.markdown("### Investigations You Collaborate On")
+
+            # Garante que as colunas estão padronizadas
+            df_projects.columns = [col.strip().title() for col in df_projects.columns]
+
+            if "Project Id" not in df_projects.columns:
+                st.error("⚠️ Column 'Project Id' not found in the Projects sheet. Please check your header formatting.")
+                st.stop()
+
             user_projects = df_projects[df_projects["Collaborators"].str.contains(email, na=False)]
 
             if user_projects.empty:
                 st.info("You are not listed as a collaborator on any investigations.")
             else:
-                selected_investigation = st.selectbox("Select an investigation to explore:", user_projects["Project ID"].tolist())
-                selected_data = user_projects[user_projects["Project ID"] == selected_investigation].iloc[0]
+                selected_investigation = st.selectbox("Select an investigation to explore:", user_projects["Project Id"].tolist())
 
-                st.markdown(f"#### Summary for: **{selected_data['Project Name']}**")
-                st.markdown(f"**Lead:** {selected_data['Lead']}")
-                st.markdown(f"**Cases Involved:** {selected_data['Cases Involved']}")
-                st.markdown(f"**Species:** {selected_data['Target Species']}")
-                st.markdown(f"**Countries:** {selected_data['Countries Covered']}")
-                st.markdown(f"**Status:** {selected_data['Project Status']}")
-                st.markdown(f"**Summary:** {selected_data['Summary']}")
+                if selected_investigation not in user_projects["Project Id"].values:
+                    st.warning("Selected investigation not found.")
+                    st.stop()
+
+                selected_data = user_projects[user_projects["Project Id"] == selected_investigation].iloc[0]
+
+                st.markdown(f"#### Summary for: **{selected_data.get('Project Name', 'Unknown')}**")
+                st.markdown(f"**Lead:** {selected_data.get('Lead', 'N/A')}")
+                st.markdown(f"**Cases Involved:** {selected_data.get('Cases Involved', 'N/A')}")
+                st.markdown(f"**Species:** {selected_data.get('Target Species', 'N/A')}")
+                st.markdown(f"**Countries:** {selected_data.get('Countries Covered', 'N/A')}")
+                st.markdown(f"**Status:** {selected_data.get('Project Status', 'N/A')}")
+                st.markdown(f"**Summary:** {selected_data.get('Summary', 'No summary provided.')}")
 
                 # --- Leitura de atualizações do feed
                 try:
                     updates_ws = sheet.worksheet("Project_Updates")
                     df_updates = pd.DataFrame(updates_ws.get_all_records())
+                    df_updates.columns = [col.strip().title() for col in df_updates.columns]
                 except Exception:
                     df_updates = pd.DataFrame()
 
                 st.markdown("---")
-                st.markdown("#### Investigation Timeline")
-                filtered_updates = df_updates[df_updates["Project ID"] == selected_investigation] if not df_updates.empty else pd.DataFrame()
+                st.markdown("#### 🧭 Investigation Timeline")
+
+                if "Project Id" in df_updates.columns:
+                    filtered_updates = df_updates[df_updates["Project Id"] == selected_investigation]
+                else:
+                    filtered_updates = pd.DataFrame()
 
                 if filtered_updates.empty:
                     st.info("No updates have been submitted for this investigation yet.")
                 else:
                     for _, row in filtered_updates.sort_values("Timestamp", ascending=False).iterrows():
-                        st.markdown(f"**{row['Date']}** — *{row['Type']}*  \\ 👤 {row['Submitted By']}  \\ {row['Description']}")
+                        st.markdown(
+                            f"**{row.get('Date', 'Unknown Date')}** — *{row.get('Type', 'Unspecified')}*  \\\\ 👤 {row.get('Submitted By', 'Unknown')}  \\\\ {row.get('Description', '')}"
+                        )
                         st.markdown("---")
 
         # --- CRIAÇÃO DE PROJETOS
