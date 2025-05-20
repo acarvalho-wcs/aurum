@@ -2168,7 +2168,7 @@ if "user" in st.session_state:
                 st.info("No projects or users found.")
                 st.stop()
 
-            selected_project = st.selectbox("Select a project to view and update:", sorted(df_proj["Project"].unique()))
+            selected_project = st.selectbox("Select an investigation to view and update:", sorted(df_proj["Project"].unique()))
 
             st.markdown(f"### Updates for Investigations: **{selected_project}**")
 
@@ -2189,7 +2189,7 @@ if "user" in st.session_state:
                     st.markdown(f"**{row['Date']}** — *{row['Type']}*  \\ 👤 {row['Submitted By']}  \\ {row['Description']}")
                     st.markdown("---")
             else:
-                st.info("No updates have been submitted for this project yet.")
+                st.info("No updates have been submitted for this investigation yet.")
 
             st.markdown("#### Submit a New Update")
             with st.form("submit_project_update"):
