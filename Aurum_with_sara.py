@@ -1793,10 +1793,14 @@ if "user" in st.session_state:
                                     new_kg,
                                     new_parts,
                                     st.session_state["user"]
+                                    st.session_state["user"]
                                 ]
-                                worksheet = sheet.worksheet("Aurum_data")
-                                worksheet.update(f"A{row_index}:N{row_index}", [updated_row])
-                                st.success("✅ Case updated successfully!")
+                                worksheet = get_worksheet()
+                                worksheet.append_row(new_row)
+                                st.success("✅ Case submitted to Aurum successfully!")
+                                for k in field_keys.values():
+                                    if k in st.session_state:
+                                        del st.session_state[k]
                                 st.rerun()
                 except Exception as e:
                     st.error(f"❌ Failed to load or update your cases: {e}")
