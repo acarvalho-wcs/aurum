@@ -2187,7 +2187,6 @@ if "user" in st.session_state:
                 st.markdown("#### Project Update Feed")
                 for _, row in project_updates.sort_values("Timestamp", ascending=False).iterrows():
                     st.markdown(f"**{row['Date']}** — *{row['Type']}*  \\ 👤 {row['Submitted By']}  \\ {row['Description']}")
-                    st.markdown("---")
             else:
                 st.info("No updates have been submitted for this investigation yet.")
 
