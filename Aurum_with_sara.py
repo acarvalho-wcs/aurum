@@ -2003,16 +2003,6 @@ if "user" in st.session_state:
         )
 
         selected_project = None
-        if collab_tab != "Create Investigation":
-            if user_projects_list:
-                selected_project = st.selectbox("Select a project to manage:", user_projects_list)
-                if not has_project_access(selected_project):
-                    st.warning("You do not have access to any investigation or have not created one yet.")
-                    st.stop()
-            else:
-                st.warning("You do not have access to any investigation or have not created one yet.")
-                st.stop()
-
         # --- DASHBOARD
         if collab_tab == "Investigation Dashboard":
             st.markdown("### Investigations You Collaborate On")
@@ -2069,6 +2059,16 @@ if "user" in st.session_state:
                             f"**{row.get('Date', 'Unknown Date')}** — *{row.get('Type', 'Unspecified')}*  \\\\ 👤 {row.get('Submitted By', 'Unknown')}  \\\\ {row.get('Description', '')}"
                         )
                         st.markdown("---")
+        
+        if collab_tab != "Create Investigation":
+            if user_projects_list:
+                selected_project = st.selectbox("Select a project to manage:", user_projects_list)
+                if not has_project_access(selected_project):
+                    st.warning("You do not have access to any investigation or have not created one yet.")
+                    st.stop()
+            else:
+                st.warning("You do not have access to any investigation or have not created one yet.")
+                st.stop()
 
         # --- CRIAÇÃO DE PROJETOS
         elif collab_tab == "Create Investigation" and (is_admin() or is_lead()):
