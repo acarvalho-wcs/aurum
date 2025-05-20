@@ -2009,7 +2009,6 @@ if "user" in st.session_state:
                 if not has_project_access(selected_project):
                     st.warning("You do not have access to any investigation or have not created one yet.")
                     st.stop()
-                st.success(f"✅ Access granted to project: **{selected_project}**")
             else:
                 st.warning("You do not have access to any investigation or have not created one yet.")
                 st.stop()
