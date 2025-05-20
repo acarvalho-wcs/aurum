@@ -2215,17 +2215,17 @@ if "user" in st.session_state:
                             updates_ws.append_row(new_row)
                         else:
                             updates_ws.update([list(new_entry.keys()), list(new_entry.values())])
-                        st.success("Update submitted successfully.")
                         for k in ["update_type_input", "update_desc_input"]:
                             if k in st.session_state:
                                 del st.session_state[k]                        
+                        st.success("Update submitted successfully.")
                         st.rerun()
                     except Exception as e:
                         st.error(f"Failed to submit update: {e}")
 
         # --- GESTÃO DE MEMBROS DO PROJETO
         elif collab_tab == "Manage Members" and (is_admin() or is_lead()):
-            st.markdown("### Add Members to This Project")
+            st.markdown("### Add Members to This Investigation")
             with st.form("manage_project_members_add"):
                 new_emails = st.text_area(
                     f"Add user emails to '{selected_project}' (comma-separated)",
