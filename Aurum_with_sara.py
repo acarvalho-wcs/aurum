@@ -2523,7 +2523,7 @@ if uploaded_file is None and st.session_state.get("user"):
                         st.info("No other species recorded with the selected species.")
 
             elif dashboard_tab == "Distribution of Cases":
-                st.markdown("## Temporal and Geographic Distribution of Recorded Cases")
+                st.markdown("## Distribution of Recorded Cases")
 
                 selected_species_dash = st.selectbox(
                     "Select a species to view:",
