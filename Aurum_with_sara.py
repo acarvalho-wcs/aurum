@@ -1969,6 +1969,7 @@ if "user" in st.session_state:
         try:
             projects_ws = sheet.worksheet("Projects")
             df_projects = pd.DataFrame(projects_ws.get_all_records())
+            df_projects.columns = [col.strip().title() for col in df_projects.columns]
         except Exception as e:
             st.error(f"❌ Failed to load 'Projects' sheet: {e}")
             df_projects = pd.DataFrame()
