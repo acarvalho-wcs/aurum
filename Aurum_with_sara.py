@@ -2184,7 +2184,7 @@ if "user" in st.session_state:
             project_updates = df_updates[df_updates["Project ID"] == selected_project] if not df_updates.empty else pd.DataFrame()
 
             if not project_updates.empty:
-                st.markdown("#### 🔄 Project Update Feed")
+                st.markdown("#### Project Update Feed")
                 for _, row in project_updates.sort_values("Timestamp", ascending=False).iterrows():
                     st.markdown(f"**{row['Date']}** — *{row['Type']}*  \\ 👤 {row['Submitted By']}  \\ {row['Description']}")
                     st.markdown("---")
@@ -2194,8 +2194,12 @@ if "user" in st.session_state:
             st.markdown("#### Submit a New Update")
             with st.form("submit_project_update"):
                 update_date = st.date_input("Date of event", value=datetime.today())
-                update_type = st.selectbox("Type of update", ["Movement", "Suspicious Activity", "Legal Decision", "Logistic Operation", "Other"])
-                update_desc = st.text_area("Description of update")
+                update_type = st.selectbox(
+                    "Type of update",
+                    ["Movement", "Suspicious Activity", "Legal Decision", "Logistic Operation", "Other"],
+                    key="update_type_input"
+                )
+                update_desc = st.text_area("Description of update", key="update_desc_input")
                 submit_update = st.form_submit_button("Submit Update")
 
                 if submit_update:
@@ -2217,7 +2221,7 @@ if "user" in st.session_state:
                             updates_ws.update([list(new_entry.keys()), list(new_entry.values())])
                         for k in ["update_type_input", "update_desc_input"]:
                             if k in st.session_state:
-                                del st.session_state[k]                        
+                                del st.session_state[k]
                         st.success("Update submitted successfully.")
                         st.rerun()
                     except Exception as e:
