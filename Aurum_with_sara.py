@@ -2691,7 +2691,7 @@ if uploaded_file is None and st.session_state.get("user"):
                                 m.get_root().html.add_child(folium.Element(legend_html))
 
                                 html_str = m.get_root().render()
-                                st.components.v1.html(html_str, height=300)
+                                st.components.v1.html(html_str, height=500)
 
                                 # Observação sobre pesos compartilhados entre espécies
                                 if (
