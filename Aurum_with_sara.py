@@ -2015,15 +2015,40 @@ if "user" in st.session_state:
 
         # --- DASHBOARD
         if collab_tab == "Investigation Dashboard":
-            with st.expander("📁 Investigation Dashboard", expanded=False):
-                if st.button("Show My Projects"):
-                    user_projects = df_projects[df_projects["Collaborators"].str.contains(email, na=False)]
+            st.markdown("### Investigations You Collaborate On")
+            user_projects = df_projects[df_projects["Collaborators"].str.contains(email, na=False)]
 
-                    if user_projects.empty:
-                        st.info("You are not listed as a collaborator on any projects.")
-                    else:
-                        st.markdown("### Projects You Collaborate On")
-                        st.dataframe(user_projects[["Investigation Name", "Lead", "Cases Involved", "Summary"]])
+            if user_projects.empty:
+                st.info("You are not listed as a collaborator on any investigations.")
+            else:
+                selected_investigation = st.selectbox("Select an investigation to explore:", user_projects["Project ID"].tolist())
+                selected_data = user_projects[user_projects["Project ID"] == selected_investigation].iloc[0]
+
+                st.markdown(f"#### Summary for: **{selected_data['Project Name']}**")
+                st.markdown(f"**Lead:** {selected_data['Lead']}")
+                st.markdown(f"**Cases Involved:** {selected_data['Cases Involved']}")
+                st.markdown(f"**Species:** {selected_data['Target Species']}")
+                st.markdown(f"**Countries:** {selected_data['Countries Covered']}")
+                st.markdown(f"**Status:** {selected_data['Project Status']}")
+                st.markdown(f"**Summary:** {selected_data['Summary']}")
+
+                # --- Leitura de atualizações do feed
+                try:
+                    updates_ws = sheet.worksheet("Project_Updates")
+                    df_updates = pd.DataFrame(updates_ws.get_all_records())
+                except Exception:
+                    df_updates = pd.DataFrame()
+
+                st.markdown("---")
+                st.markdown("#### Investigation Timeline")
+                filtered_updates = df_updates[df_updates["Project ID"] == selected_investigation] if not df_updates.empty else pd.DataFrame()
+
+                if filtered_updates.empty:
+                    st.info("No updates have been submitted for this investigation yet.")
+                else:
+                    for _, row in filtered_updates.sort_values("Timestamp", ascending=False).iterrows():
+                        st.markdown(f"**{row['Date']}** — *{row['Type']}*  \\ 👤 {row['Submitted By']}  \\ {row['Description']}")
+                        st.markdown("---")
 
         # --- CRIAÇÃO DE PROJETOS
         elif collab_tab == "Create Investigation" and (is_admin() or is_lead()):
