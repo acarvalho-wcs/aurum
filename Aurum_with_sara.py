@@ -2537,7 +2537,7 @@ if uploaded_file is None and st.session_state.get("user"):
                     st.markdown("#### Species Information")
 
                     if selected_species_dash == "All species":
-                        st.info("Select a specific species to view its image.")
+                        st.info("Select a species to view notes.")
                     else:
                         import urllib.parse
                         base_url = "https://raw.githubusercontent.com/acarvalho-wcs/aurum/main/.images/"
