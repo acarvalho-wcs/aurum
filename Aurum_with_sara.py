@@ -2544,7 +2544,7 @@ if uploaded_file is None and st.session_state.get("user"):
                         species_filename = urllib.parse.quote(selected_species_dash.replace(" ", "_") + ".jpg")
                         image_url = base_url + species_filename
 
-                        st.image(image_url, caption=selected_species_dash, use_column_width=True)
+                        st.image(image_url, caption=selected_species_dash, use_container_width=True)
 
                 with col2:
                     st.markdown("#### Heatmap of Recorded Cases by Location")
