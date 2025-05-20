@@ -2044,7 +2044,7 @@ if "user" in st.session_state:
                     df_updates = pd.DataFrame()
 
                 st.markdown("---")
-                st.markdown("#### 🧭 Investigation Timeline")
+                st.markdown("#### Investigation Timeline")
 
                 if "Project Id" in df_updates.columns:
                     filtered_updates = df_updates[df_updates["Project Id"] == selected_investigation]
@@ -2060,9 +2060,9 @@ if "user" in st.session_state:
                         )
                         st.markdown("---")
         
-        if collab_tab != "Create Investigation":
+        if collab_tab in ["Update Investigations", "Manage Members"]:
             if user_projects_list:
-                selected_project = st.selectbox("Select a project to manage:", user_projects_list)
+                selected_project = st.selectbox("Select an investigation to manage:", user_projects_list)
                 if not has_project_access(selected_project):
                     st.warning("You do not have access to any investigation or have not created one yet.")
                     st.stop()
