@@ -2104,7 +2104,7 @@ if "user" in st.session_state:
 
         # --- VISUALIZAR TODOS OS PROJETOS
         elif collab_tab == "View All Investigations" and (is_admin() or is_lead()):
-            st.markdown("### 📅 View and Update Projects")
+            st.markdown("### View and Update Investigations")
 
             project_data = []
             for idx, row in df_users.iterrows():
@@ -2124,7 +2124,7 @@ if "user" in st.session_state:
 
             selected_project = st.selectbox("Select a project to view and update:", sorted(df_proj["Project"].unique()))
 
-            st.markdown(f"### 📌 Updates for Project: **{selected_project}**")
+            st.markdown(f"### Updates for Investigations: **{selected_project}**")
 
             # --- Leitura da aba Project_Updates
             try:
@@ -2145,7 +2145,7 @@ if "user" in st.session_state:
             else:
                 st.info("No updates have been submitted for this project yet.")
 
-            st.markdown("#### ➕ Submit a New Update")
+            st.markdown("#### Submit a New Update")
             with st.form("submit_project_update"):
                 update_date = st.date_input("Date of event", value=datetime.today())
                 update_type = st.selectbox("Type of update", ["Movement", "Suspicious Activity", "Legal Decision", "Logistic Operation", "Other"])
