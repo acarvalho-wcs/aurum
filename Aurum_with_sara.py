@@ -1795,7 +1795,7 @@ if "user" in st.session_state:
                                     st.session_state["user"]
                                 ]
                                 worksheet = get_worksheet()
-                                worksheet.append_row(new_row)
+                                worksheet.update(f"A{row_index}:N{row_index}", [updated_row])
                                 st.success("✅ Case updated successfully!")
                                 for k in field_keys.values():
                                     if k in st.session_state:
