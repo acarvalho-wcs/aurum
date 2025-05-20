@@ -1950,59 +1950,60 @@ if "user" in st.session_state:
                     except Exception as e:
                         st.error(f"❌ Failed to submit your request: {e}")
 
-    # ----------------------------
-    # 🤝 COLLABORATION
-    # ----------------------------
-    elif selected_tab == "Collaboration":
-        st.markdown("## Collaboration Area")
+# ----------------------------
+# 🤝 COLLABORATION
+# ----------------------------
+elif selected_tab == "Collaboration":
+    st.markdown("## Collaboration Area")
 
-        # --- Carrega dados de usuário da planilha
-        scope = ["https://www.googleapis.com/auth/spreadsheets"]
-        credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-        client = gspread.authorize(credentials)
-        sheet = client.open_by_key(SHEET_ID)
-        users_ws = sheet.worksheet("Users")
-        df_users = pd.DataFrame(users_ws.get_all_records())
-        df_users.columns = [col.strip().title() for col in df_users.columns]
+    # --- Carrega dados de usuário da planilha
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+    client = gspread.authorize(credentials)
+    sheet = client.open_by_key(SHEET_ID)
+    users_ws = sheet.worksheet("Users")
+    df_users = pd.DataFrame(users_ws.get_all_records())
+    df_users.columns = [col.strip().title() for col in df_users.columns]
 
-        # --- Leitura da aba 'Projects'
-        try:
-            projects_ws = sheet.worksheet("Projects")
-            df_projects = pd.DataFrame(projects_ws.get_all_records())
-            df_projects.columns = [col.strip().title() for col in df_projects.columns]
-        except Exception as e:
-            st.error(f"❌ Failed to load 'Projects' sheet: {e}")
-            df_projects = pd.DataFrame()
+    # --- Leitura da aba 'Projects'
+    try:
+        projects_ws = sheet.worksheet("Projects")
+        df_projects = pd.DataFrame(projects_ws.get_all_records())
+        df_projects.columns = [col.strip().title() for col in df_projects.columns]
+    except Exception as e:
+        st.error(f"❌ Failed to load 'Projects' sheet: {e}")
+        df_projects = pd.DataFrame()
 
-        # --- Identifica o usuário logado
-        email = st.session_state.get("user_email")
-        user_row = df_users[df_users["E-Mail"] == email]
+    # --- Identifica o usuário logado
+    email = st.session_state.get("user_email")
+    user_row = df_users[df_users["E-Mail"] == email]
 
-        if user_row.empty:
-            st.error("❌ User not found.")
-            st.stop()
+    if user_row.empty:
+        st.error("❌ User not found.")
+        st.stop()
 
-        user_role = user_row["Role"].values[0].strip().lower()
-        user_projects = user_row["Projects"].values[0].strip()
-        user_projects_list = [p.strip() for p in user_projects.split(",")] if user_projects else []
+    user_role = user_row["Role"].values[0].strip().lower()
+    user_projects = user_row["Projects"].values[0].strip()
+    user_projects_list = [p.strip() for p in user_projects.split(",")] if user_projects else []
 
-        def is_admin(): return user_role == "admin"
-        def is_lead(): return user_role == "lead"
-        def is_member(): return user_role == "member"
-        def is_standard_user(): return user_role == "user"
-        def has_project_access(project): return "all" in user_projects_list or project in user_projects_list
+    def is_admin(): return user_role == "admin"
+    def is_lead(): return user_role == "lead"
+    def is_member(): return user_role == "member"
+    def is_standard_user(): return user_role == "user"
+    def has_project_access(project): return "all" in user_projects_list or project in user_projects_list
 
-        if not (is_admin() or is_lead() or is_member()):
-            st.warning("🔐 You do not have access to the collaboration area.")
-            st.stop()
+    if not (is_admin() or is_lead() or is_member()):
+        st.warning("🔐 You do not have access to the collaboration area.")
+        st.stop()
 
-        # --- Subtabs para navegação
-        collab_tab = tabs(
-            options=["Investigation Dashboard", "Create Investigation", "Update Investigations", "Manage Members"],
-            key="collab_inner_tabs"
-        )
+    # --- Subtabs para navegação
+    collab_tab = tabs(
+        options=["Investigation Dashboard", "Create Investigation", "Update Investigations", "Manage Members"],
+        key="collab_inner_tabs"
+    )
 
-        selected_project = None
+    selected_project = None
+    
         # --- DASHBOARD
         if collab_tab == "Investigation Dashboard":
             st.markdown("### Investigations You Collaborate On")
@@ -2044,7 +2045,7 @@ if "user" in st.session_state:
                     df_updates = pd.DataFrame()
 
                 st.markdown("---")
-                st.markdown("#### 🧭 Investigation Timeline")
+                st.markdown("#### Investigation Timeline")
 
                 if "Project Id" in df_updates.columns:
                     filtered_updates = df_updates[df_updates["Project Id"] == selected_investigation]
@@ -2230,40 +2231,69 @@ if "user" in st.session_state:
                     except Exception as e:
                         st.error(f"Failed to submit update: {e}")
 
-        # --- GESTÃO DE MEMBROS DO PROJETO
-        elif collab_tab == "Manage Members" and (is_admin() or is_lead()):
-            st.markdown("### Add Members to This Investigation")
-            with st.form("manage_project_members_add"):
-                new_emails = st.text_area(
-                    f"Add user emails to '{selected_project}' (comma-separated)",
-                    placeholder="email1@org.org, email2@org.org",
-                    key="add_members_input"
-                )
-                submit_add = st.form_submit_button("Add Members")
+     # --- GESTÃO DE MEMBROS DO PROJETO
+    if collab_tab == "Manage Members" and (is_admin() or is_lead()):
+        st.markdown("### Add Members to This Investigation")
 
-                if submit_add:
-                    if not new_emails.strip():
-                        st.warning("Please enter at least one email.")
-                    else:
-                        emails = [e.strip() for e in new_emails.split(",") if e.strip()]
-                        added = 0
-                        for idx, row in df_users.iterrows():
-                            user_email = row["E-Mail"].strip()
-                            if user_email in emails:
-                                current_projects = row["Projects"].strip()
-                                project_list = [p.strip() for p in current_projects.split(",")] if current_projects else []
-                                if selected_project not in project_list:
-                                    project_list.append(selected_project)
-                                    df_users.at[idx, "Projects"] = ", ".join(sorted(set(project_list)))
-                                    added += 1
-                        try:
-                            users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
-                            st.success(f"{added} user(s) added to '{selected_project}'.")
-                            if "add_members_input" in st.session_state:
-                                del st.session_state["add_members_input"]
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Failed to update sheet: {e}")
+        if "clear_member_inputs" in st.session_state:
+            for key in ["add_members_input", "remove_member_input"]:
+                if key in st.session_state:
+                    del st.session_state[key]
+            del st.session_state["clear_member_inputs"]
+
+        with st.form("manage_project_members_add"):
+            new_emails = st.text_area(
+                f"Add user emails to '{selected_project}' (comma-separated)",
+                placeholder="email1@org.org, email2@org.org",
+                key="add_members_input"
+            )
+            submit_add = st.form_submit_button("Add Members")
+
+            if submit_add:
+                if not new_emails.strip():
+                    st.warning("Please enter at least one email.")
+                else:
+                    emails = [e.strip() for e in new_emails.split(",") if e.strip()]
+                    added = 0
+                    for idx, row in df_users.iterrows():
+                        user_email = row["E-Mail"].strip()
+                        if user_email in emails:
+                            current_projects = row["Projects"].strip()
+                            project_list = [p.strip() for p in current_projects.split(",")] if current_projects else []
+                            if selected_project not in project_list:
+                                project_list.append(selected_project)
+                                df_users.at[idx, "Projects"] = ", ".join(sorted(set(project_list)))
+                                added += 1
+                    try:
+                        users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
+                        st.session_state["clear_member_inputs"] = True
+                        st.success(f"{added} user(s) added to '{selected_project}'.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Failed to update sheet: {e}")
+
+        st.markdown("### Remove Member from This Project")
+        project_members = df_users[df_users["Projects"].str.contains(selected_project, case=False)]
+        member_emails = project_members["E-Mail"].tolist()
+
+        with st.form("remove_project_member_form"):
+            email_to_remove = st.selectbox("Select member to remove:", member_emails, key="remove_member_input")
+            submit_remove = st.form_submit_button("Remove Member")
+
+            if submit_remove:
+                for idx, row in df_users.iterrows():
+                    if row["E-Mail"].strip() == email_to_remove:
+                        projects = [p.strip() for p in row["Projects"].split(",") if p.strip()]
+                        if selected_project in projects:
+                            projects.remove(selected_project)
+                            df_users.at[idx, "Projects"] = ", ".join(projects)
+                try:
+                    users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
+                    st.session_state["clear_member_inputs"] = True
+                    st.success(f"User '{email_to_remove}' removed from '{selected_project}'.")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Failed to update sheet: {e}")
 
             st.markdown("### Remove Member from This Project")
             project_members = df_users[df_users["Projects"].str.contains(selected_project, case=False)]
