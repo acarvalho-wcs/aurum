@@ -2190,12 +2190,18 @@ if "user" in st.session_state:
             else:
                 st.info("No updates have been submitted for this investigation yet.")
 
+            # Reset values before showing form (only after submission)
+            if "clear_update_fields" in st.session_state:
+                st.session_state.update_type_input = ""
+                st.session_state.update_desc_input = ""
+                del st.session_state["clear_update_fields"]
+
             st.markdown("#### Submit a New Update")
             with st.form("submit_project_update"):
                 update_date = st.date_input("Date of event", value=datetime.today())
                 update_type = st.selectbox(
                     "Type of update",
-                    ["Movement", "Suspicious Activity", "Legal Decision", "Logistic Operation", "Other"],
+                    ["", "Movement", "Suspicious Activity", "Legal Decision", "Logistic Operation", "Other"],
                     key="update_type_input"
                 )
                 update_desc = st.text_area("Description of update", key="update_desc_input")
@@ -2218,10 +2224,9 @@ if "user" in st.session_state:
                             updates_ws.append_row(new_row)
                         else:
                             updates_ws.update([list(new_entry.keys()), list(new_entry.values())])
-                        for k in ["update_type_input", "update_desc_input"]:
-                            if k in st.session_state:
-                                del st.session_state[k]
                         st.success("Update submitted successfully.")
+                        # Flag to clear inputs on next rerun
+                        st.session_state["clear_update_fields"] = True
                         st.rerun()
                     except Exception as e:
                         st.error(f"Failed to submit update: {e}")
