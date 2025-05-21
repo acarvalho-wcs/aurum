@@ -1346,8 +1346,6 @@ if st.session_state["show_sidebar_request"]:
                 st.session_state["show_sidebar_request"] = False
                 st.rerun()  # Atualiza visualmente após envio
 
-from streamlit_shadcn_ui import modal, text_input, checkbox, select
-
 # Exemplo: DataFrame fictício (substitua pelo real)
 request_df = pd.DataFrame(requests_ws.get_all_records())  # já fornecido
 users_df = pd.DataFrame(users_ws.get_all_records())       # já fornecido
