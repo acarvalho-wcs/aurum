@@ -1346,21 +1346,22 @@ if st.session_state["show_sidebar_request"]:
                 st.session_state["show_sidebar_request"] = False
                 st.rerun()  # Atualiza visualmente após envio
 
-# --- DADOS DE ENTRADA (substitua pelos reais) ---
-request_df = pd.DataFrame(requests_ws.get_all_records())
-users_df = pd.DataFrame(users_ws.get_all_records())
-
-# --- SOMENTE PARA ADMIN ---
+# --- Verifica se é admin ---
 if st.session_state.get("is_admin"):
 
+    # Exibe a tab do tipo botão
     selected_tab = tabs(
         options=["Admin Panel"],
-        default_value="",
+        default_value=None,
         key="admin_tab"
     )
 
+    # Conteúdo só aparece ao clicar na tab
     if selected_tab == "Admin Panel":
         st.markdown("## 🛡️ Admin Panel - Approve Access Requests")
+
+        request_df = pd.DataFrame(requests_ws.get_all_records())
+        users_df = pd.DataFrame(users_ws.get_all_records())
 
         if not request_df.empty:
             st.dataframe(request_df)
