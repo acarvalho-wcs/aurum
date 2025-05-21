@@ -1355,15 +1355,20 @@ if "show_admin_panel" not in st.session_state:
 # --- Verifica se é admin ---
 if st.session_state.get("is_admin"):
 
-    # Botão para alternar visibilidade
+    # Define o rótulo do botão dinamicamente
     toggle_label = "🛡️ Open Admin Panel" if not st.session_state.show_admin_panel else "❌ Close Admin Panel"
-    button(
+
+    # Cria botão e captura o clique
+    clicked = button(
         label=toggle_label,
-        key="toggle_admin_panel",
-        on_click=lambda: st.session_state.update(show_admin_panel=not st.session_state.show_admin_panel)
+        key="admin_toggle_button"
     )
 
-    # Se ativo, mostra conteúdo do painel
+    # Se clicou, alterna visibilidade
+    if clicked:
+        st.session_state.show_admin_panel = not st.session_state.show_admin_panel
+
+    # Exibe o painel se ativo
     if st.session_state.show_admin_panel:
         st.markdown("## 🛡️ Admin Panel - Approve Access Requests")
 
