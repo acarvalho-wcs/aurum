@@ -1348,29 +1348,32 @@ if st.session_state["show_sidebar_request"]:
 
 from streamlit_shadcn_ui import button
 
-# --- Estado de visibilidade do painel ---
+# Estado inicial
 if "show_admin_panel" not in st.session_state:
     st.session_state.show_admin_panel = False
 
-# --- Verifica se é admin ---
+# Verifica se é admin
 if st.session_state.get("is_admin"):
 
-    # Rótulo dinâmico
+    # Define o rótulo
     toggle_label = "🛡️ Open Admin Panel" if not st.session_state.show_admin_panel else "❌ Close Admin Panel"
 
-    # Botão com todos os parâmetros obrigatórios
-    clicked = button(
+    # Mostra botão (sem atribuir retorno)
+    button(
         label=toggle_label,
         key="admin_toggle_button",
         variant="default",
         size="default"
     )
 
-    # Alterna visibilidade
-    if clicked:
+    # Detecta o clique manualmente via session_state
+    if st.session_state.get("admin_toggle_button"):
+        # Zera o estado do botão (para permitir novo clique)
+        st.session_state["admin_toggle_button"] = False
+        # Alterna painel
         st.session_state.show_admin_panel = not st.session_state.show_admin_panel
 
-    # Exibe painel se estiver ativo
+    # Exibe painel se ativo
     if st.session_state.show_admin_panel:
         st.markdown("## 🛡️ Admin Panel - Approve Access Requests")
 
