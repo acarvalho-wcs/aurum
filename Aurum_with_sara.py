@@ -1348,27 +1348,29 @@ if st.session_state["show_sidebar_request"]:
 
 from streamlit_shadcn_ui import button
 
-# --- Estado para controle de visibilidade do painel ---
+# --- Estado de visibilidade do painel ---
 if "show_admin_panel" not in st.session_state:
     st.session_state.show_admin_panel = False
 
 # --- Verifica se é admin ---
 if st.session_state.get("is_admin"):
 
-    # Define o rótulo do botão dinamicamente
+    # Rótulo dinâmico
     toggle_label = "🛡️ Open Admin Panel" if not st.session_state.show_admin_panel else "❌ Close Admin Panel"
 
-    # Cria botão e captura o clique
+    # Botão com todos os parâmetros obrigatórios
     clicked = button(
         label=toggle_label,
-        key="admin_toggle_button"
+        key="admin_toggle_button",
+        variant="default",
+        size="default"
     )
 
-    # Se clicou, alterna visibilidade
+    # Alterna visibilidade
     if clicked:
         st.session_state.show_admin_panel = not st.session_state.show_admin_panel
 
-    # Exibe o painel se ativo
+    # Exibe painel se estiver ativo
     if st.session_state.show_admin_panel:
         st.markdown("## 🛡️ Admin Panel - Approve Access Requests")
 
@@ -1397,11 +1399,11 @@ if st.session_state.get("is_admin"):
                                 is_admin_str = "TRUE" if is_admin else "FALSE"
                                 email = user_row.iloc[0]["E-mail"].strip()
 
-                                # Atualiza aba Access Requests
+                                # Atualiza Access Requests
                                 requests_ws.update_cell(row_index + 2, request_df.columns.get_loc("Approved") + 1, "TRUE")
                                 requests_ws.update_cell(row_index + 2, request_df.columns.get_loc("Is_Admin") + 1, is_admin_str)
 
-                                # Adiciona na aba Users se ainda não estiver
+                                # Adiciona na aba Users se necessário
                                 if new_user not in users_df["Username"].values:
                                     users_ws.append_row([
                                         new_user,
