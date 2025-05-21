@@ -1355,7 +1355,7 @@ if st.session_state.get("is_admin"):
 
     selected_tab = tabs(
         options=["Admin Panel"],
-        default_value="Admin Panel",
+        default_value="",
         key="admin_tab"
     )
 
