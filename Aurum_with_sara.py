@@ -27,6 +27,7 @@ from datetime import datetime
 import pytz
 from streamlit_shadcn_ui import tabs
 from streamlit_shadcn_ui import button
+from streamlit_shadcn_ui import button, modal, text_input, checkbox, select
 import streamlit.components.v1 as components
 brt = pytz.timezone("America/Sao_Paulo")
 
@@ -1345,8 +1346,6 @@ if st.session_state["show_sidebar_request"]:
                 st.sidebar.success("✅ Request submitted!")
                 st.session_state["show_sidebar_request"] = False
                 st.rerun()  # Atualiza visualmente após envio
-
-from streamlit_shadcn_ui import button, modal, text_input, checkbox, select
 
 # Exemplo: DataFrame fictício (substitua pelo real)
 request_df = pd.DataFrame(requests_ws.get_all_records())  # já fornecido
