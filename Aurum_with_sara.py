@@ -1346,23 +1346,29 @@ if st.session_state["show_sidebar_request"]:
                 st.session_state["show_sidebar_request"] = False
                 st.rerun()  # Atualiza visualmente após envio
 
-# --- DADOS DE ENTRADA (substitua pelos reais) ---
-request_df = pd.DataFrame(requests_ws.get_all_records())
-users_df = pd.DataFrame(users_ws.get_all_records())
+from streamlit_shadcn_ui import button
+
+# --- Estado para controle de visibilidade do painel ---
+if "show_admin_panel" not in st.session_state:
+    st.session_state.show_admin_panel = False
 
 # --- Verifica se é admin ---
 if st.session_state.get("is_admin"):
 
-    # Exibe a tab de forma clicável
-    selected_tab = tabs(
-        options=["Admin Panel"],
-        default_value="",
-        key="admin_tab"
+    # Botão para alternar visibilidade
+    toggle_label = "🛡️ Open Admin Panel" if not st.session_state.show_admin_panel else "❌ Close Admin Panel"
+    button(
+        label=toggle_label,
+        key="toggle_admin_panel",
+        on_click=lambda: st.session_state.update(show_admin_panel=not st.session_state.show_admin_panel)
     )
 
-    # Conteúdo só aparece após o clique
-    if selected_tab == "Admin Panel":
+    # Se ativo, mostra conteúdo do painel
+    if st.session_state.show_admin_panel:
         st.markdown("## 🛡️ Admin Panel - Approve Access Requests")
+
+        request_df = pd.DataFrame(requests_ws.get_all_records())
+        users_df = pd.DataFrame(users_ws.get_all_records())
 
         if not request_df.empty:
             st.dataframe(request_df)
