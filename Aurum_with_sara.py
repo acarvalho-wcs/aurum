@@ -1346,6 +1346,8 @@ if st.session_state["show_sidebar_request"]:
                 st.session_state["show_sidebar_request"] = False
                 st.rerun()  # Atualiza visualmente após envio
 
+from streamlit_shadcn_ui import button
+
 # --- Estado de controle para mostrar ou ocultar painel ---
 if "show_admin_panel" not in st.session_state:
     st.session_state.show_admin_panel = False
