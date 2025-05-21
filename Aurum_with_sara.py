@@ -1346,70 +1346,62 @@ if st.session_state["show_sidebar_request"]:
                 st.session_state["show_sidebar_request"] = False
                 st.rerun()  # Atualiza visualmente após envio
 
-# Exemplo: DataFrame fictício (substitua pelo real)
-request_df = pd.DataFrame(requests_ws.get_all_records())  # já fornecido
-users_df = pd.DataFrame(users_ws.get_all_records())       # já fornecido
+# --- DADOS DE ENTRADA (substitua pelos reais) ---
+request_df = pd.DataFrame(requests_ws.get_all_records())
+users_df = pd.DataFrame(users_ws.get_all_records())
 
-# Controle de modal
-if "show_modal" not in st.session_state:
-    st.session_state.show_modal = False
-
+# --- SOMENTE PARA ADMIN ---
 if st.session_state.get("is_admin"):
 
-    st.markdown("## 🛡️ Admin Panel")
-    
-    # Botão para abrir modal
-    button(label="Approve Access Requests", key="open_modal", on_click=lambda: st.session_state.update(show_modal=True))
+    selected_tab = tabs(
+        options=["Admin Panel"],
+        default_value="Admin Panel",
+        key="admin_tab"
+    )
 
-    # Mostra tabela de requisições
-    if not request_df.empty:
-        st.dataframe(request_df)
+    if selected_tab == "Admin Panel":
+        st.markdown("## 🛡️ Admin Panel - Approve Access Requests")
 
-    # Modal com formulário
-    if st.session_state.show_modal:
-        with modal(title="Approve Access Request", key="approve_modal", open=True, on_close=lambda: st.session_state.update(show_modal=False)):
-            
-            usernames = request_df["Username"].unique().tolist() if not request_df.empty else []
-            username = select(label="Select username to approve", options=usernames, key="selected_user")
-            password = text_input(label="Set initial password", password=True, key="password_input")
-            grant_admin = checkbox(label="Grant admin access?", key="admin_check")
+        if not request_df.empty:
+            st.dataframe(request_df)
 
-            button(label="✅ Approve User", key="approve_btn")
+            with st.form("approve_form"):
+                new_user = st.selectbox("Select username to approve:", request_df["Username"].unique())
+                new_password = st.text_input("Set initial password", type="password")
+                is_admin = st.checkbox("Grant admin access?")
+                approve_button = st.form_submit_button("Approve User")
 
-            if st.session_state.get("approve_btn"):
-                if not username or not password:
-                    st.warning("Username and password are required.")
-                else:
-                    try:
-                        user_row = request_df[request_df["Username"] == username]
-                        if user_row.empty:
-                            st.warning("User not found in access requests.")
-                        else:
-                            row_index = user_row.index[0]
-                            is_admin_str = "TRUE" if grant_admin else "FALSE"
-                            email = user_row.iloc[0]["E-mail"].strip()
+                if approve_button:
+                    if not new_user or not new_password:
+                        st.warning("Username and password are required.")
+                    else:
+                        try:
+                            user_row = request_df[request_df["Username"] == new_user]
+                            if user_row.empty:
+                                st.warning("User not found in access requests.")
+                            else:
+                                row_index = user_row.index[0]
+                                is_admin_str = "TRUE" if is_admin else "FALSE"
+                                email = user_row.iloc[0]["E-mail"].strip()
 
-                            # Atualiza a aba Access Requests
-                            requests_ws.update_cell(row_index + 2, request_df.columns.get_loc("Approved") + 1, "TRUE")
-                            requests_ws.update_cell(row_index + 2, request_df.columns.get_loc("Is_Admin") + 1, is_admin_str)
+                                # Atualiza aba Access Requests
+                                requests_ws.update_cell(row_index + 2, request_df.columns.get_loc("Approved") + 1, "TRUE")
+                                requests_ws.update_cell(row_index + 2, request_df.columns.get_loc("Is_Admin") + 1, is_admin_str)
 
-                            # Adiciona na aba Users se ainda não estiver
-                            if username not in users_df["Username"].values:
-                                users_ws.append_row([
-                                    username,
-                                    password,
-                                    email,
-                                    is_admin_str,
-                                    "TRUE"
-                                ])
+                                # Adiciona na aba Users se ainda não estiver
+                                if new_user not in users_df["Username"].values:
+                                    users_ws.append_row([
+                                        new_user,
+                                        new_password,
+                                        email,
+                                        is_admin_str,
+                                        "TRUE"
+                                    ])
 
-                            st.success(f"✅ {username} has been approved and added to the system.")
-                            st.info("🔐 The user is now authorized to log into Aurum.")
-
-                            st.session_state.show_modal = False  # Fecha modal
-
-                    except Exception as e:
-                        st.error(f"❌ Failed to approve user: {e}")
+                                st.success(f"✅ {new_user} has been approved and added to the system.")
+                                st.info("🔐 The user is now authorized to log into Aurum.")
+                        except Exception as e:
+                            st.error(f"❌ Failed to approve user: {e}")
 
 # --- FORMULÁRIO ---
 def get_worksheet(sheet_name="Aurum_data"):
