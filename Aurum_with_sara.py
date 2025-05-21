@@ -1346,39 +1346,23 @@ if st.session_state["show_sidebar_request"]:
                 st.session_state["show_sidebar_request"] = False
                 st.rerun()  # Atualiza visualmente após envio
 
-from streamlit_shadcn_ui import button
+# --- DADOS DE ENTRADA (substitua pelos reais) ---
+request_df = pd.DataFrame(requests_ws.get_all_records())
+users_df = pd.DataFrame(users_ws.get_all_records())
 
-# Estado inicial
-if "show_admin_panel" not in st.session_state:
-    st.session_state.show_admin_panel = False
-
-# Verifica se é admin
+# --- Verifica se é admin ---
 if st.session_state.get("is_admin"):
 
-    # Define o rótulo
-    toggle_label = "🛡️ Open Admin Panel" if not st.session_state.show_admin_panel else "❌ Close Admin Panel"
-
-    # Mostra botão (sem atribuir retorno)
-    button(
-        label=toggle_label,
-        key="admin_toggle_button",
-        variant="default",
-        size="default"
+    # Exibe a tab de forma clicável
+    selected_tab = tabs(
+        options=["Admin Panel"],
+        default_value="",
+        key="admin_tab"
     )
 
-    # Detecta o clique manualmente via session_state
-    if st.session_state.get("admin_toggle_button"):
-        # Zera o estado do botão (para permitir novo clique)
-        st.session_state["admin_toggle_button"] = False
-        # Alterna painel
-        st.session_state.show_admin_panel = not st.session_state.show_admin_panel
-
-    # Exibe painel se ativo
-    if st.session_state.show_admin_panel:
+    # Conteúdo só aparece após o clique
+    if selected_tab == "Admin Panel":
         st.markdown("## 🛡️ Admin Panel - Approve Access Requests")
-
-        request_df = pd.DataFrame(requests_ws.get_all_records())
-        users_df = pd.DataFrame(users_ws.get_all_records())
 
         if not request_df.empty:
             st.dataframe(request_df)
@@ -1402,11 +1386,11 @@ if st.session_state.get("is_admin"):
                                 is_admin_str = "TRUE" if is_admin else "FALSE"
                                 email = user_row.iloc[0]["E-mail"].strip()
 
-                                # Atualiza Access Requests
+                                # Atualiza aba Access Requests
                                 requests_ws.update_cell(row_index + 2, request_df.columns.get_loc("Approved") + 1, "TRUE")
                                 requests_ws.update_cell(row_index + 2, request_df.columns.get_loc("Is_Admin") + 1, is_admin_str)
 
-                                # Adiciona na aba Users se necessário
+                                # Adiciona na aba Users se ainda não estiver
                                 if new_user not in users_df["Username"].values:
                                     users_ws.append_row([
                                         new_user,
