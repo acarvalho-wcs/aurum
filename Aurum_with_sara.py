@@ -2095,7 +2095,10 @@ if "user" in st.session_state:
                         """,
                         unsafe_allow_html=True
                     )
-        
+
+                # --- Espaço entre a caixa e os botões/tabs abaixo
+                st.markdown("<div style='height: 32px;'></div>", unsafe_allow_html=True)
+                
         if collab_tab in ["Update Investigations", "Manage Members"]:
             if user_projects_list:
                 selected_project = st.selectbox("Select an investigation to manage:", user_projects_list)
