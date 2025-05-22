@@ -2248,7 +2248,10 @@ if "user" in st.session_state:
                         key="update_type_input"
                     )
                     update_desc = st.text_area("Description of update", key="update_desc_input")
-                    update_links = st.text_area("Link(s) (optional, comma-separated or multiline)")
+                    update_links = st.text_area(
+                        "Link(s) (optional, comma-separated or multiline)",
+                        key="update_links"
+                    )
 
                     submit_update = st.form_submit_button("Submit Update")
 
@@ -2280,7 +2283,6 @@ if "user" in st.session_state:
                             st.rerun()
                         except Exception as e:
                             st.error(f"Failed to submit update: {e}")
-
 
             # --- ABA: MANAGE MEMBERS
             elif collab_tab == "Manage Members":
