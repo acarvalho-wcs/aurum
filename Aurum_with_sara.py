@@ -2247,6 +2247,8 @@ if "user" in st.session_state:
                         key="update_type_input"
                     )
                     update_desc = st.text_area("Description of update", key="update_desc_input")
+                    update_links = st.text_area("Link(s) (optional, comma-separated or multiline)")
+
                     submit_update = st.form_submit_button("Submit Update")
 
                     if submit_update:
@@ -2256,8 +2258,10 @@ if "user" in st.session_state:
                             "Submitted By": email,
                             "Description": update_desc,
                             "Type": update_type,
+                            "Links": update_links,
                             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         }
+
                         try:
                             current_data = updates_ws.get_all_values()
                             if current_data:
@@ -2265,12 +2269,17 @@ if "user" in st.session_state:
                                 new_row = [new_entry.get(col, "") for col in header]
                                 updates_ws.append_row(new_row)
                             else:
-                                updates_ws.update([list(new_entry.keys()), list(new_entry.values())])
+                                # Se a aba estiver vazia, cria com as novas colunas
+                                header = list(new_entry.keys())
+                                new_row = list(new_entry.values())
+                                updates_ws.update([header, new_row])
+
                             st.success("Update submitted successfully.")
                             st.session_state["clear_update_fields"] = True
                             st.rerun()
                         except Exception as e:
                             st.error(f"Failed to submit update: {e}")
+
 
             # --- ABA: MANAGE MEMBERS
             elif collab_tab == "Manage Members":
