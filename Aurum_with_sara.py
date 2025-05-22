@@ -2047,20 +2047,27 @@ if "user" in st.session_state:
                 try:
                     updates_ws = sheet.worksheet("Project_Updates")
                     df_updates = pd.DataFrame(updates_ws.get_all_records())
-                    df_updates.columns = [col.strip().title() for col in df_updates.columns]
+                    df_updates.columns = [col.strip() for col in df_updates.columns]
                 except Exception:
                     df_updates = pd.DataFrame()
 
-                if "Project Id" in df_updates.columns:
-                    filtered_updates = df_updates[df_updates["Project Id"] == selected_investigation]
+                if "Project ID" in df_updates.columns:
+                    filtered_updates = df_updates[df_updates["Project ID"] == selected_investigation]
                 else:
                     filtered_updates = pd.DataFrame()
 
+                # Ordenação segura
+                if "Timestamp" in filtered_updates.columns:
+                    sorted_updates = filtered_updates.sort_values("Timestamp", ascending=False)
+                else:
+                    sorted_updates = filtered_updates
+
+                # Renderização na caixa
                 with st.container():
                     st.markdown(
                         f"""
                         <div style="border: 1px solid #cccccc; border-radius: 12px; padding: 16px; background-color: #f9f9f9;">
-                            <h4>🕵️ Summary for: <b>{selected_data.get('Project Name', 'Unknown')}</b></h4>
+                            <h4>Summary for: <b>{selected_data.get('Project Name', 'Unknown')}</b></h4>
                             <ul style="list-style-type: none; padding-left: 0;">
                                 <li><strong>Lead:</strong> {selected_data.get('Lead', 'N/A')}</li>
                                 <li><strong>Cases Involved:</strong> {selected_data.get('Cases Involved', 'N/A')}</li>
@@ -2071,13 +2078,13 @@ if "user" in st.session_state:
                             </ul>
                             <hr>
                             <h5>📅 Investigation Timeline</h5>
-                            {"<p>No updates have been submitted for this investigation yet.</p>" if filtered_updates.empty else ""}
+                            {"<p>No updates have been submitted for this investigation yet.</p>" if sorted_updates.empty else ""}
                             <div>
                                 {''.join([
                                     f"<p><strong>{row.get('Date', 'Unknown Date')}</strong> — <em>{row.get('Type', 'Unspecified')}</em><br>"
                                     f"👤 {row.get('Submitted By', 'Unknown')}<br>"
                                     f"{row.get('Description', '')}</p><hr style='margin:8px 0;'>"
-                                    for _, row in filtered_updates.sort_values('Timestamp', ascending=False).iterrows()
+                                    for _, row in sorted_updates.iterrows()
                                 ])}
                             </div>
                         </div>
