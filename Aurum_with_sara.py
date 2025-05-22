@@ -2218,7 +2218,7 @@ if "user" in st.session_state:
                     df_updates = pd.DataFrame(updates_ws.get_all_records())
                 except Exception:
                     updates_ws = sheet.add_worksheet(title="Project_Updates", rows=1000, cols=6)
-                    updates_ws.update([["Project ID", "Date", "Submitted By", "Description", "Type", "Timestamp"]])
+                    updates_ws.update([["Project ID", "Date", "Submitted By", "Description", "Type", "Link(s)", "Timestamp"]])
                     df_updates = pd.DataFrame()
 
                 project_updates = df_updates[df_updates["Project ID"] == selected_project] if not df_updates.empty else pd.DataFrame()
@@ -2227,7 +2227,7 @@ if "user" in st.session_state:
                     st.markdown("#### Project Update Feed")
                     for _, row in project_updates.sort_values("Timestamp", ascending=False).iterrows():
                         st.markdown(
-                            f"**{row['Date']}** — *{row['Type']}*  \\\\ 👤 {row['Submitted By']}  \\\\ {row['Description']}"
+                            f"**{row['Date']}** — *{row['Type']}*  \\\\ 👤 {row['Submitted By']}  \\\\ {row['Description']}  \\\\ {row['Link(s)']}"
                         )
                 else:
                     st.info("No updates have been submitted for this investigation yet.")
