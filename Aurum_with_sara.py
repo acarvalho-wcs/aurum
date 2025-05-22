@@ -2223,7 +2223,7 @@ if "user" in st.session_state:
 
                 st.markdown("### Remove Member from This Project")
                 project_members = df_users[df_users["Projects"].str.contains(selected_project, case=False)]
-                member_emails = project_members["E-Mail"].tolist()
+                member_emails = sorted(set(project_members["E-Mail"].str.strip()))
 
                 with st.form("remove_project_member_form"):
                     email_to_remove = st.selectbox("Select member to remove:", member_emails, key="remove_member_input")
