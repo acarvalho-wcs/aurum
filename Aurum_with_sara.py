@@ -2095,237 +2095,145 @@ if "user" in st.session_state:
                         unsafe_allow_html=True
                     )
 
-                # --- Espaço entre a caixa e os botões/tabs abaixo
-                st.markdown("<div style='height: 32px;'></div>", unsafe_allow_html=True)
-                
-        if collab_tab in ["Update Investigations", "Manage Members"]:
+        # --- UPDATE INVESTIGATIONS e MANAGE MEMBERS: Selecionar projeto primeiro
+        elif collab_tab in ["Update Investigations", "Manage Members"]:
+            user_projects_list = []
+            if not df_users.empty and "Projects" in df_users.columns:
+                user_row = df_users[df_users["E-Mail"] == email]
+                if not user_row.empty:
+                    raw_projects = user_row.iloc[0]["Projects"]
+                    user_projects_list = [p.strip() for p in raw_projects.split(",") if p.strip()]
+
             if user_projects_list:
                 selected_project = st.selectbox("Select an investigation to manage:", user_projects_list)
                 if not has_project_access(selected_project):
-                    st.warning("You do not have access to any investigation or have not created one yet.")
+                    st.warning("You do not have access to this investigation.")
                     st.stop()
             else:
-                st.warning("You do not have access to any investigation or have not created one yet.")
+                st.warning("You do not have access to any investigation.")
                 st.stop()
 
-        # --- CRIAÇÃO DE PROJETOS
-        elif collab_tab == "Create Investigation" and (is_admin() or is_lead()):
-            field_keys = {
-                "project": "create_project_code",
-                "members": "create_project_emails"
-            }
+            # --- ABA: UPDATE INVESTIGATIONS
+            if collab_tab == "Update Investigations":
+                st.markdown(f"### Updates for Investigation: **{selected_project}**")
 
-            with st.form("create_project_form"):
-                new_project = st.text_input("Investigation code (no spaces, e.g., trafick_br)", key=field_keys["project"])
-                new_members_raw = st.text_area("Add collaborators' emails (comma-separated)", placeholder="email1@org.org, email2@org.org", key=field_keys["members"])
+                try:
+                    updates_ws = sheet.worksheet("Project_Updates")
+                    df_updates = pd.DataFrame(updates_ws.get_all_records())
+                except Exception:
+                    updates_ws = sheet.add_worksheet(title="Project_Updates", rows=1000, cols=6)
+                    updates_ws.update([["Project ID", "Date", "Submitted By", "Description", "Type", "Timestamp"]])
+                    df_updates = pd.DataFrame()
 
-                st.markdown("#### Additional Investigation Metadata")
-                name = st.text_input("Investigation name")
-                species = st.text_input("Target species (comma-separated)")
-                countries = st.text_input("Countries covered")
-                cases = st.text_input("Cases involved (comma-separated Case #)")
-                monitoring = st.selectbox("Monitoring type", ["Passive", "Active", "Mixed"])
-                status = st.selectbox("Investigation status", ["Ongoing", "Finalized", "On Hold", "Cancelled"])
-                summary = st.text_area("Investigation summary (brief description)")
+                project_updates = df_updates[df_updates["Project ID"] == selected_project] if not df_updates.empty else pd.DataFrame()
 
-                submit_new_project = st.form_submit_button("Create Investigation")
+                if not project_updates.empty:
+                    st.markdown("#### Project Update Feed")
+                    for _, row in project_updates.sort_values("Timestamp", ascending=False).iterrows():
+                        st.markdown(
+                            f"**{row['Date']}** — *{row['Type']}*  \\\\ 👤 {row['Submitted By']}  \\\\ {row['Description']}"
+                        )
+                else:
+                    st.info("No updates have been submitted for this investigation yet.")
 
-                if submit_new_project:
-                    if not new_project.strip():
-                        st.warning("Please provide an investigation  code.")
-                    else:
-                        new_project = new_project.strip()
-                        emails = [e.strip() for e in new_members_raw.split(",") if e.strip()]
-                        updated = 0
+                # Reset form state if needed
+                if "clear_update_fields" in st.session_state:
+                    st.session_state.update_type_input = ""
+                    st.session_state.update_desc_input = ""
+                    del st.session_state["clear_update_fields"]
 
-                        for idx, row in df_users.iterrows():
-                            user_email = row["E-Mail"].strip()
-                            if user_email in emails:
-                                current_projects = row["Projects"].strip()
-                                project_list = [p.strip() for p in current_projects.split(",")] if current_projects else []
-                                if new_project not in project_list:
-                                    project_list.append(new_project)
-                                    df_users.at[idx, "Projects"] = ", ".join(sorted(set(project_list)))
-                                    updated += 1
+                st.markdown("#### Submit a New Update")
+                with st.form("submit_project_update"):
+                    update_date = st.date_input("Date of event", value=datetime.today())
+                    update_type = st.selectbox(
+                        "Type of update",
+                        ["", "Movement", "Suspicious Activity", "Legal Decision", "Logistic Operation", "Other"],
+                        key="update_type_input"
+                    )
+                    update_desc = st.text_area("Description of update", key="update_desc_input")
+                    submit_update = st.form_submit_button("Submit Update")
 
-                        new_project_entry = {
-                            "Project ID": new_project,
-                            "Project Name": name,
-                            "Lead": email,
-                            "Collaborators": ", ".join(emails),
-                            "Creation Date": datetime.today().strftime("%Y-%m-%d"),
-                            "Cases Involved": cases,
-                            "Target Species": species,
-                            "Countries Covered": countries,
-                            "Monitoring Type": monitoring,
-                            "Project Status": status,
-                            "Summary": summary,
-                            "Last Update": datetime.today().strftime("%Y-%m-%d"),
-                            "Public": "FALSE"
+                    if submit_update:
+                        new_entry = {
+                            "Project ID": selected_project,
+                            "Date": update_date.strftime("%Y-%m-%d"),
+                            "Submitted By": email,
+                            "Description": update_desc,
+                            "Type": update_type,
+                            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         }
-
                         try:
-                            users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
-
-                            current_projects_data = projects_ws.get_all_values()
-                            if current_projects_data:
-                                header = current_projects_data[0]
-                                new_row = [new_project_entry.get(col, "") for col in header]
-                                projects_ws.append_row(new_row)
+                            current_data = updates_ws.get_all_values()
+                            if current_data:
+                                header = current_data[0]
+                                new_row = [new_entry.get(col, "") for col in header]
+                                updates_ws.append_row(new_row)
                             else:
-                                header = list(new_project_entry.keys())
-                                new_row = list(new_project_entry.values())
-                                projects_ws.update([header, new_row])
-
-                            st.success(f"✅ Project '{new_project}' created and assigned to {updated} user(s).")
-                            for k in field_keys.values():
-                                if k in st.session_state:
-                                    del st.session_state[k]
+                                updates_ws.update([list(new_entry.keys()), list(new_entry.values())])
+                            st.success("Update submitted successfully.")
+                            st.session_state["clear_update_fields"] = True
                             st.rerun()
                         except Exception as e:
-                            st.error(f"Failed to update sheet: {e}")
+                            st.error(f"Failed to submit update: {e}")
 
-        # --- VISUALIZAR TODOS OS PROJETOS
-        elif collab_tab == "Update Investigations" and (is_admin() or is_lead()):
-            st.markdown("### View and Update Investigations")
+            # --- ABA: MANAGE MEMBERS
+            elif collab_tab == "Manage Members":
+                st.markdown("### Add Members to This Investigation")
+                with st.form("manage_project_members_add"):
+                    new_emails = st.text_area(
+                        f"Add user emails to '{selected_project}' (comma-separated)",
+                        placeholder="email1@org.org, email2@org.org",
+                        key="add_members_input"
+                    )
+                    submit_add = st.form_submit_button("Add Members")
 
-            project_data = []
-            for idx, row in df_users.iterrows():
-                projects = [p.strip() for p in row["Projects"].split(",")] if row["Projects"].strip() else []
-                for proj in projects:
-                    project_data.append({
-                        "Project": proj,
-                        "Name": row["Username"],
-                        "E-mail": row["E-Mail"],
-                        "Role": row["Role"]
-                    })
-            df_proj = pd.DataFrame(project_data)
-
-            if df_proj.empty:
-                st.info("No projects or users found.")
-                st.stop()
-
-            selected_project = st.selectbox("Select an investigation to view and update:", sorted(df_proj["Project"].unique()))
-
-            st.markdown(f"### Updates for Investigations: **{selected_project}**")
-
-            # --- Leitura da aba Project_Updates
-            try:
-                updates_ws = sheet.worksheet("Project_Updates")
-                df_updates = pd.DataFrame(updates_ws.get_all_records())
-            except Exception:
-                updates_ws = sheet.add_worksheet(title="Project_Updates", rows=1000, cols=6)
-                updates_ws.update(["Project ID", "Date", "Submitted By", "Description", "Type", "Timestamp"])
-                df_updates = pd.DataFrame()
-
-            project_updates = df_updates[df_updates["Project ID"] == selected_project] if not df_updates.empty else pd.DataFrame()
-
-            if not project_updates.empty:
-                st.markdown("#### Project Update Feed")
-                for _, row in project_updates.sort_values("Timestamp", ascending=False).iterrows():
-                    st.markdown(f"**{row['Date']}** — *{row['Type']}*  \\ 👤 {row['Submitted By']}  \\ {row['Description']}")
-            else:
-                st.info("No updates have been submitted for this investigation yet.")
-
-            # Reset values before showing form (only after submission)
-            if "clear_update_fields" in st.session_state:
-                st.session_state.update_type_input = ""
-                st.session_state.update_desc_input = ""
-                del st.session_state["clear_update_fields"]
-
-            st.markdown("#### Submit a New Update")
-            with st.form("submit_project_update"):
-                update_date = st.date_input("Date of event", value=datetime.today())
-                update_type = st.selectbox(
-                    "Type of update",
-                    ["", "Movement", "Suspicious Activity", "Legal Decision", "Logistic Operation", "Other"],
-                    key="update_type_input"
-                )
-                update_desc = st.text_area("Description of update", key="update_desc_input")
-                submit_update = st.form_submit_button("Submit Update")
-
-                if submit_update:
-                    new_entry = {
-                        "Project ID": selected_project,
-                        "Date": update_date.strftime("%Y-%m-%d"),
-                        "Submitted By": email,
-                        "Description": update_desc,
-                        "Type": update_type,
-                        "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    }
-                    try:
-                        current_data = updates_ws.get_all_values()
-                        if current_data:
-                            header = current_data[0]
-                            new_row = [new_entry.get(col, "") for col in header]
-                            updates_ws.append_row(new_row)
+                    if submit_add:
+                        if not new_emails.strip():
+                            st.warning("Please enter at least one email.")
                         else:
-                            updates_ws.update([list(new_entry.keys()), list(new_entry.values())])
-                        st.success("Update submitted successfully.")
-                        # Flag to clear inputs on next rerun
-                        st.session_state["clear_update_fields"] = True
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Failed to submit update: {e}")
+                            emails = [e.strip() for e in new_emails.split(",") if e.strip()]
+                            added = 0
+                            for idx, row in df_users.iterrows():
+                                user_email = row["E-Mail"].strip()
+                                if user_email in emails:
+                                    current_projects = row["Projects"].strip()
+                                    project_list = [p.strip() for p in current_projects.split(",")] if current_projects else []
+                                    if selected_project not in project_list:
+                                        project_list.append(selected_project)
+                                        df_users.at[idx, "Projects"] = ", ".join(sorted(set(project_list)))
+                                        added += 1
+                            try:
+                                users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
+                                st.success(f"{added} user(s) added to '{selected_project}'.")
+                                if "add_members_input" in st.session_state:
+                                    del st.session_state["add_members_input"]
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Failed to update sheet: {e}")
 
-        # --- GESTÃO DE MEMBROS DO PROJETO
-        elif collab_tab == "Manage Members" and (is_admin() or is_lead()):
-            st.markdown("### Add Members to This Investigation")
-            with st.form("manage_project_members_add"):
-                new_emails = st.text_area(
-                    f"Add user emails to '{selected_project}' (comma-separated)",
-                    placeholder="email1@org.org, email2@org.org",
-                    key="add_members_input"
-                )
-                submit_add = st.form_submit_button("Add Members")
+                st.markdown("### Remove Member from This Project")
+                project_members = df_users[df_users["Projects"].str.contains(selected_project, case=False)]
+                member_emails = project_members["E-Mail"].tolist()
 
-                if submit_add:
-                    if not new_emails.strip():
-                        st.warning("Please enter at least one email.")
-                    else:
-                        emails = [e.strip() for e in new_emails.split(",") if e.strip()]
-                        added = 0
+                with st.form("remove_project_member_form"):
+                    email_to_remove = st.selectbox("Select member to remove:", member_emails, key="remove_member_input")
+                    submit_remove = st.form_submit_button("Remove Member")
+
+                    if submit_remove:
                         for idx, row in df_users.iterrows():
-                            user_email = row["E-Mail"].strip()
-                            if user_email in emails:
-                                current_projects = row["Projects"].strip()
-                                project_list = [p.strip() for p in current_projects.split(",")] if current_projects else []
-                                if selected_project not in project_list:
-                                    project_list.append(selected_project)
-                                    df_users.at[idx, "Projects"] = ", ".join(sorted(set(project_list)))
-                                    added += 1
+                            if row["E-Mail"].strip() == email_to_remove:
+                                projects = [p.strip() for p in row["Projects"].split(",") if p.strip()]
+                                if selected_project in projects:
+                                    projects.remove(selected_project)
+                                    df_users.at[idx, "Projects"] = ", ".join(projects)
                         try:
                             users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
-                            st.success(f"{added} user(s) added to '{selected_project}'.")
-                            if "add_members_input" in st.session_state:
-                                del st.session_state["add_members_input"]
+                            st.success(f"User '{email_to_remove}' removed from '{selected_project}'.")
+                            if "remove_member_input" in st.session_state:
+                                del st.session_state["remove_member_input"]
                             st.rerun()
                         except Exception as e:
                             st.error(f"Failed to update sheet: {e}")
-
-            st.markdown("### Remove Member from This Project")
-            project_members = df_users[df_users["Projects"].str.contains(selected_project, case=False)]
-            member_emails = project_members["E-Mail"].tolist()
-
-            with st.form("remove_project_member_form"):
-                email_to_remove = st.selectbox("Select member to remove:", member_emails, key="remove_member_input")
-                submit_remove = st.form_submit_button("Remove Member")
-
-                if submit_remove:
-                    for idx, row in df_users.iterrows():
-                        if row["E-Mail"].strip() == email_to_remove:
-                            projects = [p.strip() for p in row["Projects"].split(",") if p.strip()]
-                            if selected_project in projects:
-                                projects.remove(selected_project)
-                                df_users.at[idx, "Projects"] = ", ".join(projects)
-                    try:
-                        users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
-                        st.success(f"User '{email_to_remove}' removed from '{selected_project}'.")
-                        if "remove_member_input" in st.session_state:
-                            del st.session_state["remove_member_input"]
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Failed to update sheet: {e}")
 
 if uploaded_file is None and st.session_state.get("user"):
     try:
