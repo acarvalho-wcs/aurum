@@ -2059,7 +2059,6 @@ if "user" in st.session_state:
                 except Exception:
                     df_updates = pd.DataFrame()
 
-                st.markdown("---")
                 st.markdown("#### Investigation Timeline")
 
                 if "Project Id" in df_updates.columns:
