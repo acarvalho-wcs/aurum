@@ -2247,6 +2247,9 @@ if "user" in st.session_state:
                         key="update_type_input"
                     )
                     update_desc = st.text_area("Description of update", key="update_desc_input")
+                    update_link = st.text_area("Link(s)", key="update_desc_input")
+                    submit_update = st.form_submit_button("Submit Update")
+                    
                     submit_update = st.form_submit_button("Submit Update")
 
                     if submit_update:
