@@ -2084,9 +2084,10 @@ if "user" in st.session_state:
                                     f"<p><strong>{row.get('Date', 'Unknown Date')}</strong> — <em>{row.get('Type', 'Unspecified')}</em><br>"
                                     f"👤 {row.get('Submitted By', 'Unknown')}<br>"
                                     f"{row.get('Description', '')}</p><hr style='margin:8px 0;'>"
-                                    for _, row in sorted_updates.iterrows()
-                                ])}
-                            </div>
+                                        for _, row in sorted_updates.iterrows()
+                                    ]) + "</div>"
+                                )
+                            }
                         </div>
                         """,
                         unsafe_allow_html=True
