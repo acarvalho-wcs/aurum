@@ -2077,11 +2077,28 @@ if "user" in st.session_state:
                 # --- Exibição final
                 with st.container():
 
-                    # Monta timeline como HTML de linha única
-                    timeline_items = [
-                        f"<p><strong>{row.get('Date', 'Unknown Date')}</strong> — <em>{row.get('Type', 'Unspecified')}</em> · 👤 {row.get('Submitted By', 'Unknown')} · {row.get('Description', '')}</p>"
-                        for _, row in sorted_updates.iterrows()
-                    ]
+                    # Monta timeline como HTML de linha única com links (se houver)
+                    timeline_items = []
+                    for _, row in sorted_updates.iterrows():
+                        date = row.get("Date", "Unknown Date")
+                        type_ = row.get("Type", "Unspecified")
+                        author = row.get("Submitted By", "Unknown")
+                        desc = row.get("Description", "")
+                        links_raw = row.get("Links", "").strip()
+
+                        # Processa os links (se houver)
+                        links_html = ""
+                        if links_raw:
+                            links = [link.strip() for part in links_raw.splitlines() for link in part.split(",") if link.strip()]
+                            links_html = " · " + " | ".join(
+                                f"<a href='{link}' target='_blank'>🔗 Link</a>" for link in links
+                            )
+
+                        # Monta a linha
+                        timeline_items.append(
+                            f"<p><strong>{date}</strong> — <em>{type_}</em> · 👤 {author} · {desc}{links_html}</p>"
+                        )
+
                     timeline_html = "<div>" + "".join(timeline_items) + "</div>" if timeline_items else "<p>No updates have been submitted for this investigation yet.</p>"
 
                     st.markdown(
@@ -2104,6 +2121,7 @@ if "user" in st.session_state:
                     )
 
                 st.markdown("<div style='height: 32px;'></div>", unsafe_allow_html=True)
+
 
         # --- CRIAÇÃO DE PROJETOS
         elif collab_tab == "Create Investigation" and (is_admin() or is_lead()):
