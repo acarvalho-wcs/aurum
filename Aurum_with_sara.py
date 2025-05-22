@@ -2088,7 +2088,6 @@ if "user" in st.session_state:
                                 <li><strong>Status:</strong> {selected_data.get('Project Status', 'N/A')}</li>
                                 <li><strong>Summary:</strong> {selected_data.get('Summary', 'No summary provided.')}</li>
                             </ul>
-                            <hr>
                             <h5>Investigation Timeline</h5>
                             {timeline_html}
                         </div>
