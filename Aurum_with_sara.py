@@ -2043,24 +2043,6 @@ if "user" in st.session_state:
 
                 selected_data = user_projects[user_projects["Project Id"] == selected_investigation].iloc[0]
 
-                with st.container():
-                    st.markdown(
-                        f"""
-                        <div style="border: 1px solid #cccccc; border-radius: 12px; padding: 16px; background-color: #f9f9f9;">
-                            <h4>Summary for: <b>{selected_data.get('Project Name', 'Unknown')}</b></h4>
-                            <ul style="list-style-type: none; padding-left: 0;">
-                                <li><strong>Lead:</strong> {selected_data.get('Lead', 'N/A')}</li>
-                                <li><strong>Cases Involved:</strong> {selected_data.get('Cases Involved', 'N/A')}</li>
-                                <li><strong>Species:</strong> {selected_data.get('Target Species', 'N/A')}</li>
-                                <li><strong>Countries:</strong> {selected_data.get('Countries Covered', 'N/A')}</li>
-                                <li><strong>Status:</strong> {selected_data.get('Project Status', 'N/A')}</li>
-                                <li><strong>Summary:</strong><br>{selected_data.get('Summary', 'No summary provided.')}</li>
-                            </ul>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
                 # --- Leitura de atualizações do feed
                 try:
                     updates_ws = sheet.worksheet("Project_Updates")
@@ -2069,21 +2051,39 @@ if "user" in st.session_state:
                 except Exception:
                     df_updates = pd.DataFrame()
 
-                st.markdown("#### Investigation Timeline")
-
                 if "Project Id" in df_updates.columns:
                     filtered_updates = df_updates[df_updates["Project Id"] == selected_investigation]
                 else:
                     filtered_updates = pd.DataFrame()
 
-                if filtered_updates.empty:
-                    st.info("No updates have been submitted for this investigation yet.")
-                else:
-                    for _, row in filtered_updates.sort_values("Timestamp", ascending=False).iterrows():
-                        st.markdown(
-                            f"**{row.get('Date', 'Unknown Date')}** — *{row.get('Type', 'Unspecified')}*  \\\\ 👤 {row.get('Submitted By', 'Unknown')}  \\\\ {row.get('Description', '')}"
-                        )
-                        st.markdown("---")
+                with st.container():
+                    st.markdown(
+                        f"""
+                        <div style="border: 1px solid #cccccc; border-radius: 12px; padding: 16px; background-color: #f9f9f9;">
+                            <h4>🕵️ Summary for: <b>{selected_data.get('Project Name', 'Unknown')}</b></h4>
+                            <ul style="list-style-type: none; padding-left: 0;">
+                                <li><strong>Lead:</strong> {selected_data.get('Lead', 'N/A')}</li>
+                                <li><strong>Cases Involved:</strong> {selected_data.get('Cases Involved', 'N/A')}</li>
+                                <li><strong>Species:</strong> {selected_data.get('Target Species', 'N/A')}</li>
+                                <li><strong>Countries:</strong> {selected_data.get('Countries Covered', 'N/A')}</li>
+                                <li><strong>Status:</strong> {selected_data.get('Project Status', 'N/A')}</li>
+                                <li><strong>Summary:</strong><br>{selected_data.get('Summary', 'No summary provided.')}</li>
+                            </ul>
+                            <hr>
+                            <h5>📅 Investigation Timeline</h5>
+                            {"<p>No updates have been submitted for this investigation yet.</p>" if filtered_updates.empty else ""}
+                            <div>
+                                {''.join([
+                                    f"<p><strong>{row.get('Date', 'Unknown Date')}</strong> — <em>{row.get('Type', 'Unspecified')}</em><br>"
+                                    f"👤 {row.get('Submitted By', 'Unknown')}<br>"
+                                    f"{row.get('Description', '')}</p><hr style='margin:8px 0;'>"
+                                    for _, row in filtered_updates.sort_values('Timestamp', ascending=False).iterrows()
+                                ])}
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
         
         if collab_tab in ["Update Investigations", "Manage Members"]:
             if user_projects_list:
