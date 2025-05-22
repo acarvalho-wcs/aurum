@@ -2019,6 +2019,7 @@ if "user" in st.session_state:
         )
 
         selected_project = None
+
         # --- DASHBOARD
         if collab_tab == "Investigation Dashboard":
             st.markdown("### Investigations You Collaborate On")
@@ -2056,13 +2057,24 @@ if "user" in st.session_state:
                 else:
                     filtered_updates = pd.DataFrame()
 
-                # Ordenação segura
                 if "Timestamp" in filtered_updates.columns:
                     sorted_updates = filtered_updates.sort_values("Timestamp", ascending=False)
                 else:
                     sorted_updates = filtered_updates
 
-                # Renderização na caixa
+                # --- Montagem da timeline em HTML seguro
+                if sorted_updates.empty:
+                    timeline_html = "<p>No updates have been submitted for this investigation yet.</p>"
+                else:
+                    timeline_items = [
+                        f"<p><strong>{row.get('Date', 'Unknown Date')}</strong> — <em>{row.get('Type', 'Unspecified')}</em><br>"
+                        f"👤 {row.get('Submitted By', 'Unknown')}<br>"
+                        f"{row.get('Description', '')}</p><hr style='margin:8px 0;'>"
+                        for _, row in sorted_updates.iterrows()
+                    ]
+                    timeline_html = "<div>" + "".join(timeline_items) + "</div>"
+
+                # --- Exibição final
                 with st.container():
                     st.markdown(
                         f"""
@@ -2077,17 +2089,8 @@ if "user" in st.session_state:
                                 <li><strong>Summary:</strong><br>{selected_data.get('Summary', 'No summary provided.')}</li>
                             </ul>
                             <hr>
-                            <h5>📅 Investigation Timeline</h5>
-                            {"<p>No updates have been submitted for this investigation yet.</p>" if sorted_updates.empty else ""}
-                            <div>
-                                {''.join([
-                                    f"<p><strong>{row.get('Date', 'Unknown Date')}</strong> — <em>{row.get('Type', 'Unspecified')}</em><br>"
-                                    f"👤 {row.get('Submitted By', 'Unknown')}<br>"
-                                    f"{row.get('Description', '')}</p><hr style='margin:8px 0;'>"
-                                        for _, row in sorted_updates.iterrows()
-                                    ]) + "</div>"
-                                )
-                            }
+                            <h5>Investigation Timeline</h5>
+                            {timeline_html}
                         </div>
                         """,
                         unsafe_allow_html=True
