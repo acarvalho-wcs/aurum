@@ -2105,6 +2105,92 @@ if "user" in st.session_state:
 
                 st.markdown("<div style='height: 32px;'></div>", unsafe_allow_html=True)
 
+        # --- CRIAÇÃO DE PROJETOS
+        elif collab_tab == "Create Investigation" and (is_admin() or is_lead()):
+            st.markdown("### Create New Investigation")
+
+            field_keys = {
+                "project": "create_project_code",
+                "members": "create_project_emails"
+            }
+
+            with st.form("create_project_form"):
+                new_project = st.text_input(
+                    "Investigation code (no spaces, e.g., trafick_br)",
+                    key=field_keys["project"]
+                )
+                new_members_raw = st.text_area(
+                    "Add collaborators' emails (comma-separated)",
+                    placeholder="email1@org.org, email2@org.org",
+                    key=field_keys["members"]
+                )
+
+                st.markdown("#### Additional Investigation Metadata")
+                name = st.text_input("Investigation name")
+                species = st.text_input("Target species (comma-separated)")
+                countries = st.text_input("Countries covered")
+                cases = st.text_input("Cases involved (comma-separated Case #)")
+                monitoring = st.selectbox("Monitoring type", ["Passive", "Active", "Mixed"])
+                status = st.selectbox("Investigation status", ["Ongoing", "Finalized", "On Hold", "Cancelled"])
+                summary = st.text_area("Investigation summary (brief description)")
+
+                submit_new_project = st.form_submit_button("Create Investigation")
+
+                if submit_new_project:
+                    if not new_project.strip():
+                        st.warning("Please provide an investigation code.")
+                    else:
+                        new_project = new_project.strip()
+                        emails = [e.strip() for e in new_members_raw.split(",") if e.strip()]
+                        updated = 0
+
+                        for idx, row in df_users.iterrows():
+                            user_email = row["E-Mail"].strip()
+                            if user_email in emails:
+                                current_projects = row["Projects"].strip()
+                                project_list = [p.strip() for p in current_projects.split(",")] if current_projects else []
+                                if new_project not in project_list:
+                                    project_list.append(new_project)
+                                    df_users.at[idx, "Projects"] = ", ".join(sorted(set(project_list)))
+                                    updated += 1
+
+                        new_project_entry = {
+                            "Project ID": new_project,
+                            "Project Name": name,
+                            "Lead": email,
+                            "Collaborators": ", ".join(emails),
+                            "Creation Date": datetime.today().strftime("%Y-%m-%d"),
+                            "Cases Involved": cases,
+                            "Target Species": species,
+                            "Countries Covered": countries,
+                            "Monitoring Type": monitoring,
+                            "Project Status": status,
+                            "Summary": summary,
+                            "Last Update": datetime.today().strftime("%Y-%m-%d"),
+                            "Public": "FALSE"
+                        }
+
+                        try:
+                            users_ws.update([df_users.columns.values.tolist()] + df_users.values.tolist())
+
+                            current_projects_data = projects_ws.get_all_values()
+                            if current_projects_data:
+                                header = current_projects_data[0]
+                                new_row = [new_project_entry.get(col, "") for col in header]
+                                projects_ws.append_row(new_row)
+                            else:
+                                header = list(new_project_entry.keys())
+                                new_row = list(new_project_entry.values())
+                                projects_ws.update([header, new_row])
+
+                            st.success(f"✅ Project '{new_project}' created and assigned to {updated} user(s).")
+                            for k in field_keys.values():
+                                if k in st.session_state:
+                                    del st.session_state[k]
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed to update sheet: {e}")
+
         # --- UPDATE INVESTIGATIONS e MANAGE MEMBERS: Selecionar projeto primeiro
         elif collab_tab in ["Update Investigations", "Manage Members"]:
             user_projects_list = []
