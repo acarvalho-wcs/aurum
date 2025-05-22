@@ -2236,6 +2236,7 @@ if "user" in st.session_state:
                 if "clear_update_fields" in st.session_state:
                     st.session_state.update_type_input = ""
                     st.session_state.update_desc_input = ""
+                    st.session_state.update_links = ""
                     del st.session_state["clear_update_fields"]
 
                 st.markdown("#### Submit a New Update")
