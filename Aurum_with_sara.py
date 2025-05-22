@@ -2043,13 +2043,23 @@ if "user" in st.session_state:
 
                 selected_data = user_projects[user_projects["Project Id"] == selected_investigation].iloc[0]
 
-                st.markdown(f"#### Summary for: **{selected_data.get('Project Name', 'Unknown')}**")
-                st.markdown(f"**Lead:** {selected_data.get('Lead', 'N/A')}")
-                st.markdown(f"**Cases Involved:** {selected_data.get('Cases Involved', 'N/A')}")
-                st.markdown(f"**Species:** {selected_data.get('Target Species', 'N/A')}")
-                st.markdown(f"**Countries:** {selected_data.get('Countries Covered', 'N/A')}")
-                st.markdown(f"**Status:** {selected_data.get('Project Status', 'N/A')}")
-                st.markdown(f"**Summary:** {selected_data.get('Summary', 'No summary provided.')}")
+                with st.container():
+                    st.markdown(
+                        f"""
+                        <div style="border: 1px solid #cccccc; border-radius: 12px; padding: 16px; background-color: #f9f9f9;">
+                            <h4>Summary for: <b>{selected_data.get('Project Name', 'Unknown')}</b></h4>
+                            <ul style="list-style-type: none; padding-left: 0;">
+                                <li><strong>Lead:</strong> {selected_data.get('Lead', 'N/A')}</li>
+                                <li><strong>Cases Involved:</strong> {selected_data.get('Cases Involved', 'N/A')}</li>
+                                <li><strong>Species:</strong> {selected_data.get('Target Species', 'N/A')}</li>
+                                <li><strong>Countries:</strong> {selected_data.get('Countries Covered', 'N/A')}</li>
+                                <li><strong>Status:</strong> {selected_data.get('Project Status', 'N/A')}</li>
+                                <li><strong>Summary:</strong><br>{selected_data.get('Summary', 'No summary provided.')}</li>
+                            </ul>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
 
                 # --- Leitura de atualizações do feed
                 try:
