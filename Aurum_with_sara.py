@@ -2076,6 +2076,14 @@ if "user" in st.session_state:
 
                 # --- Exibição final
                 with st.container():
+
+                    # Monta timeline como HTML de linha única
+                    timeline_items = [
+                        f"<p><strong>{row.get('Date', 'Unknown Date')}</strong> — <em>{row.get('Type', 'Unspecified')}</em> · 👤 {row.get('Submitted By', 'Unknown')} · {row.get('Description', '')}</p>"
+                        for _, row in sorted_updates.iterrows()
+                    ]
+                    timeline_html = "<div>" + "".join(timeline_items) + "</div>" if timeline_items else "<p>No updates have been submitted for this investigation yet.</p>"
+
                     st.markdown(
                         f"""
                         <div style="border: 1px solid #cccccc; border-radius: 12px; padding: 16px; background-color: #f9f9f9;">
@@ -2088,7 +2096,7 @@ if "user" in st.session_state:
                                 <li><strong>Status:</strong> {selected_data.get('Project Status', 'N/A')}</li>
                                 <li><strong>Summary:</strong> {selected_data.get('Summary', 'No summary provided.')}</li>
                             </ul>
-                            <h5 style="margin-top: 24px;">Investigation Timeline</h5>
+                            <h5 style="margin-top: 24px;">📅 Investigation Timeline</h5>
                             {timeline_html}
                         </div>
                         """,
