@@ -2103,6 +2103,8 @@ if "user" in st.session_state:
                         unsafe_allow_html=True
                     )
 
+                st.markdown("<div style='height: 32px;'></div>", unsafe_allow_html=True)
+
         # --- UPDATE INVESTIGATIONS e MANAGE MEMBERS: Selecionar projeto primeiro
         elif collab_tab in ["Update Investigations", "Manage Members"]:
             user_projects_list = []
