@@ -1352,9 +1352,11 @@ if "user" in st.session_state:
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
+
 else:
     st.sidebar.markdown("## 🔐 Login to Aurum")
 
+    # Usando keys explícitos para controlar valores via session_state
     if "login_username" not in st.session_state:
         st.session_state["login_username"] = ""
     if "login_password" not in st.session_state:
@@ -1367,7 +1369,7 @@ else:
     login_button = login_col.button("Login")
 
     def verify_password(password, hashed):
-        return password == hashed  # ajuste para debug; substitua por hash comparável se necessário
+        return password == hashed_pw
 
     if login_button and username and password:
         user_row = users_df[users_df["Username"] == username]
@@ -1378,9 +1380,8 @@ else:
                 st.session_state["user"] = username
                 st.session_state["user_email"] = user_row.iloc[0]["E-Mail"]
                 st.session_state["is_admin"] = str(user_row.iloc[0]["Is_Admin"]).strip().lower() == "true"
-                st.session_state["is_authenticated"] = True
 
-                # Limpa os campos de login
+                # Limpa os campos após login bem-sucedido
                 st.session_state.pop("login_username", None)
                 st.session_state.pop("login_password", None)
 
