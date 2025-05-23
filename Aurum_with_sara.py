@@ -117,20 +117,6 @@ users_df = pd.DataFrame(users_ws.get_all_records())
 def get_worksheet(name="Aurum_data"):
     return sheets.worksheet(name)
 
-# --- Função para registrar sessões ---
-def log_session():
-    if st.session_state.get("is_authenticated") and st.session_state.get("username") and st.session_state.get("email"):
-        try:
-            session_ws = get_worksheet("Sessions")
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            session_ws.append_row([
-                st.session_state["username"],
-                st.session_state["email"],
-                timestamp
-            ])
-        except Exception as e:
-            st.warning(f"\u26a0\ufe0f Failed to log session: {e}")
-
 # --- Executar registro apenas uma vez por sessão para evitar duplicatas ---
 if "session_logged" not in st.session_state:
     log_session()
@@ -1366,11 +1352,9 @@ if "user" in st.session_state:
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
-
 else:
     st.sidebar.markdown("## 🔐 Login to Aurum")
 
-    # Usando keys explícitos para controlar valores via session_state
     if "login_username" not in st.session_state:
         st.session_state["login_username"] = ""
     if "login_password" not in st.session_state:
@@ -1383,7 +1367,7 @@ else:
     login_button = login_col.button("Login")
 
     def verify_password(password, hashed):
-        return password == hashed_pw
+        return password == hashed  # ajuste para debug; substitua por hash comparável se necessário
 
     if login_button and username and password:
         user_row = users_df[users_df["Username"] == username]
@@ -1394,8 +1378,9 @@ else:
                 st.session_state["user"] = username
                 st.session_state["user_email"] = user_row.iloc[0]["E-Mail"]
                 st.session_state["is_admin"] = str(user_row.iloc[0]["Is_Admin"]).strip().lower() == "true"
+                st.session_state["is_authenticated"] = True
 
-                # Limpa os campos após login bem-sucedido
+                # Limpa os campos de login
                 st.session_state.pop("login_username", None)
                 st.session_state.pop("login_password", None)
 
@@ -1404,6 +1389,25 @@ else:
                 st.error("Incorrect password.")
         else:
             st.error("User not approved or does not exist.")
+
+# --- Função para registrar sessões ---
+def log_session():
+    if st.session_state.get("is_authenticated") and st.session_state.get("user") and st.session_state.get("user_email"):
+        try:
+            session_ws = get_worksheet("Sessions")
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            session_ws.append_row([
+                st.session_state["user"],
+                st.session_state["user_email"],
+                timestamp
+            ])
+        except Exception as e:
+            st.warning(f"\u26a0\ufe0f Failed to log session: {e}")
+
+# --- Executar uma única vez ---
+if st.session_state.get("is_authenticated") and "session_logged" not in st.session_state:
+    log_session()
+    st.session_state["session_logged"] = True
 
 # --- FORMULÁRIO DE ACESSO (REQUISIÇÃO) ---
 # Inicializa estado
