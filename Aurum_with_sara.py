@@ -143,7 +143,7 @@ if uploaded_file is None:
     By integrating advanced statistical methods and interactive visualizations, Aurum enables researchers, enforcement agencies, and conservation organizations to identify operational patterns and support data-driven responses to IWT.
 
     Click the small arrow at the top-left corner (`>`) to open the sidebar and upload your XLSX data file.
-    
+
     For the full Aurum experience, please request access or log in if you already have an account.  
     Click **About Aurum** to learn more about each analysis module.
     """)
