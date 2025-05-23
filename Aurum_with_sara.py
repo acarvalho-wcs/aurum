@@ -1343,8 +1343,6 @@ if export_html and df_selected is not None:
 def load_users_data():
     return pd.DataFrame(users_ws.get_all_records())
 
-users_df = load_users_data()
-
 # --- Função para registrar sessões (apenas após login validado) ---
 def log_session(username, email):
     try:
@@ -1382,7 +1380,10 @@ else:
         return password == hashed
 
     if login_button and username and password:
+        # ← AQUI: só carrega os dados após o clique no botão
+        users_df = load_users_data()
         user_row = users_df[users_df["Username"] == username]
+
         if not user_row.empty and str(user_row.iloc[0]["Approved"]).strip().lower() == "true":
             hashed_pw = user_row.iloc[0]["Password"].strip()
 
