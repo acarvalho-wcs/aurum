@@ -177,26 +177,32 @@ if uploaded_file is None:
 
         # --- EXIBIÇÃO DO PAINEL PÚBLICO ---
         st.markdown("### Platform Overview")
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
-        col1, col2, col3, col4, col5, col6 = st.columns(6)
+        col1, col2, col3 = st.columns(3)
+        col4, col5, col6 = st.columns(3)
+
+        def styled_box(title, value, description):
+            return f"""
+            <div style="border: 1px solid #ddd; border-radius: 10px; padding: 16px; background-color: #f9f9f9; text-align: center;">
+                <div style="font-size: 24px; font-weight: bold; color: #333;">{value}</div>
+                <div style="font-size: 16px; font-weight: 600; margin-top: 4px;">{title}</div>
+                <div style="font-size: 13px; color: #666; margin-top: 2px;">{description}</div>
+            </div>
+            """
 
         with col1:
-            st.metric(label="Users", value=total_users)
-
+            st.markdown(styled_box("Users", total_users, "Registered users"), unsafe_allow_html=True)
         with col2:
-            st.metric(label="Logged (1h)", value=logged_count)
-
+            st.markdown(styled_box("Logged (1h)", logged_count, "Active users in last hour"), unsafe_allow_html=True)
         with col3:
-            st.metric(label="Last Update", value=last_update)
-
+            st.markdown(styled_box("Last Update", last_update, "Platform revision date"), unsafe_allow_html=True)
         with col4:
-            st.metric(label="Cases", value=total_cases)
-
+            st.markdown(styled_box("Cases", total_cases, "Registered cases"), unsafe_allow_html=True)
         with col5:
-            st.metric(label="Species", value=total_species)
-
+            st.markdown(styled_box("Species", total_species, "Species with recorded cases"), unsafe_allow_html=True)
         with col6:
-            st.metric(label="Investigations", value=ongoing_projects)
+            st.markdown(styled_box("Investigations", ongoing_projects, "Ongoing investigations"), unsafe_allow_html=True)
 
     except Exception as e:
         st.warning(f"⚠️ Dashboard temporarily unavailable: {e}")
