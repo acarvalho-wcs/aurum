@@ -117,25 +117,6 @@ users_df = pd.DataFrame(users_ws.get_all_records())
 def get_worksheet(name="Aurum_data"):
     return sheets.worksheet(name)
 
-# --- Função para registrar sessões ---
-def log_session():
-    if st.session_state.get("is_authenticated") and st.session_state.get("username") and st.session_state.get("email"):
-        try:
-            session_ws = get_worksheet("Sessions")
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            session_ws.append_row([
-                st.session_state["username"],
-                st.session_state["email"],
-                timestamp
-            ])
-        except Exception as e:
-            st.warning(f"\u26a0\ufe0f Failed to log session: {e}")
-
-# --- Executar registro apenas uma vez por sessão para evitar duplicatas ---
-if "session_logged" not in st.session_state:
-    log_session()
-    st.session_state["session_logged"] = True
-
 # --- Mensagem inicial caso nenhum arquivo tenha sido enviado e usuário não esteja logado ---
 if uploaded_file is None:
     st.markdown("""
@@ -1404,6 +1385,25 @@ else:
                 st.error("Incorrect password.")
         else:
             st.error("User not approved or does not exist.")
+
+# --- Função para registrar sessões ---
+def log_session():
+    if st.session_state.get("is_authenticated") and st.session_state.get("username") and st.session_state.get("email"):
+        try:
+            session_ws = get_worksheet("Sessions")
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            session_ws.append_row([
+                st.session_state["username"],
+                st.session_state["email"],
+                timestamp
+            ])
+        except Exception as e:
+            st.warning(f"\u26a0\ufe0f Failed to log session: {e}")
+
+# --- Executar registro apenas uma vez por sessão para evitar duplicatas ---
+if "session_logged" not in st.session_state:
+    log_session()
+    st.session_state["session_logged"] = True
 
 # --- Executar uma única vez ---
 if st.session_state.get("is_authenticated") and "session_logged" not in st.session_state:
