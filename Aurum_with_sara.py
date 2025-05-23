@@ -128,6 +128,78 @@ if uploaded_file is None:
     Click **About Aurum** to learn more about each analysis module.
     """)
 
+    # --- DASHBOARD PÚBLICO VISÍVEL APÓS O TEXTO INICIAL ---
+    try:
+        df_projects = pd.DataFrame(sheets.worksheet("Projects").get_all_records())
+        df_cases = pd.DataFrame(sheet.worksheet("Aurum_data").get_all_records()) if "Aurum_data" in [ws.title for ws in sheets.worksheets()] else pd.DataFrame()
+        df_sessions = pd.DataFrame(sheets.worksheet("Sessions").get_all_records()) if "Sessions" in [ws.title for ws in sheets.worksheets()] else pd.DataFrame()
+        df_meta = pd.DataFrame(sheets.worksheet("Metadata").get_all_records()) if "Metadata" in [ws.title for ws in sheets.worksheets()] else pd.DataFrame()
+
+        total_users = len(users_df)
+        total_cases = len(df_cases)
+
+        # --- ESPÉCIES ÚNICAS (ajustado para remover números) ---
+        species_col = "N seized specimens"
+        if not df_cases.empty and species_col in df_cases.columns:
+            species_list = df_cases[species_col].dropna().astype(str)
+            all_species = set()
+            for entry in species_list:
+                for s in entry.split(","):
+                    cleaned = s.strip()
+                    if cleaned:
+                        parts = cleaned.split(" ", 1)
+                        if len(parts) == 2:
+                            all_species.add(parts[1].strip())
+                        else:
+                            all_species.add(cleaned)
+            total_species = len(all_species)
+        else:
+            total_species = 0
+
+        # --- INVESTIGAÇÕES EM ANDAMENTO ---
+        ongoing_projects = df_projects[df_projects["Project Status"] == "Ongoing"].shape[0]
+
+        # --- USUÁRIOS LOGADOS NA ÚLTIMA HORA ---
+        if not df_sessions.empty and "Timestamp" in df_sessions.columns:
+            df_sessions["Timestamp"] = pd.to_datetime(df_sessions["Timestamp"], errors="coerce")
+            now = datetime.now()
+            logged_count = df_sessions[df_sessions["Timestamp"] > now - timedelta(hours=1)]["Username"].nunique()
+        else:
+            logged_count = 0
+
+        # --- ÚLTIMA ATUALIZAÇÃO MANUAL ---
+        if not df_meta.empty and "Key" in df_meta.columns and "Value" in df_meta.columns:
+            last_update_row = df_meta[df_meta["Key"] == "Last Update"]
+            last_update = last_update_row.iloc[0]["Value"] if not last_update_row.empty else "Unavailable"
+        else:
+            last_update = "Unavailable"
+
+        # --- EXIBIÇÃO DO PAINEL PÚBLICO ---
+        st.markdown("### Platform Overview")
+
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
+
+        with col1:
+            card(title="Users", content=str(total_users), description="Registered users", key="card_total_users")
+
+        with col2:
+            card(title="Logged (1h)", content=str(logged_count), description="Active users in last hour", key="card_logged_hour")
+
+        with col3:
+            card(title="Last Update", content=last_update, description="Platform revision date", key="card_last_update")
+
+        with col4:
+            card(title="Cases", content=str(total_cases), description="Registered cases", key="card_total_cases")
+
+        with col5:
+            card(title="Species", content=str(total_species), description="Species with recorded cases", key="card_species_count")
+
+        with col6:
+            card(title="Investigations", content=str(ongoing_projects), description="Ongoing investigations", key="card_ongoing_projects")
+
+    except Exception as e:
+        st.warning(f"⚠️ Dashboard temporarily unavailable: {e}")
+
 # --- ALERTAS PÚBLICOS (visível para todos, inclusive sem login) ---
 def display_public_alerts_section(sheet_id):
     import folium
