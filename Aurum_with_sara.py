@@ -117,6 +117,22 @@ users_df = pd.DataFrame(users_ws.get_all_records())
 def get_worksheet(name="Aurum_data"):
     return sheets.worksheet(name)
 
+# --- Função para registrar sessões ---
+def log_session():
+    if st.session_state.get("is_authenticated"):
+        try:
+            session_ws = get_worksheet("Sessions")
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            session_ws.append_row([
+                st.session_state.get("username", "unknown"),
+                st.session_state.get("email", "unknown"),
+                timestamp
+            ])
+        except Exception as e:
+            st.warning(f"\u26a0\ufe0f Failed to log session: {e}")
+
+log_session()
+
 # --- Mensagem inicial caso nenhum arquivo tenha sido enviado e usuário não esteja logado ---
 if uploaded_file is None:
     st.markdown("""
