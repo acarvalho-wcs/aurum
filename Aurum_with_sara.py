@@ -1338,37 +1338,32 @@ if export_html and df_selected is not None:
         mime="text/html"
     )
 
-# --- LOGIN ---
-st.sidebar.markdown("---")
+# --- Função com cache curto para carregar os dados de usuários ---
+@st.cache_data(ttl=30)
+def load_users_data():
+    return pd.DataFrame(users_ws.get_all_records())
 
-# --- Função para registrar sessões ---
-def log_session():
+users_df = load_users_data()
+
+# --- Função para registrar sessões (apenas após login validado) ---
+def log_session(username, email):
     try:
         session_ws = get_worksheet("Sessions")
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        session_ws.append_row([
-            st.session_state["user"],
-            st.session_state["user_email"],
-            timestamp
-        ])
+        session_ws.append_row([username, email, timestamp])
     except Exception as e:
         st.warning(f"\u26a0\ufe0f Failed to log session: {e}")
 
-# --- Usuário já autenticado ---
+# --- LOGIN ---
+st.sidebar.markdown("---")
+
 if "user" in st.session_state:
     st.sidebar.markdown(f"✅ **{st.session_state['user']}** is connected.")
-    
-    # Loga sessão apenas uma vez
-    if "session_logged" not in st.session_state:
-        log_session()
-        st.session_state["session_logged"] = True
-
     if st.sidebar.button("Logout"):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
 
-# --- Formulário de login ---
 else:
     st.sidebar.markdown("## 🔐 Login to Aurum")
 
@@ -1384,7 +1379,7 @@ else:
     login_button = login_col.button("Login")
 
     def verify_password(password, hashed):
-        return password == hashed  # Ajuste temporário se hash ainda não está implementado
+        return password == hashed
 
     if login_button and username and password:
         user_row = users_df[users_df["Username"] == username]
@@ -1392,19 +1387,19 @@ else:
             hashed_pw = user_row.iloc[0]["Password"].strip()
 
             if verify_password(password, hashed_pw):
-                # Sessão segura
+                # Armazena dados da sessão
                 st.session_state["user"] = username
                 st.session_state["user_email"] = user_row.iloc[0]["E-Mail"]
                 st.session_state["is_admin"] = str(user_row.iloc[0]["Is_Admin"]).strip().lower() == "true"
-                st.session_state["is_authenticated"] = True
+
+                # Registra sessão apenas uma vez
+                if "session_logged" not in st.session_state:
+                    log_session(username, st.session_state["user_email"])
+                    st.session_state["session_logged"] = True
 
                 # Limpa campos de login
                 st.session_state.pop("login_username", None)
                 st.session_state.pop("login_password", None)
-
-                # Registra a sessão
-                log_session()
-                st.session_state["session_logged"] = True
 
                 st.rerun()
             else:
