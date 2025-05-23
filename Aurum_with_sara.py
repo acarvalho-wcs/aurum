@@ -130,10 +130,10 @@ if uploaded_file is None:
 
     # --- DASHBOARD PÚBLICO VISÍVEL APÓS O TEXTO INICIAL ---
     try:
-        df_projects = pd.DataFrame(sheets.worksheet("Projects").get_all_records())
-        df_cases = pd.DataFrame(sheet.worksheet("Aurum_data").get_all_records()) if "Aurum_data" in [ws.title for ws in sheets.worksheets()] else pd.DataFrame()
-        df_sessions = pd.DataFrame(sheets.worksheet("Sessions").get_all_records()) if "Sessions" in [ws.title for ws in sheets.worksheets()] else pd.DataFrame()
-        df_meta = pd.DataFrame(sheets.worksheet("Metadata").get_all_records()) if "Metadata" in [ws.title for ws in sheets.worksheets()] else pd.DataFrame()
+        df_projects = pd.DataFrame(get_worksheet("Projects").get_all_records())
+        df_cases = pd.DataFrame(get_worksheet("Aurum_data").get_all_records())
+        df_sessions = pd.DataFrame(get_worksheet("Sessions").get_all_records())
+        df_meta = pd.DataFrame(get_worksheet("Metadata").get_all_records())
 
         total_users = len(users_df)
         total_cases = len(df_cases)
