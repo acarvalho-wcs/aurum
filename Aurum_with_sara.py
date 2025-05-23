@@ -194,7 +194,7 @@ if uploaded_file is None:
         with col1:
             st.markdown(styled_box("Users", total_users, "Registered users"), unsafe_allow_html=True)
         with col2:
-            st.markdown(styled_box("Logged (1h)", logged_count, "Active users in last hour"), unsafe_allow_html=True)
+            st.markdown(styled_box("Logged)", logged_count, "Active users in last hour"), unsafe_allow_html=True)
         with col3:
             st.markdown(styled_box("Last Update", last_update, "Platform revision date"), unsafe_allow_html=True)
         with col4:
