@@ -27,6 +27,7 @@ from datetime import datetime
 import pytz
 from streamlit_shadcn_ui import tabs
 from streamlit_shadcn_ui import button
+from streamlit_shadcn_ui import card
 import streamlit.components.v1 as components
 brt = pytz.timezone("America/Sao_Paulo")
 
