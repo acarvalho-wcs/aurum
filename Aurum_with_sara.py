@@ -181,22 +181,22 @@ if uploaded_file is None:
         col1, col2, col3, col4, col5, col6 = st.columns(6)
 
         with col1:
-            card(title="Users", content=str(total_users), description="Registered users", key="card_total_users")
+            st.metric(label="Users", value=total_users)
 
         with col2:
-            card(title="Logged (1h)", content=str(logged_count), description="Active users in last hour", key="card_logged_hour")
+            st.metric(label="Logged (1h)", value=logged_count)
 
         with col3:
-            card(title="Last Update", content=last_update, description="Platform revision date", key="card_last_update")
+            st.metric(label="Last Update", value=last_update)
 
         with col4:
-            card(title="Cases", content=str(total_cases), description="Registered cases", key="card_total_cases")
+            st.metric(label="Cases", value=total_cases)
 
         with col5:
-            card(title="Species", content=str(total_species), description="Species with recorded cases", key="card_species_count")
+            st.metric(label="Species", value=total_species)
 
         with col6:
-            card(title="Investigations", content=str(ongoing_projects), description="Ongoing investigations", key="card_ongoing_projects")
+            st.metric(label="Investigations", value=ongoing_projects)
 
     except Exception as e:
         st.warning(f"⚠️ Dashboard temporarily unavailable: {e}")
