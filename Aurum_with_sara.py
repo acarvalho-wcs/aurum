@@ -117,6 +117,20 @@ users_df = pd.DataFrame(users_ws.get_all_records())
 def get_worksheet(name="Aurum_data"):
     return sheets.worksheet(name)
 
+# --- Função para registrar sessões ---
+def log_session():
+    if st.session_state.get("is_authenticated") and st.session_state.get("username") and st.session_state.get("email"):
+        try:
+            session_ws = get_worksheet("Sessions")
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            session_ws.append_row([
+                st.session_state["username"],
+                st.session_state["email"],
+                timestamp
+            ])
+        except Exception as e:
+            st.warning(f"\u26a0\ufe0f Failed to log session: {e}")
+
 # --- Executar registro apenas uma vez por sessão para evitar duplicatas ---
 if "session_logged" not in st.session_state:
     log_session()
@@ -128,7 +142,7 @@ if uploaded_file is None:
     **Aurum** is a criminal intelligence platform developed to support the monitoring and investigation of **illegal wildlife trade (IWT)**.
     By integrating advanced statistical methods and interactive visualizations, Aurum enables researchers, enforcement agencies, and conservation organizations to identify operational patterns and support data-driven responses to IWT.
 
-    Click the small arrow at the top-left corner (`>`) to open the sidebar and upload your XLSX data file.
+    Click the small arrow at the top-left corner (>) to open the sidebar and upload your XLSX data file.
 
     For the full Aurum experience, please request access or log in if you already have an account.  
     Click **About Aurum** to learn more about each analysis module.
@@ -1390,20 +1404,6 @@ else:
                 st.error("Incorrect password.")
         else:
             st.error("User not approved or does not exist.")
-
-# --- Função para registrar sessões ---
-def log_session():
-    if st.session_state.get("is_authenticated") and st.session_state.get("user") and st.session_state.get("user_email"):
-        try:
-            session_ws = get_worksheet("Sessions")
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            session_ws.append_row([
-                st.session_state["user"],
-                st.session_state["user_email"],
-                timestamp
-            ])
-        except Exception as e:
-            st.warning(f"\u26a0\ufe0f Failed to log session: {e}")
 
 # --- Executar uma única vez ---
 if st.session_state.get("is_authenticated") and "session_logged" not in st.session_state:
