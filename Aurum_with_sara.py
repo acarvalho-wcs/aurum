@@ -738,50 +738,51 @@ if uploaded_file is not None:
                     summary = multi_species_cases[['Case #', 'Country of offenders', 'Species', 'N_seized']].sort_values(by='Case #')
                     st.dataframe(summary)
 
-                    with st.expander("🌐 Visualize Co-occurrence Network (Sankey / Alluvial)"):
-                        if st.button("Generate Sankey / Alluvial"):
-                            st.write("🔎 Processing co-occurrences...")
+                    with st.expander("Visualize Co-occurrence Network (Bipartite Graph)"):
+                        if st.button("Generate Bipartite Graph"):
+                            st.write("Processing bipartite graph...")
 
-                            # Gera matriz de co-ocorrência
-                            df_binario = multi_species_cases.groupby(['Case #', 'Species']).size().unstack(fill_value=0)
-                            df_binario = df_binario.applymap(lambda x: 1 if x > 0 else 0)
-                            matriz_coocorrencia = df_binario.T.dot(df_binario)
+                            import networkx as nx
+                            import matplotlib.pyplot as plt
 
-                            # Converte para pares (source, target, count)
-                            pairs = []
-                            for i, sp1 in enumerate(matriz_coocorrencia.columns):
-                                for j, sp2 in enumerate(matriz_coocorrencia.columns):
+                            # Cria grafo bipartido
+                            B = nx.Graph()
+
+                            # Adiciona nós das espécies (um conjunto bipartido)
+                            species = matriz_coocorrencia.columns.tolist()
+                            B.add_nodes_from(species, bipartite=0)
+
+                            # Adiciona arestas de co-ocorrência
+                            for i, sp1 in enumerate(species):
+                                for j, sp2 in enumerate(species):
                                     if j > i:
                                         count = matriz_coocorrencia.loc[sp1, sp2]
                                         if count > 0:
-                                            pairs.append([sp1, sp2, count])
+                                            B.add_edge(sp1, sp2, weight=count)
 
-                            # Adiciona auto-links (frequências individuais)
-                            for sp in matriz_coocorrencia.columns:
-                                freq = matriz_coocorrencia.loc[sp, sp]
-                                if freq > 0:
-                                    pairs.append([sp, sp, freq])
+                            # Cria layout para visualização
+                            pos = nx.spring_layout(B, seed=42, k=0.3)
 
-                            df_pairs = pd.DataFrame(pairs, columns=['Species_A', 'Species_B', 'Count'])
+                            # Pega pesos para as arestas (largura)
+                            weights = [B[u][v]['weight'] for u, v in B.edges()]
 
-                            # Cria Sankey plot
-                            all_species = list(set(df_pairs['Species_A']).union(set(df_pairs['Species_B'])))
-                            label_index = {sp: idx for idx, sp in enumerate(all_species)}
-                            sources = df_pairs['Species_A'].map(label_index).tolist()
-                            targets = df_pairs['Species_B'].map(label_index).tolist()
-                            counts = df_pairs['Count'].tolist()
+                            # Desenha o grafo
+                            plt.figure(figsize=(12, 8))
+                            nx.draw(
+                                B, pos, with_labels=True,
+                                width=weights,
+                                edge_color='gray',
+                                node_color='skyblue',
+                                node_size=500,
+                                font_size=8
+                            )
+                            plt.title("Species Co-occurrence Bipartite Graph")
+                            st.pyplot(plt.gcf())
+                            plt.close()
 
-                            import plotly.graph_objects as go
-                            fig = go.Figure(data=[go.Sankey(
-                                node=dict(label=all_species, pad=15, thickness=15, line=dict(color="black", width=0.5)),
-                                link=dict(source=sources, target=targets, value=counts)
-                            )])
-                            fig.update_layout(title_text="Species Co-occurrence Sankey / Alluvial", font_size=10)
-                            st.plotly_chart(fig, use_container_width=True)
-
-                            # Botão para exportar CSV dos pares
-                            csv = df_pairs.to_csv(index=False).encode('utf-8')
-                            st.download_button("Download Co-occurrence Pairs (CSV)", data=csv, file_name="co_occurrence_pairs.csv", mime='text/csv')
+                            # Botão opcional para exportar o grafo em GraphML
+                            graphml_data = nx.generate_graphml(B)
+                            st.download_button("Download GraphML", data=''.join(graphml_data), file_name="cooccurrence_bipartite.graphml", mime="text/xml")
             
             show_anomaly = st.sidebar.checkbox("Anomaly Detection", value=False)
             if show_anomaly:
