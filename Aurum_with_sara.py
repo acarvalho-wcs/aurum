@@ -737,52 +737,6 @@ if uploaded_file is not None:
                 else:
                     summary = multi_species_cases[['Case #', 'Country of offenders', 'Species', 'N_seized']].sort_values(by='Case #')
                     st.dataframe(summary)
-
-                    with st.expander("Visualize Co-occurrence Network (Bipartite Graph)"):
-                        if st.button("Generate Bipartite Graph"):
-                            st.write("Processing bipartite graph...")
-
-                            import networkx as nx
-                            import matplotlib.pyplot as plt
-
-                            # Cria grafo bipartido
-                            B = nx.Graph()
-
-                            # Adiciona nós das espécies (um conjunto bipartido)
-                            species = matriz_coocorrencia.columns.tolist()
-                            B.add_nodes_from(species, bipartite=0)
-
-                            # Adiciona arestas de co-ocorrência
-                            for i, sp1 in enumerate(species):
-                                for j, sp2 in enumerate(species):
-                                    if j > i:
-                                        count = matriz_coocorrencia.loc[sp1, sp2]
-                                        if count > 0:
-                                            B.add_edge(sp1, sp2, weight=count)
-
-                            # Cria layout para visualização
-                            pos = nx.spring_layout(B, seed=42, k=0.3)
-
-                            # Pega pesos para as arestas (largura)
-                            weights = [B[u][v]['weight'] for u, v in B.edges()]
-
-                            # Desenha o grafo
-                            plt.figure(figsize=(12, 8))
-                            nx.draw(
-                                B, pos, with_labels=True,
-                                width=weights,
-                                edge_color='gray',
-                                node_color='skyblue',
-                                node_size=500,
-                                font_size=8
-                            )
-                            plt.title("Species Co-occurrence Bipartite Graph")
-                            st.pyplot(plt.gcf())
-                            plt.close()
-
-                            # Botão opcional para exportar o grafo em GraphML
-                            graphml_data = nx.generate_graphml(B)
-                            st.download_button("Download GraphML", data=''.join(graphml_data), file_name="cooccurrence_bipartite.graphml", mime="text/xml")
             
             show_anomaly = st.sidebar.checkbox("Anomaly Detection", value=False)
             if show_anomaly:
