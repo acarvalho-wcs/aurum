@@ -738,6 +738,45 @@ if uploaded_file is not None:
                     summary = multi_species_cases[['Case #', 'Country of offenders', 'Species', 'N_seized']].sort_values(by='Case #')
                     st.dataframe(summary)
 
+                    with st.expander("Visualize Co-occurrence Network (Sankey / Alluvial)"):
+                        if st.button("Generate Sankey / Alluvial"):
+                            st.write("Processing co-occurrences...")
+
+                            # Gera matriz de co-ocorrência
+                            df_binario = multi_species_cases.groupby(['Case #', 'Species']).size().unstack(fill_value=0)
+                            df_binario = df_binario.applymap(lambda x: 1 if x > 0 else 0)
+                            matriz_coocorrencia = df_binario.T.dot(df_binario)
+
+                            # Converte para pares (source, target, count)
+                            pairs = []
+                            for i, sp1 in enumerate(matriz_coocorrencia.columns):
+                                for j, sp2 in enumerate(matriz_coocorrencia.columns):
+                                    if j > i:
+                                        count = matriz_coocorrencia.loc[sp1, sp2]
+                                        if count > 0:
+                                            pairs.append([sp1, sp2, count])
+                            df_pairs = pd.DataFrame(pairs, columns=['Species_A', 'Species_B', 'Count'])
+
+                            # Cria Sankey plot
+                            all_species = list(set(df_pairs['Species_A']).union(set(df_pairs['Species_B'])))
+                            label_index = {sp: idx for idx, sp in enumerate(all_species)}
+                            sources = df_pairs['Species_A'].map(label_index).tolist()
+                            targets = df_pairs['Species_B'].map(label_index).tolist()
+                            counts = df_pairs['Count'].tolist()
+
+                            import plotly.graph_objects as go
+                            fig = go.Figure(data=[go.Sankey(
+                                node=dict(label=all_species, pad=15, thickness=15, line=dict(color="black", width=0.5)),
+                                link=dict(source=sources, target=targets, value=counts)
+                            )])
+                            fig.update_layout(title_text="Species Co-occurrence Sankey / Alluvial", font_size=10)
+                            st.plotly_chart(fig, use_container_width=True)
+
+                            # Botão para exportar CSV dos pares
+                            csv = df_pairs.to_csv(index=False).encode('utf-8')
+                            st.download_button("Download Co-occurrence Pairs (CSV)", data=csv, file_name="co_occurrence_pairs.csv", mime='text/csv')
+
+            
             show_anomaly = st.sidebar.checkbox("Anomaly Detection", value=False)
             if show_anomaly:
                 st.markdown("## Anomaly Detection")
