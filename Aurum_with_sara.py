@@ -738,9 +738,9 @@ if uploaded_file is not None:
                     summary = multi_species_cases[['Case #', 'Country of offenders', 'Species', 'N_seized']].sort_values(by='Case #')
                     st.dataframe(summary)
 
-                    with st.expander("Visualize Co-occurrence Network (Sankey / Alluvial)"):
+                    with st.expander("🌐 Visualize Co-occurrence Network (Sankey / Alluvial)"):
                         if st.button("Generate Sankey / Alluvial"):
-                            st.write("Processing co-occurrences...")
+                            st.write("🔎 Processing co-occurrences...")
 
                             # Gera matriz de co-ocorrência
                             df_binario = multi_species_cases.groupby(['Case #', 'Species']).size().unstack(fill_value=0)
@@ -755,6 +755,13 @@ if uploaded_file is not None:
                                         count = matriz_coocorrencia.loc[sp1, sp2]
                                         if count > 0:
                                             pairs.append([sp1, sp2, count])
+
+                            # Adiciona auto-links (frequências individuais)
+                            for sp in matriz_coocorrencia.columns:
+                                freq = matriz_coocorrencia.loc[sp, sp]
+                                if freq > 0:
+                                    pairs.append([sp, sp, freq])
+
                             df_pairs = pd.DataFrame(pairs, columns=['Species_A', 'Species_B', 'Count'])
 
                             # Cria Sankey plot
@@ -775,7 +782,6 @@ if uploaded_file is not None:
                             # Botão para exportar CSV dos pares
                             csv = df_pairs.to_csv(index=False).encode('utf-8')
                             st.download_button("Download Co-occurrence Pairs (CSV)", data=csv, file_name="co_occurrence_pairs.csv", mime='text/csv')
-
             
             show_anomaly = st.sidebar.checkbox("Anomaly Detection", value=False)
             if show_anomaly:
