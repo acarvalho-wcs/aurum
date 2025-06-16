@@ -1165,7 +1165,7 @@ def place_logo_bottom_right(image_path, width=70, link_url="https://wcs.org/"):
         <style>
         .custom-logo {{
             position: fixed;
-            bottom: 40px;
+            bottom: 60px;
             right: 10px;
             z-index: 9999;
         }}
