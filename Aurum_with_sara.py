@@ -2824,7 +2824,7 @@ if uploaded_file is None and st.session_state.get("user"):
                                         use_container_width=True
                                     )
 
-                st.markdown("### 📋 Recorded Cases for Selected Species")
+                st.markdown("### Recorded Cases for Selected Species")
 
                 df_species = (
                     df_dashboard[df_dashboard["Species"] == selected_species_dash]
