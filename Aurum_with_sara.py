@@ -2824,6 +2824,46 @@ if uploaded_file is None and st.session_state.get("user"):
                                         use_container_width=True
                                     )
 
+                st.markdown("### 📋 Recorded Cases for Selected Species")
+
+                df_species = (
+                    df_dashboard[df_dashboard["Species"] == selected_species_dash]
+                    if selected_species_dash != "All species"
+                    else df_dashboard.copy()
+                )
+
+                cols_to_show = [col for col in df_species.columns if col not in ["Latitude", "Longitude", "geometry"]]
+                df_species_view = df_species[cols_to_show].reset_index(drop=True)
+
+                if df_species_view.empty:
+                    st.info("No recorded cases found for the selected species.")
+                else:
+                    st.dataframe(df_species_view, use_container_width=True)
+
+                    csv_data = df_species_view.to_csv(index=False).encode("utf-8")
+                    xlsx_buffer = BytesIO()
+                    with pd.ExcelWriter(xlsx_buffer, engine="xlsxwriter") as writer:
+                        df_species_view.to_excel(writer, index=False, sheet_name="Cases")
+                    xlsx_data = xlsx_buffer.getvalue()
+
+                    col_dl1, col_dl2, col_dl3 = st.columns([5, 2, 2])
+                    with col_dl2:
+                        st.download_button(
+                            label="Download CSV",
+                            data=csv_data,
+                            file_name=f"aurum_cases_{selected_species_dash.replace(' ', '_')}.csv",
+                            mime="text/csv",
+                            use_container_width=True
+                        )
+                    with col_dl3:
+                        st.download_button(
+                            label="Download Excel",
+                            data=xlsx_data,
+                            file_name=f"aurum_cases_{selected_species_dash.replace(' ', '_')}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True
+                        )
+
     except Exception as e:
         st.error(f"❌ Failed to load dashboard summary: {e}")
                 
