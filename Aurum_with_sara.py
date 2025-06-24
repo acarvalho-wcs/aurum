@@ -2832,7 +2832,8 @@ if uploaded_file is None and st.session_state.get("user"):
                     else df_dashboard.copy()
                 )
 
-                cols_to_show = [col for col in df_species.columns if col not in ["Latitude", "Longitude", "geometry"]]
+                cols_to_hide = ["Latitude", "Longitude", "geometry", "Species", "N_seized", "Species_clean", "Species_display"]
+                cols_to_show = [col for col in df_species.columns if col not in cols_to_hide]
                 df_species_view = df_species[cols_to_show].reset_index(drop=True)
 
                 if df_species_view.empty:
