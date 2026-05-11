@@ -5,7 +5,7 @@ from google.oauth2.service_account import Credentials
 import re
 import requests
 import unicodedata
-import statsmodels.api as sm
+from scipy.stats import linregress
 import matplotlib.pyplot as plt
 import numpy as np
 import networkx as nx
@@ -396,15 +396,8 @@ if uploaded_file is not None:
                     if len(df_pre) < 2 or len(df_post) < 2:
                         return 0.0, "Insufficient data for segmented regression"
 
-                    X_pre = sm.add_constant(df_pre[[year_col]])
-                    y_pre = df_pre[count_col]
-                    model_pre = sm.OLS(y_pre, X_pre).fit()
-                    slope_pre = model_pre.params[year_col]
-
-                    X_post = sm.add_constant(df_post[[year_col]])
-                    y_post = df_post[count_col]
-                    model_post = sm.OLS(y_post, X_post).fit()
-                    slope_post = model_post.params[year_col]
+                    slope_pre, _, _, _, _ = linregress(df_pre[year_col], df_pre[count_col])
+                    slope_post, _, _, _, _ = linregress(df_post[year_col], df_post[count_col])
 
                     tcs = (slope_post - slope_pre) / (abs(slope_pre) + 1)
                     log = f"TCS = {tcs:.2f}"
@@ -469,12 +462,8 @@ if uploaded_file is not None:
                         st.markdown(f"#### {species}")
 
                         if len(df_pre) > 1:
-                            X_pre = sm.add_constant(df_pre['Year'])
-                            y_pre = df_pre['N_seized']
-                            model_pre = sm.OLS(y_pre, X_pre).fit()
-                            slope_pre = model_pre.params['Year']
-                            r2_pre = model_pre.rsquared
-                            pval_pre = model_pre.pvalues['Year']
+                            slope_pre, intercept_pre, r_pre, pval_pre, _ = linregress(df_pre['Year'], df_pre['N_seized'])
+                            r2_pre = r_pre ** 2
                             st.markdown(f"- Pre-breakpoint slope: β = `{slope_pre:.2f}`")
                             st.markdown(f"- R² = `{r2_pre:.2f}`")
                             st.markdown(f"- p-value = `{pval_pre:.4f}`")
@@ -482,12 +471,8 @@ if uploaded_file is not None:
                             st.info("Not enough data before breakpoint.")
 
                         if len(df_post) > 1:
-                            X_post = sm.add_constant(df_post['Year'])
-                            y_post = df_post['N_seized']
-                            model_post = sm.OLS(y_post, X_post).fit()
-                            slope_post = model_post.params['Year']
-                            r2_post = model_post.rsquared
-                            pval_post = model_post.pvalues['Year']
+                            slope_post, intercept_post, r_post, pval_post, _ = linregress(df_post['Year'], df_post['N_seized'])
+                            r2_post = r_post ** 2
                             st.markdown(f"- Post-breakpoint slope: β = `{slope_post:.2f}`")
                             st.markdown(f"- R² = `{r2_post:.2f}`")
                             st.markdown(f"- p-value = `{pval_post:.4f}`")
