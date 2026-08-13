@@ -1363,7 +1363,7 @@ if st.session_state.get("is_admin"):
     # Exibe a tab de forma clicável
     selected_tab = tabs(
         options=["Admin Panel"],
-        default_value="",
+        default_value="Admin Panel",
         key="admin_tab"
     )
 
@@ -1644,7 +1644,7 @@ if "user" in st.session_state:
     # --- MENU SUPERIOR COM TABS ---
     selected_tab = tabs(
         options=["Alerts Management", "Cases Management", "Data Requests", "Collaboration"],
-        default_value="",
+        default_value="Alerts Management",
         key="main_tab"
     )
 
@@ -2471,7 +2471,7 @@ if uploaded_file is None and st.session_state.get("user"):
 
             dashboard_tab = tabs(
                 options=["Summary Dashboard", "Distribution of Cases"],
-                default_value="",
+                default_value="Summary Dashboard",
                 key="dashboard_tabs"
             )
 
