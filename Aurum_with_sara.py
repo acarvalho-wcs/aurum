@@ -2939,4 +2939,4 @@ def display_suggestions_section(SHEET_ID):
 display_suggestions_section(SHEET_ID)
 
 st.sidebar.markdown("---")    
-st.sidebar.markdown("**How to cite:** Carvalho, A. F. Aurum: A Platform for Criminal Intelligence in Wildlife Trafficking. Wildlife Conservation Society, 2025.")
+st.sidebar.markdown("**How to cite:** Carvalho, A. F. Aurum: A Platform for Criminal Intelligence in Wildlife Trafficking. Wildlife Conservation Society, 2025. DOI: 10.5281/zenodo.23899034")
